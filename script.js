@@ -16,7 +16,10 @@ const STARTGG_KEY = _0x4a + _0x4b + _0x4c + _0x4d;
 
 // ========== CÓDIGO ORIGINAL COMPLETO ==========
 const STARTGG_API = 'https://api.start.gg/gql/alpha';
-const PARRYGG_API = '/.netlify/functions/parry-api';
+// Configure sua chave Parry.gg nesta constante antes de publicar pelo GitHub Pages.
+// A chave ficará visível no navegador e deve ser rotacionada periodicamente.
+const PARRYGG_API_KEY = 'pgk_nMIfoofizz/pP0/29kG8sqKit0AVmGx0nX6esMg22sA=';
+const PARRYGG_API = 'https://grpcweb.parry.gg/parrygg.services';
 let provedorAtual = 'startgg';
 let parryGames = [];
 
@@ -56,10 +59,16 @@ async function selecionarProvedor(provedor) {
 }
 
 async function callParryGG(method, body = {}, service = 'TournamentService') {
-    const response = await fetch(PARRYGG_API, {
+    if (!PARRYGG_API_KEY || PARRYGG_API_KEY === 'COLE_SUA_CHAVE_PARRY_AQUI') {
+        throw new Error('Configure sua chave Parry.gg na constante PARRYGG_API_KEY do script.js.');
+    }
+    const response = await fetch(`${PARRYGG_API}.${service}/${method}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service, method, body })
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': PARRYGG_API_KEY
+        },
+        body: JSON.stringify(body)
     });
     const json = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(json.message || `Parry.gg respondeu HTTP ${response.status}`);
