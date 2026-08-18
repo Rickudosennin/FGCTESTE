@@ -30,6 +30,20 @@
                 <button onclick="toggleChangelog()" class="text-slate-500 hover:text-white text-2xl" aria-label="Fechar changelog">&times;</button>
             </div>
             <div class="space-y-6">
+                <div class="border-l-2 border-purple-500 pl-4">
+                    <span class="bg-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V2.8</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Novidades Parry.gg</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-purple-400 font-bold">Nova opção Parry.gg:</span> Agora é possível alternar entre torneios do Start.gg e da Parry.gg.</li>
+                        <li>• <span class="text-purple-400 font-bold">Lista de jogos:</span> A Parry.gg possui sua própria lista de jogos, organizada em ordem alfabética.</li>
+                        <li>• <span class="text-purple-400 font-bold">Mais informações:</span> Os cards exibem banners, data, quantidade de participantes, formato e local do torneio.</li>
+                        <li>• <span class="text-purple-400 font-bold">Filtros aprimorados:</span> É possível buscar eventos online, presenciais e por região ou país.</li>
+                        <li>• <span class="text-purple-400 font-bold">Eventos futuros:</span> Os torneios aparecem organizados pela data mais próxima, facilitando a consulta dos próximos eventos.</li>
+                        <li>• <span class="text-purple-400 font-bold">Sugestão de datas:</span> O painel dos próximos 14 dias também funciona nas buscas da Parry.gg.</li>
+                        <li>• <span class="text-purple-400 font-bold">Acesso rápido:</span> Cada card possui botões para abrir a página do torneio e consultar os participantes.</li>
+                        <li>• <span class="text-purple-400 font-bold">Troca de plataformas:</span> Ao voltar para o Start.gg, a lista de jogos e os filtros originais são restaurados automaticamente.</li>
+                    </ul>
+                </div>
                 <div class="border-l-2 border-green-500 pl-4">
                     <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V2.7</span>
                     <h3 class="text-white font-bold text-sm uppercase mt-1">Acessibilidade: Libras e Leitor de Tela</h3>
@@ -207,36 +221,25 @@
 
     <main class="max-w-6xl mx-auto w-full" id="conteudo">
         <header class="text-center mb-10"><h1 class="text-4xl font-black text-white mb-2 tracking-tight uppercase italic">FGC TOURNAMENT <span class="text-red-600">HUB</span></h1><p class="text-slate-400 font-medium">Busca avançada de torneios</p></header>
-
-        <div class="flex gap-2 mb-6" role="tablist" aria-label="Fonte de torneios">
-            <button id="btn_aba_startgg" type="button" role="tab" aria-selected="true" aria-controls="aba_startgg" onclick="trocarAba('startgg')" class="tab-source-btn tab-active">
-                <i class="fa-solid fa-trophy" aria-hidden="true"></i> START.GG
-            </button>
-            <button id="btn_aba_parry" type="button" role="tab" aria-selected="false" aria-controls="aba_parry" onclick="trocarAba('parry')" class="tab-source-btn">
-                <i class="fa-solid fa-gamepad" aria-hidden="true"></i> PARRY.GG
-            </button>
-        </div>
-
-        <div id="aba_startgg" role="tabpanel" aria-labelledby="btn_aba_startgg">
-            <div class="glass-card p-6 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div><label for="campo_jogo" class="block text-xs font-bold uppercase text-red-500 mb-2">Jogo</label><select id="campo_jogo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="">Carregando jogos...</option></select></div>
-                <div><label for="campo_tipo" class="block text-xs font-bold uppercase text-red-500 mb-2">Formato</label><select id="campo_tipo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="online">Online</option><option value="offline">Presencial (Offline)</option></select></div>
-                <div><label for="campo_local" class="block text-xs font-bold uppercase text-red-500 mb-2">Região / País</label><select id="campo_local" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option></select></div>
-                <div class="flex items-end"><button onclick="pesquisar()" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">PESQUISAR</button></div>
+        <div class="glass-card p-6 rounded-xl mb-6">
+            <div class="mb-5" role="group" aria-label="Origem dos torneios">
+                <p class="block text-xs font-bold uppercase text-red-500 mb-2">Origem dos torneios</p>
+                <div class="grid grid-cols-2 gap-2 max-w-xl">
+                    <button id="provider_startgg" type="button" class="provider-btn provider-btn-active" onclick="selecionarProvedor('startgg')"><i class="fa-solid fa-trophy mr-2"></i>Start.gg</button>
+                    <button id="provider_parrygg" type="button" class="provider-btn" onclick="selecionarProvedor('parrygg')"><i class="fa-solid fa-bolt mr-2"></i>Parry.gg</button>
+                </div>
+                <div id="parry_config" class="hidden" aria-hidden="true"></div>
             </div>
-            <div id="painel_disponibilidade" class="hidden glass-card p-6 rounded-xl mb-10 border-slate-800 bg-black/40"><h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-green-500" aria-hidden="true"></i> Sugestão de Datas (Próximos 14 dias)</h2><div id="grid_dias" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3"></div></div>
-            <div id="status" class="hidden text-center py-10" role="status" aria-live="polite"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600" aria-hidden="true"></div><p class="mt-2 text-red-500 font-bold uppercase text-sm">Sincronizando cronogramas...</p></div>
-            <div id="resultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" role="region" aria-label="Resultados da busca de torneios" aria-live="polite"></div>
-        </div>
-
-        <div id="aba_parry" role="tabpanel" aria-labelledby="btn_aba_parry" class="hidden">
-            <div class="glass-card p-6 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="md:col-span-3"><label for="campo_jogo_parry" class="block text-xs font-bold uppercase text-purple-500 mb-2">Jogo</label><select id="campo_jogo_parry" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-purple-500"><option value="">Carregando jogos...</option></select></div>
-                <div class="flex items-end"><button onclick="pesquisarParry()" class="w-full btn-primary-parry text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">PESQUISAR</button></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div><label for="campo_jogo" class="block text-xs font-bold uppercase text-red-500 mb-2">Jogo</label><select id="campo_jogo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="">Carregando jogos...</option></select></div>
+            <div><label for="campo_tipo" class="block text-xs font-bold uppercase text-red-500 mb-2">Formato</label><select id="campo_tipo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="online">Online</option><option value="offline">Presencial (Offline)</option></select></div>
+            <div><label for="campo_local" class="block text-xs font-bold uppercase text-red-500 mb-2">Região / País</label><select id="campo_local" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option></select></div>
+            <div class="flex items-end"><button onclick="pesquisar()" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">PESQUISAR</button></div>
             </div>
-            <div id="status_parry" class="hidden text-center py-10" role="status" aria-live="polite"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600" aria-hidden="true"></div><p class="mt-2 text-purple-400 font-bold uppercase text-sm">Sincronizando com parry.gg...</p></div>
-            <div id="resultados_parry" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" role="region" aria-label="Resultados da busca de torneios no parry.gg" aria-live="polite"></div>
         </div>
+        <div id="painel_disponibilidade" class="hidden glass-card p-6 rounded-xl mb-10 border-slate-800 bg-black/40"><h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-green-500" aria-hidden="true"></i> Sugestão de Datas (Próximos 14 dias)</h2><div id="grid_dias" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3"></div></div>
+        <div id="status" class="hidden text-center py-10" role="status" aria-live="polite"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600" aria-hidden="true"></div><p id="status_text" class="mt-2 text-red-500 font-bold uppercase text-sm">Sincronizando cronogramas...</p></div>
+        <div id="resultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" role="region" aria-label="Resultados da busca de torneios" aria-live="polite"></div>
     </main>
 
     <footer class="max-w-5xl mx-auto w-full mt-10 border-t border-slate-800 pt-8 pb-4">
