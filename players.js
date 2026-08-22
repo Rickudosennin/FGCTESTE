@@ -1,4 +1,4 @@
-// ==================== CONFIG DA DATABASE DE PLAYERS ====================
+// ==================== CONFIG ====================
 const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
 const GITHUB_ISSUES_TOKEN = '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';
@@ -22,7 +22,7 @@ function _cacheEstaFresco(entry) {
     return idadeHoras < CACHE_MAX_IDADE_HORAS;
 }
 
-// ==================== PROCESSAMENTO DOS DADOS ====================
+// ==================== PROCESSAMENTO ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
@@ -93,9 +93,8 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     };
 }
 
-// ==================== BUSCA AO VIVO (COM QUERY EXPANDIDA) ====================
+// ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
-    // Query expandida com startAt e nome do evento
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
             recentStandings(limit: 15) {
@@ -117,7 +116,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     const json1 = await callStartGG(query1, { id: playerId });
     const standings = json1.data?.player?.recentStandings || [];
 
-    // Buscar sets de cada evento
     const setsPorEvento = {};
     for (const standing of standings) {
         const eventId = standing.container?.id;
@@ -129,7 +127,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
-// ==================== PERSISTÊNCIA (abre Issue) ====================
+// ==================== PERSISTÊNCIA ====================
 async function _persistirNoCache(playerId, dados) {
     if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
     try {
@@ -157,7 +155,7 @@ async function obterDadosPlayer(playerId, gamerTag) {
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (para a tela de busca) ====================
+// ==================== BUSCA DE PLAYERS ====================
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
