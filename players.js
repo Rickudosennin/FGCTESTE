@@ -1,21 +1,15 @@
 // ==================== CONFIG DA DATABASE DE PLAYERS ====================
 const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-// Token de acesso pessoal (fine-grained) com escopo ÚNICO E EXCLUSIVO de "Issues: write" neste repositório.
-// NUNCA usar aqui um token com permissão de escrita em Contents/Actions/Admin — este token fica visível
-// para qualquer visitante do site (é client-side), então o escopo precisa ser o mínimo possível.
-// Como gerar: GitHub > Settings > Developer settings > Fine-grained tokens > New token
-//   Repository access: Only select repositories > fgchub
-//   Permissions: Issues = Read and write (todas as outras em "No access")
 const GITHUB_ISSUES_TOKEN = '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';
-const CACHE_MAX_IDADE_HORAS = 24; // acima disso, refaz busca ao vivo mesmo se já estiver em cache
+const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LEITURA DO CACHE ====================
 let _playersCacheData = null;
 async function _lerPlayersCache() {
     if (_playersCacheData) return _playersCacheData;
     try {
-        const resp = await fetch(PLAYERS_CACHE_URL + '?t=' + Date.now()); // evita cache do CDN do raw.githubusercontent
+        const resp = await fetch(PLAYERS_CACHE_URL + '?t=' + Date.now());
         const json = await resp.json();
         _playersCacheData = json.players || {};
     } catch (e) { _playersCacheData = {}; }
@@ -28,47 +22,116 @@ function _cacheEstaFresco(entry) {
     return idadeHoras < CACHE_MAX_IDADE_HORAS;
 }
 
-// ==================== BUSCA AO VIVO (fallback quando não está em cache) ====================
-async function _buscarPlayerAoVivo(playerId, gamerTag) {
-    const query1 = `query PlayerHistory($id: ID!) { player(id: $id) { recentStandings(limit: 10) { placement container { ... on Event { id name tournament { name numAttendees } } } } } }`;
-    const json1 = await callStartGG(query1, { id: playerId });
-    const standings = json1.data?.player?.recentStandings || [];
+// ==================== PROCESSAMENTO DOS DADOS ====================
+function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
+    const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
-    let totalWins = 0, totalLosses = 0; const torneiosData = [];
-    for (const standing of standings) {
-        const eventId = standing.container?.id;
-        const tournamentName = standing.container?.tournament?.name || 'Torneio';
-        if (!eventId) continue;
-        const resultado = await buscarSetsDoEvento(eventId, playerId);
-        if (resultado.total > 0 && !resultado.error) { totalWins += resultado.wins; totalLosses += resultado.losses; }
-        torneiosData.push({ name: tournamentName, wins: resultado.wins, losses: resultado.losses, placement: standing.placement, attendees: standing.container?.tournament?.numAttendees || '?', sets: resultado.sets || [] });
-    }
+    let totalWins = 0, totalLosses = 0;
+    let wins6m = 0, losses6m = 0;
+    const torneios = [];
+    const colocacoes = [];
 
-    const todosSets = torneiosData.flatMap(t => t.sets || []);
-    const reports = await buscarReportsChar();
-    const statsChar = {};
-    todosSets.forEach(s => {
-        const rep = reports.find(r => String(r.setId) === String(s.setId) && String(r.playerId) === String(playerId));
-        if (!rep) return;
-        if (!statsChar[rep.character]) statsChar[rep.character] = { wins: 0, losses: 0 };
-        s.venceu ? statsChar[rep.character].wins++ : statsChar[rep.character].losses++;
+    standings.forEach(s => {
+        const eventId = s.container?.id;
+        const startAt = s.container?.startAt;
+        const resultado = setsPorEvento[eventId] || { wins: 0, losses: 0 };
+
+        totalWins += resultado.wins;
+        totalLosses += resultado.losses;
+
+        const isRecent = startAt && (startAt * 1000) > seisMesesAtras;
+        if (isRecent) {
+            wins6m += resultado.wins;
+            losses6m += resultado.losses;
+        }
+
+        const winrate = (resultado.wins + resultado.losses) > 0 
+            ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100) 
+            : 0;
+
+        torneios.push({
+            name: s.container?.tournament?.name || '—',
+            eventName: s.container?.name || '—',
+            placement: s.placement || '?',
+            attendees: s.container?.tournament?.numAttendees || '?',
+            wins: resultado.wins,
+            losses: resultado.losses,
+            winrate,
+            date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
+            isRecent
+        });
+
+        if (s.placement) colocacoes.push(s.placement);
     });
 
     const totalPartidas = totalWins + totalLosses;
+    const total6m = wins6m + losses6m;
+
+    // Highlights: melhores colocações (top 8)
+    const highlights = [...torneios]
+        .filter(t => t.placement && t.placement > 0 && t.attendees !== '?')
+        .sort((a, b) => a.placement - b.placement)
+        .slice(0, 8)
+        .map(t => ({
+            placement: `${t.placement}º/${t.attendees}`,
+            eventName: t.eventName,
+            date: t.date
+        }));
+
     return {
         gamerTag,
-        wins: totalWins,
-        losses: totalLosses,
-        winrate: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
-        tournaments: torneiosData.map(t => ({ name: t.name, wins: t.wins, losses: t.losses, placement: t.placement, attendees: t.attendees })),
-        characters: statsChar,
+        totalWins,
+        totalLosses,
+        winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
+        winrateLast6Months: total6m > 0 ? Math.round((wins6m / total6m) * 100) : 0,
+        wins6m,
+        losses6m,
+        recentForm: colocacoes.slice(0, 10),
+        highlights,
+        tournaments: torneios,
         updatedAt: new Date().toISOString()
     };
 }
 
-// ==================== PERSISTÊNCIA (abre Issue, GitHub Action commita depois) ====================
+// ==================== BUSCA AO VIVO (COM QUERY EXPANDIDA) ====================
+async function _buscarPlayerAoVivo(playerId, gamerTag) {
+    // Query expandida com startAt e nome do evento
+    const query1 = `query PlayerHistory($id: ID!) {
+        player(id: $id) {
+            recentStandings(limit: 15) {
+                placement
+                container {
+                    ... on Event {
+                        id
+                        name
+                        startAt
+                        tournament {
+                            name
+                            numAttendees
+                        }
+                    }
+                }
+            }
+        }
+    }`;
+    const json1 = await callStartGG(query1, { id: playerId });
+    const standings = json1.data?.player?.recentStandings || [];
+
+    // Buscar sets de cada evento
+    const setsPorEvento = {};
+    for (const standing of standings) {
+        const eventId = standing.container?.id;
+        if (!eventId) continue;
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
+    }
+
+    return processarDadosPlayer(standings, setsPorEvento, gamerTag);
+}
+
+// ==================== PERSISTÊNCIA (abre Issue) ====================
 async function _persistirNoCache(playerId, dados) {
-    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return; // token não configurado ainda, não tenta
+    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
     try {
         await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
             method: 'POST',
@@ -79,10 +142,10 @@ async function _persistirNoCache(playerId, dados) {
                 labels: ['player-cache-update']
             })
         });
-    } catch (e) { /* falha silenciosa: pior caso, só não persiste dessa vez */ }
+    } catch (e) { /* falha silenciosa */ }
 }
 
-// ==================== FUNÇÃO PRINCIPAL: cache primeiro, senão busca ao vivo e salva ====================
+// ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag) {
     const cache = await _lerPlayersCache();
     const entry = cache[playerId];
@@ -90,17 +153,29 @@ async function obterDadosPlayer(playerId, gamerTag) {
         return { dados: entry, fonte: 'cache' };
     }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
-    _persistirNoCache(playerId, dados); // não bloqueia a renderização, roda em paralelo
+    _persistirNoCache(playerId, dados);
     return { dados, fonte: 'live' };
 }
 
 // ==================== BUSCA DE PLAYERS (para a tela de busca) ====================
-// Como o Start.gg não tem uma busca global por gamertag, a lista de sugestões vem
-// dos rankings das ligas que o FGC HUB já monitora (LIGAS_MONITORADAS em script.js).
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
-    const query = `query LeagueStandings($slug: String) { league(slug: $slug) { standings(query: { page: 1, perPage: 40 }) { nodes { placement entrant { name participants { player { id } } } } } } }`;
+    const query = `query LeagueStandings($slug: String) {
+        league(slug: $slug) {
+            standings(query: { page: 1, perPage: 40 }) {
+                nodes {
+                    placement
+                    entrant {
+                        name
+                        participants {
+                            player { id }
+                        }
+                    }
+                }
+            }
+        }
+    }`;
     const resultados = await Promise.all(LIGAS_MONITORADAS.map(liga =>
         callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
     ));
