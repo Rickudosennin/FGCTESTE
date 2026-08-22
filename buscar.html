@@ -24,6 +24,7 @@
                    class="bg-transparent flex-1 outline-none text-white placeholder-slate-500 py-2" />
         </div>
 
+        <!-- Botão de debug para ver players salvos -->
         <div class="flex justify-between items-center mb-4">
             <button id="btn_mostrar_salvos" class="text-xs text-slate-500 hover:text-red-400 transition">
                 <i class="fa-solid fa-database"></i> Mostrar players salvos (<span id="contador_salvos">0</span>)
@@ -33,6 +34,7 @@
             </button>
         </div>
 
+        <!-- Lista de players salvos (oculta) -->
         <div id="lista_salvos" class="hidden glass-card p-4 rounded-xl mb-4 max-h-60 overflow-y-auto">
             <p class="text-xs text-slate-400 mb-2">Players salvos localmente:</p>
             <div id="conteudo_salvos" class="text-sm text-white space-y-1"></div>
@@ -75,9 +77,8 @@
             const vistos = new Set();
             const unicos = [];
             for (const p of lista) {
-                const id = String(p.playerId);
-                if (!vistos.has(id)) {
-                    vistos.add(id);
+                if (!vistos.has(p.playerId)) {
+                    vistos.add(p.playerId);
                     unicos.push(p);
                 }
             }
@@ -96,9 +97,14 @@
 
         async function carregarDados() {
             resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
-            listaCompleta = await carregarPlayersConhecidos();
-            resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
-            atualizarContador();
+            try {
+                listaCompleta = await carregarPlayersConhecidos();
+                resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
+                atualizarContador();
+            } catch (e) {
+                console.error('Erro ao carregar players:', e);
+                resultadosDiv.innerHTML = '<div class="history-empty">❌ Erro ao carregar players. Recarregue a página.</div>';
+            }
         }
 
         let timeoutId;
@@ -125,13 +131,6 @@
         btnLimpar.addEventListener('click', () => {
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
-                // Remove também os perfis em cache
-                const keys = Object.keys(localStorage);
-                keys.forEach(key => {
-                    if (key.startsWith('fgchub_profile_')) {
-                        localStorage.removeItem(key);
-                    }
-                });
                 atualizarContador();
                 carregarDados();
             }

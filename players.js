@@ -43,7 +43,7 @@ function _cacheEstaFresco(entry) {
     return idadeHoras < CACHE_MAX_IDADE_HORAS;
 }
 
-// ==================== MAPA DE JOGOS (baseado no games do script.js) ====================
+// ==================== MAPA DE JOGOS ====================
 let _gameMap = null;
 function _carregarGameMap() {
     if (_gameMap) return _gameMap;
@@ -66,7 +66,6 @@ function _detectarJogoPrincipal(standings) {
     standings.forEach(s => {
         const container = s.container;
         if (!container) return;
-        // O videogameId pode estar no tournament ou no evento
         const tournament = container.tournament;
         if (tournament && tournament.videogameId) {
             const id = tournament.videogameId;
@@ -74,7 +73,6 @@ function _detectarJogoPrincipal(standings) {
         }
     });
 
-    // Se não encontrou nenhum, fallback para Tekken 8
     if (Object.keys(gameCount).length === 0) {
         return { id: 49783, name: 'TEKKEN 8' };
     }
@@ -190,9 +188,8 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
     };
 }
 
-// ==================== BUSCA AO VIVO (COM DADOS DO USUÁRIO E JOGO) ====================
+// ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
-    // Query expandida com dados do usuário e videogameId dos torneios
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
             gamerTag
@@ -238,7 +235,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
         setsPorEvento[eventId] = resultado;
     }
 
-    // Carrega reports de personagem (cache global)
     if (!_charReportsCache) {
         await buscarReportsChar();
     }
@@ -246,7 +242,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     return processarDadosPlayer(standings, setsPorEvento, playerData?.gamerTag || gamerTag, userData);
 }
 
-// ==================== PERSISTÊNCIA NO GITHUB (OPCIONAL) ====================
+// ==================== PERSISTÊNCIA ====================
 async function _persistirNoCache(playerId, dados) {
     if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
     try {
@@ -275,43 +271,57 @@ async function obterDadosPlayer(playerId, gamerTag) {
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (com localStorage) ====================
+// ==================== BUSCA DE PLAYERS (COM TIMEOUT E FALLBACK) ====================
 let _listaPlayersConhecidos = null;
+
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
 
     const mapa = new Map();
 
-    // 1. Players das ligas monitoradas (LIGAS_MONITORADAS é definido no script.js)
-    if (typeof LIGAS_MONITORADAS !== 'undefined') {
-        const query = `query LeagueStandings($slug: String) {
-            league(slug: $slug) {
-                standings(query: { page: 1, perPage: 40 }) {
-                    nodes {
-                        placement
-                        entrant {
-                            name
-                            participants {
-                                player { id }
+    // 1. Tenta carregar das ligas, mas com timeout de 5 segundos
+    if (typeof LIGAS_MONITORADAS !== 'undefined' && LIGAS_MONITORADAS.length > 0) {
+        try {
+            const query = `query LeagueStandings($slug: String) {
+                league(slug: $slug) {
+                    standings(query: { page: 1, perPage: 40 }) {
+                        nodes {
+                            placement
+                            entrant {
+                                name
+                                participants {
+                                    player { id }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }`;
-        const resultados = await Promise.all(LIGAS_MONITORADAS.map(liga =>
-            callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
-        ));
-        resultados.flat().forEach(node => {
-            const playerId = node.entrant?.participants?.[0]?.player?.id;
-            const gamerTag = node.entrant?.name;
-            if (playerId && gamerTag && !mapa.has(playerId)) {
-                mapa.set(playerId, { playerId, gamerTag, placement: node.placement });
-            }
-        });
+            }`;
+            
+            // Promise com timeout de 5 segundos
+            const fetchPromise = Promise.all(LIGAS_MONITORADAS.map(liga =>
+                callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
+            ));
+            
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout ao buscar ligas')), 5000)
+            );
+            
+            const resultados = await Promise.race([fetchPromise, timeoutPromise]);
+            
+            resultados.flat().forEach(node => {
+                const playerId = node.entrant?.participants?.[0]?.player?.id;
+                const gamerTag = node.entrant?.name;
+                if (playerId && gamerTag && !mapa.has(playerId)) {
+                    mapa.set(playerId, { playerId, gamerTag, placement: node.placement });
+                }
+            });
+        } catch (e) {
+            console.warn('Erro/timeout ao buscar ligas, usando apenas localStorage:', e);
+        }
     }
 
-    // 2. Players salvos localmente (localStorage)
+    // 2. SEMPRE adiciona os players do localStorage (fallback principal)
     const locais = _carregarPlayersLocal();
     locais.forEach(p => {
         if (!mapa.has(p.playerId)) {
