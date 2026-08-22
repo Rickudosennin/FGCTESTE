@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil do Player | FGC HUB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-3xl mx-auto">
+        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para a busca</a>
+
+        <div id="perfil_conteudo">
+            <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="players.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const playerId = params.get('id');
+        const gamerTag = params.get('tag') || 'Player';
+        const conteudo = document.getElementById('perfil_conteudo');
+
+        function montarHtmlPerfil(dados, fonte) {
+            const wr = dados.winrate;
+            const wrClass = wr >= 60 ? 'history-winrate-60' : (wr >= 40 ? 'history-winrate-40' : 'history-winrate-0');
+
+            let html = `
+                <div class="player-history">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="history-title" style="margin-bottom:0;">🔍 ${gamerTag}</div>
+                        <span class="text-[10px] text-slate-500 uppercase">${fonte === 'cache' ? '⚡ dados em cache' : '🔴 ao vivo'}</span>
+                    </div>
+                    <div class="legend-bar">
+                        <div class="legend-item"><span class="legend-dot green"></span> 60%+</div>
+                        <div class="legend-item"><span class="legend-dot yellow"></span> 40-59%</div>
+                        <div class="legend-item"><span class="legend-dot red"></span> &lt;40%</div>
+                    </div>
+                    <div class="history-winrate ${wrClass}">📊 WinRate: ${wr}%</div>
+                    <div class="history-winrate-detail">${dados.wins}W / ${dados.losses}L em ${dados.tournaments.length} torneios</div>`;
+
+            dados.tournaments.forEach(t => {
+                const twr = t.wins + t.losses > 0 ? Math.round((t.wins / (t.wins + t.losses)) * 100) : 0;
+                const cls = twr >= 60 ? 'history-winrate-60' : (twr >= 40 ? 'history-winrate-40' : 'history-winrate-0');
+                html += `<div class="history-item"><span class="history-name">${t.name}</span><span class="history-placement ${cls}">${t.wins}W-${t.losses}L (${twr}%) — ${t.placement}º/${t.attendees}</span></div>`;
+            });
+
+            const totalSets = dados.tournaments.reduce((a, t) => a + t.wins + t.losses, 0);
+            const setsComReport = Object.values(dados.characters || {}).reduce((a, c) => a + c.wins + c.losses, 0);
+            html += montarHtmlWinrateChar(dados.characters || {}, totalSets - setsComReport);
+
+            html += `</div>`;
+            return html;
+        }
+
+        async function iniciar() {
+            if (!playerId) { conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>'; return; }
+            try {
+                const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
+                conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
+            } catch (e) {
+                conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
+            }
+        }
+
+        iniciar();
+    </script>
+</body>
+</html>

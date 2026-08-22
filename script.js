@@ -16,162 +16,6 @@ const STARTGG_KEY = _0x4a + _0x4b + _0x4c + _0x4d;
 
 // ========== CÓDIGO ORIGINAL COMPLETO ==========
 const STARTGG_API = 'https://api.start.gg/gql/alpha';
-// Configure sua chave Parry.gg nesta constante antes de publicar pelo GitHub Pages.
-// A chave ficará visível no navegador e deve ser rotacionada periodicamente.
-const PARRYGG_API_KEY = 'pgk_nMIfoofizz/pP0/29kG8sqKit0AVmGx0nX6esMg22sA=';
-const PARRYGG_API = 'https://grpcweb.parry.gg/parrygg.services';
-let provedorAtual = 'startgg';
-let parryGames = [];
-
-function parryTimestamp(value) {
-    if (typeof value === 'number') return value > 100000000000 ? Math.floor(value / 1000) : value;
-    if (!value) return 0;
-    const parsed = Date.parse(String(value));
-    return Number.isNaN(parsed) ? 0 : Math.floor(parsed / 1000);
-}
-
-function parryGameSlug(game) {
-    return parryValue(game, 'slug', 'gameSlug', 'id') || '';
-}
-
-async function selecionarProvedor(provedor) {
-    provedorAtual = provedor;
-    document.getElementById('provider_startgg')?.classList.toggle('provider-btn-active', provedor === 'startgg');
-    document.getElementById('provider_parrygg')?.classList.toggle('provider-btn-active', provedor === 'parrygg');
-    document.getElementById('parry_config')?.classList.toggle('hidden', provedor !== 'parrygg');
-    const text = document.getElementById('api_status_text');
-    if (text) text.textContent = provedor === 'startgg' ? 'API: Start.gg selecionada' : 'API: Parry.gg selecionada';
-
-    const selectJogo = document.getElementById('campo_jogo');
-    if (provedor === 'startgg') {
-        const jogoAnterior = selectJogo?.value || '';
-        carregarJogos();
-        if (selectJogo && games.some(game => !game.hidden && game.value === jogoAnterior)) selectJogo.value = jogoAnterior;
-        const tipo = document.getElementById('campo_tipo')?.value || 'online';
-        document.getElementById('campo_local').innerHTML = tipo === 'offline' ? '<option value="BR">Brasil</option><option value="US">Estados Unidos</option>' : '<option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option>';
-    } else {
-        const selectJogoParry = document.getElementById('campo_jogo');
-        if (selectJogoParry) selectJogoParry.value = '';
-        await carregarJogosParry();
-        const tipo = document.getElementById('campo_tipo')?.value || 'online';
-        document.getElementById('campo_local').innerHTML = tipo === 'offline' ? '<option value="BR">Brasil</option><option value="US">Estados Unidos</option>' : '<option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option>';
-    }
-}
-
-async function callParryGG(method, body = {}, service = 'TournamentService') {
-    if (!PARRYGG_API_KEY || PARRYGG_API_KEY === 'COLE_SUA_CHAVE_PARRY_AQUI') {
-        throw new Error('Configure sua chave Parry.gg na constante PARRYGG_API_KEY do script.js.');
-    }
-    const response = await fetch(`${PARRYGG_API}.${service}/${method}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': PARRYGG_API_KEY
-        },
-        body: JSON.stringify(body)
-    });
-    const json = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(json.message || `Parry.gg respondeu HTTP ${response.status}`);
-    return json;
-}
-
-function parryValue(obj, ...names) {
-    for (const name of names) {
-        const value = name.split('.').reduce((acc, key) => acc?.[key], obj);
-        if (value !== undefined && value !== null && value !== '') return value;
-    }
-    return null;
-}
-
-function normalizarTorneioParry(t) {
-    const id = parryValue(t, 'id', 'tournamentId') || crypto.randomUUID();
-    const slugs = Array.isArray(t.slugs) ? t.slugs : [];
-    const slugObj = slugs.find(s => s.type === 'SLUG_TYPE_PRIMARY') || slugs[0];
-    const slug = parryValue(t, 'slug', 'tournamentSlug') || parryValue(slugObj, 'slug') || id;
-    const events = Array.isArray(t.events) ? t.events : [];
-    const startAt = parryTimestamp(parryValue(t, 'startDate', 'startAt', 'start_at', 'startTime')) || Math.min(...events.map(e => parryTimestamp(parryValue(e, 'startDate', 'startAt'))).filter(Boolean), 0);
-    const endAt = parryTimestamp(parryValue(t, 'endDate', 'endAt', 'end_at', 'endTime')) || startAt;
-    const attendees = Number(parryValue(t, 'numAttendees', 'attendeeCount', 'numEntrants', 'participantsCount') || 0);
-    const gameNames = [...new Set(events.map(e => parryValue(e, 'game.name', 'game.title')).filter(Boolean))];
-    const gameIds = [...new Set(events.map(e => parryValue(e, 'game.id', 'game.gameId')).filter(Boolean))];
-    const locationType = parryValue(t, 'locationType') || '';
-    const address = t.address || {};
-    const countryCode = String(parryValue(address, 'countryCode', 'country_code') || '').toUpperCase();
-    const countryName = parryValue(address, 'country', 'countryName') || '';
-    const locationLabel = parryValue(address, 'formattedAddress', 'country', 'countryName') || parryValue(t, 'venueAddress', 'location', 'addrState') || (locationType || 'Parry.gg');
-    const images = Array.isArray(t.images) ? t.images : [];
-    const bannerUrl = images.find(image => image?.type === 'IMAGE_TYPE_BANNER' && image.url)?.url || images.find(image => image?.url)?.url || '';
-    return { id, name: parryValue(t, 'name', 'title') || 'Torneio Parry.gg', slug, url: `https://parry.gg/${encodeURIComponent(slug)}`, startAt, endAt, numAttendees: attendees, gameNames, gameIds, locationType, countryCode, countryName, isRegistrationOpen: !['TOURNAMENT_STATE_COMPLETED', 'TOURNAMENT_STATE_CANCELLED'].includes(t.state), state: t.state || '', addrState: locationLabel, owner: { name: parryValue(t, 'ownerId', 'organizerName', 'owner.name') || '—' }, images, bannerUrl, streams: [], events: events.map(e => ({ startAt: parryTimestamp(parryValue(e, 'startDate', 'startAt')), locationType: parryValue(e, 'locationType') || locationType })) };
-}
-
-async function carregarJogosParry() {
-    const select = document.getElementById('campo_jogo');
-    if (!select) return;
-    select.innerHTML = '<option value="">Carregando jogos Parry.gg...</option>';
-    const json = await callParryGG('GetGames', {}, 'GameService');
-    const jogosApi = (json.games || json.Games || json.data?.games || []).map(game => ({ value: parryGameSlug(game), label: parryValue(game, 'name', 'title') || 'Jogo Parry.gg', raw: game })).filter(game => game.value || game.label);
-    // A API de metadados pode não devolver jogos usados por eventos recentes.
-    // Pokemon Champions é confirmado nos eventos Parry e precisa continuar pesquisável.
-    const jogosFallback = [{ value: 'pokemon-champions', label: 'Pokemon Champions', raw: { slug: 'pokemon-champions', name: 'Pokemon Champions' } }];
-    const porNome = new Map();
-    [...jogosApi, ...jogosFallback].forEach(game => porNome.set(game.label.trim().toLocaleLowerCase('pt-BR'), game));
-    parryGames = [...porNome.values()].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
-    select.innerHTML = '<option value="">Todos os jogos Parry.gg</option>' + parryGames.map(game => `<option value="${String(game.value).replace(/"/g, '&quot;')}">${String(game.label).replace(/[<>&"']/g, '')}</option>`).join('');
-}
-
-async function pesquisarParryGG(container, status) {
-    const statusText = document.getElementById('status_text');
-    if (statusText) statusText.textContent = 'Consultando torneios Parry.gg...';
-    const selectedGame = document.getElementById('campo_jogo')?.value || '';
-    const typeVal = document.getElementById('campo_tipo')?.value || 'online';
-    const json = await callParryGG('GetTournaments', { sortOrder: 'TOURNAMENTS_SORT_ORDER_HOME', paginationRequest: { pageSize: 100 } });
-    const raw = json.tournaments || json.Tournaments || json.data?.tournaments || [];
-    const agora = Math.floor(Date.now() / 1000);
-    const estadosEncerrados = new Set(['TOURNAMENT_STATE_COMPLETED', 'TOURNAMENT_STATE_CANCELLED', 'TOURNAMENT_STATE_ENDED']);
-    const estadosEmAndamento = new Set(['TOURNAMENT_STATE_IN_PROGRESS', 'TOURNAMENT_STATE_LIVE', 'TOURNAMENT_STATE_RUNNING']);
-    const nodes = raw.map(normalizarTorneioParry).filter(t => {
-        const encerrado = estadosEncerrados.has(t.state);
-        const emAndamento = estadosEmAndamento.has(t.state);
-        const dataFuturaOuAtiva = !encerrado && (emAndamento || (t.startAt && t.startAt >= agora) || (t.endAt && t.endAt >= agora));
-        if (!dataFuturaOuAtiva) return false;
-        const selected = parryGames.find(g => g.value === selectedGame);
-        const gameMatches = !selectedGame || t.gameIds.includes(selectedGame) || t.gameNames.some(name => selected && selected.label.toLowerCase() === name.toLowerCase());
-        const eventTypes = t.events.map(e => e.locationType || t.locationType).filter(Boolean);
-        const typeMatches = !typeVal || !eventTypes.length || eventTypes.some(value => typeVal === 'online' ? ['LOCATION_TYPE_ONLINE', 'LOCATION_TYPE_HYBRID'].includes(value) : value === 'LOCATION_TYPE_OFFLINE');
-        const southAmerica = ['AR', 'BO', 'BR', 'CL', 'CO', 'EC', 'GY', 'PE', 'PY', 'SR', 'UY', 'VE'];
-        const localVal = document.getElementById('campo_local')?.value || '';
-        const regionMatches = !localVal || localVal === 'worldwide' || (localVal === 'south-america' ? (t.countryCode ? southAmerica.includes(t.countryCode) : typeVal === 'online') : t.countryCode === localVal);
-        return gameMatches && typeMatches && regionMatches;
-    });
-    if (!nodes.length) {
-        container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">Nenhum torneio Parry.gg encontrado para os filtros atuais.</div>';
-        status.classList.add('hidden');
-        return;
-    }
-    nodes.sort((a, b) => (a.startAt || Number.MAX_SAFE_INTEGER) - (b.startAt || Number.MAX_SAFE_INTEGER) || a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
-    atualizarPainelDisponibilidade(nodes);
-    nodes.forEach(t => {
-        const card = document.createElement('div');
-        card.className = 'glass-card rounded-xl flex flex-col justify-between overflow-hidden';
-        const safeBannerUrl = String(t.bannerUrl || '').replace(/"/g, '&quot;');
-        const banner = safeBannerUrl ? `<img src="${safeBannerUrl}" alt="Banner de ${String(t.name).replace(/[<>&"']/g, '')}" class="w-full h-36 object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '';
-        card.innerHTML = `${banner}<div class="p-5 flex flex-col flex-1">
-<div class="flex justify-between items-center mb-3"><span class="text-[10px] bg-purple-900 text-purple-100 px-2 py-1 rounded font-bold uppercase">Parry.gg</span><span class="text-xs text-white font-bold">${t.startAt ? new Date(t.startAt * 1000).toLocaleDateString('pt-BR') : 'Data não informada'}</span></div><h3 class="font-bold text-lg text-white mb-2 leading-tight">${String(t.name).replace(/[<>&\"']/g, '')}</h3><p class="text-[11px] font-bold text-slate-400 uppercase"><i class="fas fa-users"></i> ${t.numAttendees} participante${t.numAttendees !== 1 ? 's' : ''}</p><p class="text-sm text-slate-400 mt-3 italic"><i class="fas fa-globe"></i> ${String(t.addrState).replace(/[<>&\"']/g, '')}</p><p class="text-[10px] text-purple-300 mt-2 font-bold uppercase"><i class="fas fa-${t.locationType === 'LOCATION_TYPE_OFFLINE' ? 'building' : 'wifi'}"></i> ${t.locationType === 'LOCATION_TYPE_OFFLINE' ? 'Presencial (Offline)' : t.locationType === 'LOCATION_TYPE_HYBRID' ? 'Híbrido' : 'Online'}${t.countryCode ? ` · ${t.countryCode}` : ''}</p><div class="mt-4 space-y-2"><a href="${t.url}" target="_blank" rel="noopener" class="block text-center bg-purple-700 hover:bg-purple-600 text-white font-black py-3 rounded-lg uppercase text-sm tracking-tighter transition">Página na Parry.gg</a><a href="javascript:void(0)" onclick="abrirAttendeesParry('${encodeURIComponent(t.id)}')" class="block text-center border border-purple-700 text-purple-300 hover:bg-purple-900/30 font-bold py-2 rounded-lg uppercase text-[10px] tracking-wider">Ver participantes</a></div></div>`;
-        container.appendChild(card);
-    });
-    status.classList.add('hidden');
-}
-
-async function abrirAttendeesParry(tournamentId) {
-    const sidebar = document.getElementById('attendees_sidebar'), overlay = document.getElementById('attendees_overlay'), content = document.getElementById('attendees_content');
-    sidebar.classList.add('open'); overlay.classList.add('active'); document.body.style.overflow = 'hidden';
-    content.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando participantes Parry.gg...</p></div>';
-    try {
-        const json = await callParryGG('GetTournamentAttendees', { tournamentId: decodeURIComponent(tournamentId) });
-        const attendees = json.attendees || json.Attendees || [];
-        content.innerHTML = attendees.length ? attendees.map((a, i) => `<div class="attendee-item"><span class="attendee-number">#${i + 1}</span><span class="attendee-name">${String(parryValue(a, 'gamerTag', 'gamer_tag', 'user.gamerTag', 'name') || 'Sem nome').replace(/[<>&\"']/g, '')}</span></div>`).join('') : '<div style="text-align:center;padding:40px;color:#aaa;">Nenhum participante encontrado.</div>';
-    } catch (error) { content.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">${error.message}</div>`; }
-}
 
 const COUNTRY_MAP = {
     "Brazil":"BR","United States":"US","Argentina":"AR","Chile":"CL","Colombia":"CO",
@@ -374,11 +218,38 @@ function fecharAttendees() { document.getElementById('attendees_sidebar').classL
 // ==================== HISTORICO ====================
 async function buscarSetsDoEvento(eventId, playerId) {
     try {
-        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { winnerId slots { entrant { id participants { player { id } } } } } } } }`;
-        const json = await callStartGG(query, { eventId }); const sets = json.data?.event?.sets?.nodes || []; let wins = 0, losses = 0;
-        sets.forEach(set => { const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId)); if (!playerSlot || !playerSlot.entrant) return; const myEntrantId = playerSlot.entrant.id; if (set.winnerId) { if (String(set.winnerId) === String(myEntrantId)) wins++; else losses++; } });
-        return { wins, losses, total: wins + losses };
-    } catch (e) { return { wins: 0, losses: 0, total: 0, error: true }; }
+        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id participants { player { id } } } } } } } }`;
+        const json = await callStartGG(query, { eventId }); const sets = json.data?.event?.sets?.nodes || []; let wins = 0, losses = 0; const setsDetalhados = [];
+        sets.forEach(set => { const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId)); if (!playerSlot || !playerSlot.entrant) return; const myEntrantId = playerSlot.entrant.id; if (set.winnerId) { const venceu = String(set.winnerId) === String(myEntrantId); if (venceu) wins++; else losses++; setsDetalhados.push({ setId: set.id, venceu }); } });
+        return { wins, losses, total: wins + losses, sets: setsDetalhados };
+    } catch (e) { return { wins: 0, losses: 0, total: 0, error: true, sets: [] }; }
+}
+
+// ==================== WINRATE POR PERSONAGEM (reports manuais no Git) ====================
+let _charReportsCache = null;
+async function buscarReportsChar() {
+    if (_charReportsCache) return _charReportsCache;
+    try {
+        const resp = await fetch('https://raw.githubusercontent.com/Rickudosennin/fgchub/main/data/character-reports.json');
+        const json = await resp.json();
+        _charReportsCache = json.reports || [];
+    } catch (e) { _charReportsCache = []; }
+    return _charReportsCache;
+}
+
+function montarHtmlWinrateChar(statsChar, setsSemReport) {
+    let charHtml = '<div class="history-char-title">🎮 WinRate por Personagem</div>';
+    if (Object.keys(statsChar).length === 0) {
+        charHtml += '<div class="history-empty">Nenhum personagem reportado ainda.</div>';
+        return charHtml;
+    }
+    Object.entries(statsChar).forEach(([char, s]) => {
+        const wr = (s.wins + s.losses) > 0 ? Math.round((s.wins / (s.wins + s.losses)) * 100) : 0;
+        const cls = wr >= 60 ? 'history-winrate-60' : (wr >= 40 ? 'history-winrate-40' : 'history-winrate-0');
+        charHtml += `<div class="history-item"><span class="history-name">${char}</span><span class="history-placement ${cls}">${s.wins}W-${s.losses}L (${wr}%)</span></div>`;
+    });
+    if (setsSemReport > 0) charHtml += `<div class="history-item"><span class="history-name" style="opacity:.6">Sem char reportado</span><span class="history-placement" style="opacity:.6">${setsSemReport} sets</span></div>`;
+    return charHtml;
 }
 
 async function toggleHistorico(playerId, gamerTag, index) {
@@ -396,12 +267,26 @@ async function toggleHistorico(playerId, gamerTag, index) {
             if (!eventId) continue;
             const resultado = await buscarSetsDoEvento(eventId, playerId);
             if (resultado.total > 0 && !resultado.error) { totalWins += resultado.wins; totalLosses += resultado.losses; torneiosProcessados++; }
-            torneiosData.push({ name: tournamentName, wins: resultado.wins, losses: resultado.losses, placement: standing.placement, attendees: standing.container?.tournament?.numAttendees || '?' });
+            torneiosData.push({ name: tournamentName, wins: resultado.wins, losses: resultado.losses, placement: standing.placement, attendees: standing.container?.tournament?.numAttendees || '?', sets: resultado.sets || [] });
         }
         const totalPartidas = totalWins + totalLosses; const winRateGeral = totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0;
         let wrClass = winRateGeral >= 60 ? 'history-winrate-60' : (winRateGeral >= 40 ? 'history-winrate-40' : 'history-winrate-0');
         let html = `<div class="player-history"><div class="history-title">🔍 ${gamerTag}</div><div class="legend-bar"><div class="legend-item"><span class="legend-dot green"></span> 60%+</div><div class="legend-item"><span class="legend-dot yellow"></span> 40-59%</div><div class="legend-item"><span class="legend-dot red"></span> &lt;40%</div></div><div class="history-winrate ${wrClass}">📊 WinRate: ${winRateGeral}%</div><div class="history-winrate-detail">${totalWins}W / ${totalLosses}L em ${torneiosProcessados} torneios</div>`;
         torneiosData.forEach(t => { const wr = t.wins + t.losses > 0 ? Math.round((t.wins / (t.wins + t.losses)) * 100) : 0; let itemWrClass = wr >= 60 ? 'history-winrate-60' : (wr >= 40 ? 'history-winrate-40' : 'history-winrate-0'); html += `<div class="history-item"><span class="history-name">${t.name}</span><span class="history-placement ${itemWrClass}">${t.wins}W-${t.losses}L (${wr}%) — ${t.placement}º/${t.attendees}</span></div>`; });
+
+        const todosSetsDoPlayer = torneiosData.flatMap(t => t.sets || []);
+        const reports = await buscarReportsChar();
+        const statsChar = {};
+        todosSetsDoPlayer.forEach(s => {
+            const rep = reports.find(r => String(r.setId) === String(s.setId) && String(r.playerId) === String(playerId));
+            if (!rep) return;
+            if (!statsChar[rep.character]) statsChar[rep.character] = { wins: 0, losses: 0 };
+            s.venceu ? statsChar[rep.character].wins++ : statsChar[rep.character].losses++;
+        });
+        const setsComReport = Object.values(statsChar).reduce((acc, c) => acc + c.wins + c.losses, 0);
+        const setsSemReport = todosSetsDoPlayer.length - setsComReport;
+        html += montarHtmlWinrateChar(statsChar, setsSemReport);
+
         historyDiv.innerHTML = html + `</div>`;
     } catch (e) { historyDiv.innerHTML = `<div class="player-history"><div class="history-empty">❌ Erro ao buscar histórico.</div></div>`; }
 }
@@ -752,10 +637,6 @@ function gerarLinkGoogleCalendar(t){const i=formatarDataGoogle(t.startAt),f=form
 async function pesquisar() {
     const gameObj = games.find(g => g.value === document.getElementById("campo_jogo").value), typeVal = document.getElementById("campo_tipo").value, localVal = document.getElementById("campo_local").value;
     const container = document.getElementById("resultados"), status = document.getElementById("status"); container.innerHTML = ""; status.classList.remove("hidden");
-    if (provedorAtual === 'parrygg') {
-        try { await pesquisarParryGG(container, status); } catch (error) { status.classList.add('hidden'); container.innerHTML = `<div class="col-span-full text-center py-10 text-red-400">${error.message}</div>`; }
-        return;
-    }
     const camposNode = `
           id,name,url,startAt,endAt,registrationClosesAt,isRegistrationOpen,addrState,numAttendees,
           images{url,type},streams{streamName,streamSource},

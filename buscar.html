@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Player | FGC HUB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-3xl mx-auto">
+        <a href="index.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para o FGC HUB</a>
+
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-black text-white uppercase italic">Buscar <span class="text-red-600">Player</span></h1>
+            <p class="text-slate-400 text-sm mt-2">Winrate geral, por torneio e por personagem.</p>
+        </div>
+
+        <div class="glass-card p-3 rounded-xl mb-8 flex items-center gap-3">
+            <i class="fa-solid fa-magnifying-glass text-slate-500 pl-2" aria-hidden="true"></i>
+            <input id="busca_input" type="text" placeholder="Digite o gamertag do player..." autocomplete="off"
+                   class="bg-transparent flex-1 outline-none text-white placeholder-slate-500 py-2" />
+        </div>
+
+        <div id="resultados_busca" class="space-y-2"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="players.js"></script>
+    <script>
+        const inputBusca = document.getElementById('busca_input');
+        const resultadosDiv = document.getElementById('resultados_busca');
+        let listaCompleta = [];
+
+        function renderizarLista(lista) {
+            if (lista.length === 0) {
+                resultadosDiv.innerHTML = '<div class="history-empty">Nenhum player encontrado com esse nome.</div>';
+                return;
+            }
+            resultadosDiv.innerHTML = lista.map(p => `
+                <a href="player.html?id=${p.playerId}&tag=${encodeURIComponent(p.gamerTag)}" class="attendee-item flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg px-3">
+                    <span class="attendee-name">${p.gamerTag}</span>
+                    <span class="text-slate-500 text-xs">Ver perfil &rarr;</span>
+                </a>
+            `).join('');
+        }
+
+        async function iniciar() {
+            resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
+            listaCompleta = await carregarPlayersConhecidos();
+            renderizarLista(listaCompleta.slice(0, 15));
+        }
+
+        inputBusca.addEventListener('input', () => {
+            renderizarLista(filtrarPlayers(listaCompleta, inputBusca.value));
+        });
+
+        iniciar();
+    </script>
+</body>
+</html>
