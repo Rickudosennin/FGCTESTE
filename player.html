@@ -9,7 +9,7 @@
 </head>
 <body class="p-4 md:p-10">
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-5xl mx-auto">
         <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para a busca</a>
 
         <div id="perfil_conteudo">
@@ -25,7 +25,7 @@
         const gamerTag = params.get('tag') || 'Player';
         const conteudo = document.getElementById('perfil_conteudo');
 
-        // ========== FUNÇÕES AUXILIARES ==========
+        // ========== AUXILIARES ==========
         function getDotClass(placement) {
             if (placement === 1) return 'dot-1st';
             if (placement <= 3) return 'dot-top3';
@@ -39,16 +39,28 @@
             return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
         }
 
-        // ========== MONTAR HTML ==========
+        // ========== MONTAGEM DO PERFIL ==========
         function montarHtmlPerfil(dados, fonte) {
-            const { 
+            const {
                 gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
                 wins6m, losses6m, recentForm, highlights, tournaments
             } = dados;
 
             const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-            let html = `
+            // Abas: apenas Events por enquanto
+            const eventsHtml = tournaments.slice(0, 15).map(t => `
+                <div class="event-row">
+                    <span class="event-name">${t.name}</span>
+                    <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
+                        ${t.placement}º / ${t.attendees}
+                    </span>
+                    <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
+                    <span class="event-date">${t.date}</span>
+                </div>
+            `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+
+            return `
                 <div class="player-profile">
                     <!-- HEADER -->
                     <div class="profile-header">
@@ -93,21 +105,25 @@
                         `).join('')}
                     </div>
 
-                    <!-- HISTÓRICO COMPLETO (opcional, pode ser expandido) -->
-                    <div class="full-history mt-6">
-                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Últimos torneios</h3>
-                        ${tournaments.slice(0, 10).map(t => `
-                            <div class="history-item">
-                                <span class="history-name">${t.name}</span>
-                                <span class="history-placement ${t.winrate >= 60 ? 'history-winrate-60' : (t.winrate >= 40 ? 'history-winrate-40' : 'history-winrate-0')}">
-                                    ${t.wins}W-${t.losses}L (${t.winrate}%) — ${t.placement}º/${t.attendees}
-                                </span>
-                            </div>
-                        `).join('')}
+                    <!-- ABAS: Overview (Events) -->
+                    <div class="profile-tabs">
+                        <div class="tab-header">
+                            <span class="tab-btn active" data-tab="events">EVENTS</span>
+                            <span class="tab-btn" data-tab="versus">VERSUS</span>
+                            <span class="tab-btn" data-tab="vods">VODS</span>
+                        </div>
+                        <div class="tab-content" id="tab-events">
+                            ${eventsHtml}
+                        </div>
+                        <div class="tab-content" id="tab-versus" style="display:none;">
+                            <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
+                        </div>
+                        <div class="tab-content" id="tab-vods" style="display:none;">
+                            <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+                        </div>
                     </div>
                 </div>
             `;
-            return html;
         }
 
         // ========== INICIALIZAR ==========
@@ -119,6 +135,17 @@
             try {
                 const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
                 conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
+
+                // Event listeners para abas
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        const target = this.dataset.tab;
+                        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                        document.getElementById('tab-' + target).style.display = 'block';
+                    });
+                });
             } catch (e) {
                 console.error(e);
                 conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';

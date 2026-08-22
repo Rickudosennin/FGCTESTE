@@ -333,7 +333,7 @@ select:focus-visible,
     outline-offset: 2px;
 }
 
-/* ========== PERFIL DO PLAYER (ESTILO SUPERMAJOR) ========== */
+/* ========== PERFIL SUPERMAJOR ========== */
 .player-profile {
     background: rgba(10, 10, 15, 0.95);
     border: 1px solid #dc2626;
@@ -520,20 +520,74 @@ select:focus-visible,
     font-weight: 500;
 }
 
-.full-history .history-item {
+/* Abas */
+.profile-tabs {
+    margin-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 20px;
+}
+
+.tab-header {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 16px;
+}
+
+.tab-btn {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    cursor: pointer;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
 }
 
-.full-history .history-name {
+.tab-btn.active {
+    color: #fff;
+    border-bottom-color: #dc2626;
+}
+
+.tab-btn:hover {
+    color: #e2e8f0;
+}
+
+.event-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
     font-size: 13px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.full-history .history-placement {
-    font-size: 13px;
+.event-name {
+    flex: 2;
+    font-weight: 600;
+    color: #e2e8f0;
 }
 
-/* Responsivo */
+.event-placement {
+    flex: 1;
+    font-weight: 700;
+}
+
+.event-record {
+    flex: 1;
+    color: #94a3b8;
+}
+
+.event-date {
+    flex: 0.5;
+    color: #64748b;
+    font-size: 12px;
+}
+
 @media (max-width: 640px) {
     .player-profile {
         padding: 16px;
@@ -566,5 +620,11 @@ select:focus-visible,
     }
     .highlight-item .date {
         font-size: 11px;
+    }
+    .event-row {
+        font-size: 12px;
+    }
+    .event-name {
+        flex: 1 1 100%;
     }
 }
