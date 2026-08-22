@@ -43,68 +43,6 @@ function _cacheEstaFresco(entry) {
     return idadeHoras < CACHE_MAX_IDADE_HORAS;
 }
 
-// ==================== MAPA DE JOGOS ====================
-let _gameMap = null;
-function _carregarGameMap() {
-    if (_gameMap) return _gameMap;
-    _gameMap = {};
-    if (typeof games !== 'undefined') {
-        games.forEach(g => {
-            if (g.videogameId) {
-                _gameMap[g.videogameId] = g.label;
-            }
-        });
-    }
-    return _gameMap;
-}
-
-// ==================== DETECÇÃO DO JOGO PRINCIPAL ====================
-function _detectarJogoPrincipal(standings) {
-    const gameCount = {};
-    const gameMap = _carregarGameMap();
-
-    standings.forEach(s => {
-        const container = s.container;
-        if (!container) return;
-        const tournament = container.tournament;
-        if (tournament && tournament.videogameId) {
-            const id = tournament.videogameId;
-            gameCount[id] = (gameCount[id] || 0) + 1;
-        }
-    });
-
-    if (Object.keys(gameCount).length === 0) {
-        return { id: 49783, name: 'TEKKEN 8' };
-    }
-
-    const sorted = Object.entries(gameCount).sort((a, b) => b[1] - a[1]);
-    const topId = sorted[0][0];
-    const topName = gameMap[topId] || `Jogo ${topId}`;
-    return { id: topId, name: topName };
-}
-
-// ==================== CÁLCULO DO PERSONAGEM PRINCIPAL ====================
-function _calcularPersonagemPrincipal(setsPorEvento, playerId) {
-    const charCount = {};
-    const reports = _charReportsCache || [];
-
-    Object.values(setsPorEvento).forEach(result => {
-        (result.sets || []).forEach(set => {
-            const rep = reports.find(r => String(r.setId) === String(set.setId) && String(r.playerId) === String(playerId));
-            if (rep && rep.character) {
-                charCount[rep.character] = (charCount[rep.character] || 0) + 1;
-            }
-        });
-    });
-
-    if (Object.keys(charCount).length === 0) {
-        return null;
-    }
-
-    const sorted = Object.entries(charCount).sort((a, b) => b[1] - a[1]);
-    return sorted.length > 0 ? sorted[0][0] : null;
-}
-
 // ==================== PROCESSAMENTO ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
@@ -160,9 +98,6 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
             date: t.date
         }));
 
-    const mainCharacter = _calcularPersonagemPrincipal(setsPorEvento, userData?.id || '');
-    const mainGame = _detectarJogoPrincipal(standings);
-
     return {
         gamerTag,
         user: {
@@ -172,9 +107,6 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
             avatarUrl: userData?.avatarUrl || '',
             genderPronoun: userData?.genderPronoun || '',
         },
-        mainCharacter,
-        mainGame: mainGame.name,
-        mainGameId: mainGame.id,
         totalWins,
         totalLosses,
         winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
@@ -215,7 +147,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
                         tournament {
                             name
                             numAttendees
-                            videogameId
                         }
                     }
                 }
@@ -233,10 +164,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
         if (!eventId) continue;
         const resultado = await buscarSetsDoEvento(eventId, playerId);
         setsPorEvento[eventId] = resultado;
-    }
-
-    if (!_charReportsCache) {
-        await buscarReportsChar();
     }
 
     return processarDadosPlayer(standings, setsPorEvento, playerData?.gamerTag || gamerTag, userData);
@@ -298,7 +225,6 @@ async function carregarPlayersConhecidos() {
                 }
             }`;
             
-            // Promise com timeout de 5 segundos
             const fetchPromise = Promise.all(LIGAS_MONITORADAS.map(liga =>
                 callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
             ));
@@ -339,6 +265,3 @@ function filtrarPlayers(lista, termo) {
     const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
     return filtrados.slice(0, 15);
 }
-
-// ==================== VARIÁVEIS GLOBAIS ====================
-let _charReportsCache = null;

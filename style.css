@@ -400,21 +400,6 @@ select:focus-visible,
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
-.profile-avatar-badge {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    background: #dc2626;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 20px;
-    border: 2px solid #0a0a0f;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
 /* INFORMAÇÕES DO PERFIL */
 .profile-info {
     flex: 1;
@@ -484,37 +469,6 @@ select:focus-visible,
     margin-top: 4px;
     opacity: 0.8;
     max-width: 500px;
-}
-
-.profile-game-tag {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-}
-
-.game-badge {
-    background: rgba(220, 38, 38, 0.2);
-    border: 1px solid rgba(220, 38, 38, 0.4);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 14px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.char-badge {
-    background: rgba(168, 85, 247, 0.2);
-    border: 1px solid rgba(168, 85, 247, 0.4);
-    color: #c084fc;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 14px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .profile-source {
@@ -769,9 +723,6 @@ select:focus-visible,
         text-align: center;
     }
     .profile-name-row {
-        justify-content: center;
-    }
-    .profile-game-tag {
         justify-content: center;
     }
     .profile-stats-grid {

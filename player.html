@@ -32,46 +32,10 @@
             const gamerTag = params.get('tag') || 'Player';
             const conteudo = document.getElementById('perfil_conteudo');
 
-            // ========== MAPA DE CORES POR JOGO ==========
-            const GAME_COLORS = {
-                'TEKKEN 8': { bg: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.4)', text: '#dc2626' },
-                'STREET FIGHTER 6': { bg: 'rgba(59,130,246,0.2)', border: 'rgba(59,130,246,0.4)', text: '#3b82f6' },
-                'SUPER SMASH BROS. ULTIMATE': { bg: 'rgba(168,85,247,0.2)', border: 'rgba(168,85,247,0.4)', text: '#a855f7' },
-                'SUPER SMASH BROS. MELEE': { bg: 'rgba(234,179,8,0.2)', border: 'rgba(234,179,8,0.4)', text: '#eab308' },
-                'GUILTY GEAR STRIVE': { bg: 'rgba(236,72,153,0.2)', border: 'rgba(236,72,153,0.4)', text: '#ec4899' },
-                '2XKO': { bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.4)', text: '#22c55e' },
-                'MORTAL KOMBAT 1': { bg: 'rgba(168,85,247,0.2)', border: 'rgba(168,85,247,0.4)', text: '#a855f7' }
-            };
-
-            // ========== MAPA DE PERSONAGENS PARA BANNER ==========
-            const CHARACTER_IMAGES = {
-                'A2435': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2435.png',
-                'A2432': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2432.png',
-                'A2406': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2406.png',
-                'A2408': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2408.png',
-                'A2415': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2415.png',
-                'A2417': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2417.png',
-                'A2432': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2432.png',
-                'A2538': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2538.png',
-                'A2425': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2425.png',
-                'A2436': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2436.png',
-                'A2437': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2437.png',
-                'A2446': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2446.png',
-                'A2620': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2620.png',
-            };
-
-            function getCharacterImage(charId) {
-                return CHARACTER_IMAGES[charId] || 'https://images.start.gg/images/tournament/placeholder-banner.jpg';
-            }
-
-            function getGameColors(gameName) {
-                return GAME_COLORS[gameName] || GAME_COLORS['TEKKEN 8'];
-            }
-
             // ========== MONTA HTML ==========
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, user, mainCharacter, mainGame, totalWins, totalLosses,
+                    gamerTag, user, totalWins, totalLosses,
                     winrateAllTime, winrateLast6Months, wins6m, losses6m,
                     recentForm, highlights, tournaments
                 } = dados;
@@ -82,11 +46,6 @@
                 const city = user?.location?.city || '';
                 const localizacao = [city, country].filter(Boolean).join(', ') || 'Localização não informada';
                 const avatarUrl = user?.avatarUrl || '';
-
-                const gameName = mainGame || 'TEKKEN 8';
-                const charName = mainCharacter || 'JIN';
-                const bannerUrl = getCharacterImage(mainCharacter);
-                const gameColors = getGameColors(gameName);
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
@@ -122,15 +81,17 @@
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
+                // Banner: usa um gradiente fixo (sem depender de personagem)
+                const bannerGradient = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+
                 return `
-                    <div class="player-profile-modern" style="border-color: ${gameColors.border};">
+                    <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
                         <!-- BANNER -->
-                        <div class="profile-banner" style="background-image: url('${bannerUrl}');">
+                        <div class="profile-banner" style="background: ${bannerGradient};">
                             <div class="profile-banner-overlay"></div>
                             <div class="profile-header-content">
                                 <div class="profile-avatar-wrapper">
                                     ${avatarUrl ? `<img src="${avatarUrl}" alt="${gamerTag}" class="profile-avatar">` : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`}
-                                    ${mainCharacter ? `<div class="profile-avatar-badge" style="background:${gameColors.text};">${charName}</div>` : ''}
                                 </div>
                                 <div class="profile-info">
                                     <div class="profile-name-row">
@@ -140,10 +101,6 @@
                                     ${nomeReal ? `<div class="profile-real-name">${nomeReal}</div>` : ''}
                                     <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${localizacao}</div>
                                     ${bio ? `<div class="profile-bio">"${bio}"</div>` : ''}
-                                    <div class="profile-game-tag">
-                                        <span class="game-badge" style="background:${gameColors.bg}; border-color:${gameColors.border}; color:${gameColors.text};">${gameName}</span>
-                                        <span class="char-badge">${charName}</span>
-                                    </div>
                                 </div>
                                 <div class="profile-source">
                                     <span class="text-xs text-slate-400">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
