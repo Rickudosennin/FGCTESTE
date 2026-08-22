@@ -22,7 +22,7 @@
     <script>
         (function() {
             if (window._playerLoaded) {
-                console.log('Perfil já carregado.');
+                console.log('Perfil já carregado, ignorando segunda execução.');
                 return;
             }
             window._playerLoaded = true;
@@ -32,27 +32,85 @@
             const gamerTag = params.get('tag') || 'Player';
             const conteudo = document.getElementById('perfil_conteudo');
 
-            function getDotClass(placement) {
-                if (placement === 1) return 'dot-1st';
-                if (placement <= 3) return 'dot-top3';
-                if (placement <= 8) return 'dot-top8';
-                return 'dot-other';
+            // ========== MAPA DE CORES POR JOGO ==========
+            const GAME_COLORS = {
+                'TEKKEN 8': { bg: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.4)', text: '#dc2626' },
+                'STREET FIGHTER 6': { bg: 'rgba(59,130,246,0.2)', border: 'rgba(59,130,246,0.4)', text: '#3b82f6' },
+                'SUPER SMASH BROS. ULTIMATE': { bg: 'rgba(168,85,247,0.2)', border: 'rgba(168,85,247,0.4)', text: '#a855f7' },
+                'SUPER SMASH BROS. MELEE': { bg: 'rgba(234,179,8,0.2)', border: 'rgba(234,179,8,0.4)', text: '#eab308' },
+                'GUILTY GEAR STRIVE': { bg: 'rgba(236,72,153,0.2)', border: 'rgba(236,72,153,0.4)', text: '#ec4899' },
+                '2XKO': { bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.4)', text: '#22c55e' },
+                'MORTAL KOMBAT 1': { bg: 'rgba(168,85,247,0.2)', border: 'rgba(168,85,247,0.4)', text: '#a855f7' }
+            };
+
+            // ========== MAPA DE PERSONAGENS PARA BANNER ==========
+            const CHARACTER_IMAGES = {
+                'A2435': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2435.png',
+                'A2432': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2432.png',
+                'A2406': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2406.png',
+                'A2408': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2408.png',
+                'A2415': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2415.png',
+                'A2417': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2417.png',
+                'A2432': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2432.png',
+                'A2538': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2538.png',
+                'A2425': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2425.png',
+                'A2436': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2436.png',
+                'A2437': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2437.png',
+                'A2446': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2446.png',
+                'A2620': 'https://slpurukxtnleofuopadw.supabase.co/storage/v1/object/public/characters/center-banner-700x250/A2620.png',
+            };
+
+            function getCharacterImage(charId) {
+                return CHARACTER_IMAGES[charId] || 'https://images.start.gg/images/tournament/placeholder-banner.jpg';
             }
 
-            function formatDate(timestamp) {
-                if (!timestamp) return '—';
-                const d = new Date(timestamp * 1000);
-                return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+            function getGameColors(gameName) {
+                return GAME_COLORS[gameName] || GAME_COLORS['TEKKEN 8'];
             }
 
+            // ========== MONTA HTML ==========
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments
+                    gamerTag, user, mainCharacter, mainGame, totalWins, totalLosses,
+                    winrateAllTime, winrateLast6Months, wins6m, losses6m,
+                    recentForm, highlights, tournaments
                 } = dados;
+
+                const nomeReal = user?.name || '';
+                const bio = user?.bio || '';
+                const country = user?.location?.country || '';
+                const city = user?.location?.city || '';
+                const localizacao = [city, country].filter(Boolean).join(', ') || 'Localização não informada';
+                const avatarUrl = user?.avatarUrl || '';
+
+                const gameName = mainGame || 'TEKKEN 8';
+                const charName = mainCharacter || 'JIN';
+                const bannerUrl = getCharacterImage(mainCharacter);
+                const gameColors = getGameColors(gameName);
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
+                // Recent Form (últimas 10)
+                const formDots = recentForm.map(pos => {
+                    let cls = 'dot-other';
+                    if (pos === 1) cls = 'dot-1st';
+                    else if (pos <= 3) cls = 'dot-top3';
+                    else if (pos <= 8) cls = 'dot-top8';
+                    return `<span class="form-dot ${cls}">${pos}</span>`;
+                }).join('');
+
+                // Highlights
+                const highlightsHtml = highlights.length === 0 
+                    ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>'
+                    : highlights.map(h => `
+                        <div class="highlight-item">
+                            <span class="placement">${h.placement}</span>
+                            <span class="event">${h.eventName}</span>
+                            <span class="date">${h.date}</span>
+                        </div>
+                    `).join('');
+
+                // Events (lista de torneios)
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
                         <span class="event-name">${t.name}</span>
@@ -65,102 +123,120 @@
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
                 return `
-                    <div class="player-profile">
-                        <div class="profile-header">
-                            <h1 class="profile-gamertag">${gamerTag}</h1>
-                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
-                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
-                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
-                                <i class="fa-solid fa-rotate"></i> Atualizar dados
-                            </button>
-                        </div>
-
-                        <div class="profile-summary">
-                            <div class="stat-card">
-                                <span class="label">ALL TIME</span>
-                                <span class="value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
-                                <span class="record">${totalWins}-${totalLosses}</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="label">LAST 6 MONTHS</span>
-                                <span class="value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
-                                <span class="record">${wins6m}-${losses6m}</span>
-                            </div>
-                        </div>
-
-                        <div class="recent-form">
-                            <h3>RECENT FORM</h3>
-                            <div class="form-dots">
-                                ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
-                            </div>
-                        </div>
-
-                        <div class="highlights">
-                            <h3>HIGHLIGHTS</h3>
-                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
-                            ${highlights.map(h => `
-                                <div class="highlight-item">
-                                    <span class="placement">${h.placement}</span>
-                                    <span class="event">${h.eventName}</span>
-                                    <span class="date">${h.date}</span>
+                    <div class="player-profile-modern" style="border-color: ${gameColors.border};">
+                        <!-- BANNER -->
+                        <div class="profile-banner" style="background-image: url('${bannerUrl}');">
+                            <div class="profile-banner-overlay"></div>
+                            <div class="profile-header-content">
+                                <div class="profile-avatar-wrapper">
+                                    ${avatarUrl ? `<img src="${avatarUrl}" alt="${gamerTag}" class="profile-avatar">` : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`}
+                                    ${mainCharacter ? `<div class="profile-avatar-badge" style="background:${gameColors.text};">${charName}</div>` : ''}
                                 </div>
-                            `).join('')}
+                                <div class="profile-info">
+                                    <div class="profile-name-row">
+                                        <h1 class="profile-gamertag">${gamerTag}</h1>
+                                        <span class="profile-verified"><i class="fa-solid fa-check-circle"></i> VERIFICADO</span>
+                                    </div>
+                                    ${nomeReal ? `<div class="profile-real-name">${nomeReal}</div>` : ''}
+                                    <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${localizacao}</div>
+                                    ${bio ? `<div class="profile-bio">"${bio}"</div>` : ''}
+                                    <div class="profile-game-tag">
+                                        <span class="game-badge" style="background:${gameColors.bg}; border-color:${gameColors.border}; color:${gameColors.text};">${gameName}</span>
+                                        <span class="char-badge">${charName}</span>
+                                    </div>
+                                </div>
+                                <div class="profile-source">
+                                    <span class="text-xs text-slate-400">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="profile-tabs">
-                            <div class="tab-header">
-                                <span class="tab-btn active" data-tab="events">EVENTS</span>
-                                <span class="tab-btn" data-tab="versus">VERSUS</span>
-                                <span class="tab-btn" data-tab="vods">VODS</span>
+                        <!-- STATS CARDS -->
+                        <div class="profile-stats-grid">
+                            <div class="stat-card">
+                                <span class="stat-label">ALL TIME</span>
+                                <span class="stat-value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
+                                <span class="stat-record">${totalWins}W - ${totalLosses}L</span>
                             </div>
-                            <div class="tab-content" id="tab-events">
+                            <div class="stat-card">
+                                <span class="stat-label">LAST 6 MONTHS</span>
+                                <span class="stat-value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
+                                <span class="stat-record">${wins6m}W - ${losses6m}L</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">EVENTS</span>
+                                <span class="stat-value text-blue-400">${tournaments.length}</span>
+                                <span class="stat-record">torneios</span>
+                            </div>
+                        </div>
+
+                        <!-- RECENT FORM -->
+                        <div class="profile-section">
+                            <h3 class="section-title">RECENT FORM</h3>
+                            <div class="form-dots-container">
+                                ${formDots}
+                            </div>
+                        </div>
+
+                        <!-- HIGHLIGHTS -->
+                        <div class="profile-section">
+                            <h3 class="section-title">HIGHLIGHTS</h3>
+                            <div class="highlights-container">
+                                ${highlightsHtml}
+                            </div>
+                        </div>
+
+                        <!-- ABAS -->
+                        <div class="profile-tabs-modern">
+                            <div class="tab-header-modern">
+                                <button class="tab-btn-modern active" data-tab="events">EVENTS</button>
+                                <button class="tab-btn-modern" data-tab="versus">VERSUS</button>
+                                <button class="tab-btn-modern" data-tab="vods">VODS</button>
+                            </div>
+                            <div class="tab-content-modern active" id="tab-events">
                                 ${eventsHtml}
                             </div>
-                            <div class="tab-content" id="tab-versus" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
+                            <div class="tab-content-modern" id="tab-versus" style="display:none;">
+                                <div class="text-slate-500 text-sm py-8 text-center">Em breve: confrontos diretos.</div>
                             </div>
-                            <div class="tab-content" id="tab-vods" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+                            <div class="tab-content-modern" id="tab-vods" style="display:none;">
+                                <div class="text-slate-500 text-sm py-8 text-center">Em breve: VODs.</div>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            async function carregarPerfil(forceRefresh = false) {
+            // ========== INICIALIZAR ==========
+            async function iniciar() {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
                     return;
                 }
                 try {
-                    conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
-                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh);
-                    conteudo.innerHTML = '';
+                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                    // Reatribui os eventos das abas
-                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                    // Abas
+                    document.querySelectorAll('.tab-btn-modern').forEach(btn => {
                         btn.addEventListener('click', function() {
-                            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                            document.querySelectorAll('.tab-btn-modern').forEach(b => b.classList.remove('active'));
                             this.classList.add('active');
                             const target = this.dataset.tab;
-                            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                            document.querySelectorAll('.tab-content-modern').forEach(c => c.classList.remove('active'));
+                            document.getElementById('tab-' + target).classList.add('active');
                             document.getElementById('tab-' + target).style.display = 'block';
+                            document.querySelectorAll('.tab-content-modern:not(.active)').forEach(c => c.style.display = 'none');
                         });
                     });
+
                 } catch (e) {
+                    console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
 
-            // Função global para ser chamada pelo botão
-            window.atualizarDados = function() {
-                carregarPerfil(true);
-            };
-
-            // Inicializa
-            carregarPerfil(false);
+            iniciar();
         })();
     </script>
 </body>
