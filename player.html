@@ -33,9 +33,6 @@
             const gamerTag = params.get('tag') || 'Player';
             const conteudo = document.getElementById('perfil_conteudo');
 
-            console.log('📌 Player ID:', playerId);
-            console.log('📌 Gamer Tag:', gamerTag);
-
             function getDotClass(placement) {
                 if (placement === 1) return 'dot-1st';
                 if (placement <= 3) return 'dot-top3';
@@ -51,24 +48,11 @@
 
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, user, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
                     wins6m, losses6m, recentForm, highlights, tournaments
                 } = dados;
 
-                const nomeReal = user?.name || '';
-                const bio = user?.bio || '';
-                const country = user?.location?.country || '';
-                const city = user?.location?.city || '';
-                const localizacao = [city, country].filter(Boolean).join(', ') || 'Localização não informada';
-                const avatarUrl = user?.avatarUrl || '';
-
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
-
-                const bannerStyle = 'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);';
-
-                const avatarHtml = avatarUrl 
-                    ? `<img src="${avatarUrl}" alt="${gamerTag}" class="profile-avatar">` 
-                    : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`;
 
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
@@ -83,45 +67,26 @@
 
                 return `
                     <div class="player-profile">
-                        <div class="profile-banner" style="${bannerStyle}">
-                            <div class="profile-banner-overlay"></div>
-                            <div class="profile-header-content">
-                                <div class="profile-avatar-wrapper">
-                                    ${avatarHtml}
-                                </div>
-                                <div class="profile-info">
-                                    <div class="profile-name-row">
-                                        <h1 class="profile-gamertag">${gamerTag}</h1>
-                                        <span class="profile-verified"><i class="fa-solid fa-check-circle"></i> VERIFICADO</span>
-                                    </div>
-                                    ${nomeReal ? `<div class="profile-real-name">${nomeReal}</div>` : ''}
-                                    <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${localizacao}</div>
-                                    ${bio ? `<div class="profile-bio">"${bio}"</div>` : ''}
-                                    <div class="profile-source">
-                                        <span class="text-xs text-slate-400">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                                        <button onclick="atualizarDados()" class="ml-3 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
-                                            <i class="fa-solid fa-rotate"></i> Atualizar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="profile-header">
+                            <h1 class="profile-gamertag">${gamerTag}</h1>
+                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
+                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
+                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
+                                <i class="fa-solid fa-rotate"></i> Atualizar dados
+                            </button>
                         </div>
 
                         <div class="profile-summary">
                             <div class="stat-card">
                                 <span class="label">ALL TIME</span>
                                 <span class="value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
-                                <span class="record">${totalWins}W - ${totalLosses}L</span>
+                                <span class="record">${totalWins}-${totalLosses}</span>
                             </div>
                             <div class="stat-card">
                                 <span class="label">LAST 6 MONTHS</span>
                                 <span class="value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
-                                <span class="record">${wins6m}W - ${losses6m}L</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="label">EVENTS</span>
-                                <span class="value text-blue-400">${tournaments.length}</span>
-                                <span class="record">torneios</span>
+                                <span class="record">${wins6m}-${losses6m}</span>
                             </div>
                         </div>
 
@@ -175,6 +140,7 @@
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
+                    // Reatribui os eventos das abas
                     document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -185,20 +151,16 @@
                         });
                     });
                 } catch (e) {
-                    console.error('❌ Erro detalhado:', e);
-                    // Exibe mensagem de erro mais descritiva
-                    let msg = '❌ Erro ao carregar perfil do player.';
-                    if (e.message) {
-                        msg += `<br><span style="font-size:12px;color:#ef4444;">${e.message}</span>`;
-                    }
-                    conteudo.innerHTML = `<div class="history-empty">${msg}</div>`;
+                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
 
+            // Função global para ser chamada pelo botão
             window.atualizarDados = function() {
                 carregarPerfil(true);
             };
 
+            // Inicializa
             carregarPerfil(false);
         })();
     </script>

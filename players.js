@@ -12,6 +12,7 @@ function _salvarPlayerLocal(playerId, gamerTag) {
         if (!lista.some(p => p.playerId === playerId)) {
             lista.push({ playerId, gamerTag });
             localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
+            // Atualiza o contador visual se existir
             const contador = document.getElementById('contador_salvos');
             if (contador) contador.textContent = lista.length;
         }
@@ -42,6 +43,7 @@ function _lerPerfilCache(playerId) {
         const raw = localStorage.getItem(cacheKey);
         if (!raw) return null;
         const cacheData = JSON.parse(raw);
+        // Verifica se o cache ainda é fresco (menos de 24h)
         const idade = (Date.now() - cacheData.timestamp) / 3600000;
         if (idade < CACHE_MAX_IDADE_HORAS) {
             return cacheData.dados;
@@ -51,7 +53,7 @@ function _lerPerfilCache(playerId) {
 }
 
 // ==================== PROCESSAMENTO ====================
-function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
+function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
     let totalWins = 0, totalLosses = 0;
@@ -107,13 +109,6 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
 
     return {
         gamerTag,
-        user: {
-            name: userData?.name || '',
-            bio: userData?.bio || '',
-            location: userData?.location || {},
-            avatarUrl: userData?.avatarUrl || '',
-            genderPronoun: userData?.genderPronoun || '',
-        },
         totalWins,
         totalLosses,
         winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
@@ -129,34 +124,8 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
 
 // ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
-    console.log('🔍 Buscando player ao vivo:', playerId, gamerTag);
-
-    if (!playerId) {
-        console.error('❌ playerId está vazio!');
-        throw new Error('ID do player não fornecido');
-    }
-
-    // Verifica se callStartGG existe
-    if (typeof callStartGG !== 'function') {
-        console.error('❌ callStartGG não está definida! Verifique se o script.js foi carregado.');
-        throw new Error('callStartGG não definida');
-    }
-
-    const query = `query PlayerData($id: ID!) {
+    const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
-            gamerTag
-            user {
-                id
-                name
-                bio
-                avatarUrl
-                location {
-                    country
-                    city
-                    state
-                }
-                genderPronoun
-            }
             recentStandings(limit: 15) {
                 placement
                 container {
@@ -173,73 +142,35 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
             }
         }
     }`;
+    const json1 = await callStartGG(query1, { id: playerId });
+    const standings = json1.data?.player?.recentStandings || [];
 
-    try {
-        console.log('📤 Enviando requisição para API...');
-        const json = await callStartGG(query, { id: playerId });
-        console.log('📥 Resposta da API:', json);
-
-        const playerData = json.data?.player;
-        if (!playerData) {
-            console.warn('⚠️ Player não encontrado na API.');
-            throw new Error('Player não encontrado');
-        }
-
-        const standings = playerData.recentStandings || [];
-        const userData = playerData.user || {};
-
-        console.log(`📊 ${standings.length} torneios encontrados.`);
-
-        const setsPorEvento = {};
-        for (const standing of standings) {
-            const eventId = standing.container?.id;
-            if (!eventId) continue;
-            try {
-                const resultado = await buscarSetsDoEvento(eventId, playerId);
-                setsPorEvento[eventId] = resultado;
-            } catch (e) {
-                console.warn('⚠️ Erro ao buscar sets do evento', eventId, e);
-                setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
-            }
-        }
-
-        const dados = processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, userData);
-        console.log('✅ Dados processados com sucesso.');
-        return dados;
-
-    } catch (e) {
-        console.error('❌ Erro em _buscarPlayerAoVivo:', e);
-        throw e; // Re-lança para ser capturado no player.html
+    const setsPorEvento = {};
+    for (const standing of standings) {
+        const eventId = standing.container?.id;
+        if (!eventId) continue;
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
     }
-}
 
-// ==================== PERSISTÊNCIA ====================
-async function _persistirNoCache(playerId, dados) {
-    // Desabilitado - sem token
-    return;
+    return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false) {
-    console.log('⚙️ obterDadosPlayer chamado com:', { playerId, gamerTag, forceRefresh });
-
-    if (!playerId) {
-        console.error('❌ playerId é obrigatório');
-        throw new Error('ID do player não fornecido');
-    }
-
+    // Se não for forçado, tenta o cache do localStorage primeiro
     if (!forceRefresh) {
         const cacheData = _lerPerfilCache(playerId);
         if (cacheData) {
-            console.log('⚡ Usando cache para:', playerId);
             return { dados: cacheData, fonte: 'cache' };
         }
     }
-
-    console.log('🌐 Buscando dados ao vivo...');
+    // Busca ao vivo
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
+    // Salva no cache local
     _salvarPerfilCache(playerId, dados);
-    _salvarPlayerLocal(playerId, dados.gamerTag || gamerTag);
+    // Salva também na lista de players conhecidos (para a busca)
+    _salvarPlayerLocal(playerId, gamerTag);
     return { dados, fonte: 'live' };
 }
 
@@ -247,9 +178,13 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false) {
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
+
+    // Retorna apenas os players salvos localmente (dos inscritos)
     const locais = _carregarPlayersLocal();
+    // Remove duplicatas (caso haja) usando Map
     const mapa = new Map();
     locais.forEach(p => {
+        // Garantir que o playerId seja string para evitar duplicação
         const id = String(p.playerId);
         if (!mapa.has(id)) {
             mapa.set(id, { playerId: id, gamerTag: p.gamerTag, placement: null });
