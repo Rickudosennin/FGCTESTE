@@ -70,85 +70,9 @@
                     `;
                 }
 
-                // Se não tiver torneios, mostra mensagem
-                if (dados.tournaments.length === 0) {
-                    return `
-                        <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
-                            <div class="profile-banner" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
-                                <div class="profile-banner-overlay"></div>
-                                <div class="profile-header-content">
-                                    <div class="profile-avatar-wrapper">
-                                        ${dados.user?.avatarUrl ? `<img src="${dados.user.avatarUrl}" alt="${gamerTag}" class="profile-avatar">` : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`}
-                                    </div>
-                                    <div class="profile-info">
-                                        <div class="profile-name-row">
-                                            <h1 class="profile-gamertag">${gamerTag}</h1>
-                                            <span class="profile-verified"><i class="fa-solid fa-check-circle"></i> VERIFICADO</span>
-                                        </div>
-                                        ${dados.user?.name ? `<div class="profile-real-name">${dados.user.name}</div>` : ''}
-                                        <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${dados.user?.location?.country ? dados.user.location.country : 'Localização não informada'}</div>
-                                        ${dados.user?.bio ? `<div class="profile-bio">"${dados.user.bio}"</div>` : ''}
-                                    </div>
-                                    <div class="profile-source">
-                                        <span class="text-xs text-slate-400">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="profile-stats-grid">
-                                <div class="stat-card">
-                                    <span class="stat-label">ALL TIME</span>
-                                    <span class="stat-value text-yellow-500">0%</span>
-                                    <span class="stat-record">0W - 0L</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">LAST 6 MONTHS</span>
-                                    <span class="stat-value text-yellow-500">0%</span>
-                                    <span class="stat-record">0W - 0L</span>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-label">EVENTS</span>
-                                    <span class="stat-value text-blue-400">0</span>
-                                    <span class="stat-record">torneios</span>
-                                </div>
-                            </div>
-
-                            <div class="profile-section">
-                                <h3 class="section-title">RECENT FORM</h3>
-                                <div class="text-slate-500 text-sm py-4 text-center">Nenhum torneio encontrado para este player.</div>
-                            </div>
-
-                            <div class="profile-section">
-                                <h3 class="section-title">HIGHLIGHTS</h3>
-                                <div class="text-slate-500 text-sm py-4 text-center">Nenhum destaque encontrado.</div>
-                            </div>
-
-                            <div class="profile-tabs-modern">
-                                <div class="tab-header-modern">
-                                    <button class="tab-btn-modern active" data-tab="events">EVENTS</button>
-                                    <button class="tab-btn-modern" data-tab="versus">VERSUS</button>
-                                    <button class="tab-btn-modern" data-tab="vods">VODS</button>
-                                </div>
-                                <div class="tab-content-modern active" id="tab-events">
-                                    <div class="text-slate-500 text-sm py-8 text-center">Nenhum evento encontrado.</div>
-                                </div>
-                                <div class="tab-content-modern" id="tab-versus" style="display:none;">
-                                    <div class="text-slate-500 text-sm py-8 text-center">Em breve: confrontos diretos.</div>
-                                </div>
-                                <div class="tab-content-modern" id="tab-vods" style="display:none;">
-                                    <div class="text-slate-500 text-sm py-8 text-center">Em breve: VODs.</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
                 // Dados normais
-                const {
-                    totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, user
-                } = dados;
-
+                const { user, tournaments, totalWins, totalLosses, winrateAllTime, winrateLast6Months, wins6m, losses6m, recentForm, highlights } = dados;
+                
                 const nomeReal = user?.name || '';
                 const bio = user?.bio || '';
                 const country = user?.location?.country || '';
@@ -158,14 +82,16 @@
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-                const formDots = recentForm.map(pos => {
+                // Recent Form
+                const formDots = recentForm.length > 0 ? recentForm.map(pos => {
                     let cls = 'dot-other';
                     if (pos === 1) cls = 'dot-1st';
                     else if (pos <= 3) cls = 'dot-top3';
                     else if (pos <= 8) cls = 'dot-top8';
                     return `<span class="form-dot ${cls}">${pos}</span>`;
-                }).join('');
+                }).join('') : '<div class="text-slate-500 text-sm py-2">Nenhum torneio encontrado para este player.</div>';
 
+                // Highlights
                 const highlightsHtml = highlights.length === 0 
                     ? '<div class="text-slate-500 text-sm py-2">Nenhum destaque encontrado.</div>'
                     : highlights.map(h => `
@@ -176,7 +102,8 @@
                         </div>
                     `).join('');
 
-                const eventsHtml = tournaments.slice(0, 15).map(t => `
+                // Events
+                const eventsHtml = tournaments.length > 0 ? tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
                         <span class="event-name">${t.name}</span>
                         <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
@@ -185,7 +112,7 @@
                         <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
                         <span class="event-date">${t.date}</span>
                     </div>
-                `).join('');
+                `).join('') : '<div class="text-slate-500 text-sm py-8 text-center">Nenhum evento encontrado.</div>';
 
                 const bannerGradient = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
 

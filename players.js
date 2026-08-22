@@ -120,11 +120,12 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
     };
 }
 
-// ==================== BUSCA AO VIVO ====================
+// ==================== BUSCA AO VIVO (QUERY UNIFICADA) ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
     console.log('🔍 Buscando player:', playerId, gamerTag);
     
-    const query1 = `query PlayerHistory($id: ID!) {
+    // Query única que busca tudo de uma vez
+    const query = `query PlayerData($id: ID!) {
         player(id: $id) {
             gamerTag
             user {
@@ -156,20 +157,15 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
         }
     }`;
     
-    let json1, standings = [], userData = {};
-    let playerData = null;
+    let json, playerData, standings = [], userData = {};
     
     try {
-        json1 = await callStartGG(query1, { id: playerId });
-        console.log('📦 Resposta da API:', json1);
+        json = await callStartGG(query, { id: playerId });
+        console.log('📦 Resposta da API:', json);
         
-        playerData = json1.data?.player;
-        standings = playerData?.recentStandings || [];
-        userData = playerData?.user || {};
-        
+        playerData = json.data?.player;
         if (!playerData) {
             console.warn('⚠️ Player não encontrado na API.');
-            // Retorna dados vazios com indicação de erro
             return {
                 gamerTag: gamerTag || 'Player',
                 user: { name: '', bio: '', location: {}, avatarUrl: '' },
@@ -186,6 +182,11 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
                 _error: 'player_not_found'
             };
         }
+        
+        userData = playerData.user || {};
+        standings = playerData.recentStandings || [];
+        console.log('📊 Standings encontrados:', standings.length);
+        
     } catch (e) {
         console.error('❌ Erro na requisição:', e);
         return {
@@ -204,23 +205,24 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
             _error: 'api_error'
         };
     }
-
-    console.log('📊 Standings encontrados:', standings.length);
-
+    
+    // Busca sets para cada evento
     const setsPorEvento = {};
-    for (const standing of standings) {
-        const eventId = standing.container?.id;
-        if (!eventId) continue;
-        try {
-            const resultado = await buscarSetsDoEvento(eventId, playerId);
-            setsPorEvento[eventId] = resultado;
-        } catch (e) {
-            console.warn('⚠️ Erro ao buscar sets do evento', eventId, e);
-            setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
+    if (standings.length > 0) {
+        for (const standing of standings) {
+            const eventId = standing.container?.id;
+            if (!eventId) continue;
+            try {
+                const resultado = await buscarSetsDoEvento(eventId, playerId);
+                setsPorEvento[eventId] = resultado;
+            } catch (e) {
+                console.warn('⚠️ Erro ao buscar sets do evento', eventId, e);
+                setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
+            }
         }
     }
-
-    const dados = processarDadosPlayer(standings, setsPorEvento, playerData?.gamerTag || gamerTag, userData);
+    
+    const dados = processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, userData);
     console.log('✅ Dados processados:', dados);
     return dados;
 }
@@ -257,9 +259,8 @@ async function obterDadosPlayer(playerId, gamerTag) {
     console.log('🌐 Buscando ao vivo:', playerId);
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
     
-    // Se o player foi encontrado, salva no cache local
     if (dados && !dados._error) {
-        _salvarPlayerLocal(playerId, gamerTag);
+        _salvarPlayerLocal(playerId, dados.gamerTag || gamerTag);
         _persistirNoCache(playerId, dados);
     }
     
