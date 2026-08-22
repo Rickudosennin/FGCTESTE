@@ -1,12 +1,7 @@
 // ==================== CONFIG ====================
-const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
-const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio se não quiser usar Issues
-const CACHE_MAX_IDADE_HORAS = 24;
-
-// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
 
+// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
 function _salvarPlayerLocal(playerId, gamerTag) {
     try {
         const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
@@ -16,6 +11,7 @@ function _salvarPlayerLocal(playerId, gamerTag) {
             // Atualiza o contador visual se existir
             const contador = document.getElementById('contador_salvos');
             if (contador) contador.textContent = lista.length;
+            console.log('Player salvo localmente:', playerId, gamerTag);
         }
     } catch (e) {}
 }
@@ -26,25 +22,10 @@ function _carregarPlayersLocal() {
     } catch (e) { return []; }
 }
 
-// ==================== LEITURA DO CACHE DO GITHUB ====================
-let _playersCacheData = null;
-async function _lerPlayersCache() {
-    if (_playersCacheData) return _playersCacheData;
-    try {
-        const resp = await fetch(PLAYERS_CACHE_URL + '?t=' + Date.now());
-        const json = await resp.json();
-        _playersCacheData = json.players || {};
-    } catch (e) { _playersCacheData = {}; }
-    return _playersCacheData;
-}
+// ==================== LEITURA DO CACHE DO GITHUB (opcional, mantido para compatibilidade) ====================
+// Se você quiser manter a leitura do cache do GitHub, pode deixar, mas não é mais usado na busca principal.
 
-function _cacheEstaFresco(entry) {
-    if (!entry || !entry.updatedAt) return false;
-    const idadeHoras = (Date.now() - new Date(entry.updatedAt).getTime()) / 36e5;
-    return idadeHoras < CACHE_MAX_IDADE_HORAS;
-}
-
-// ==================== PROCESSAMENTO ====================
+// ==================== PROCESSAMENTO (mantido para o perfil) ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
@@ -148,88 +129,34 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
-// ==================== PERSISTÊNCIA NO GITHUB (OPCIONAL) ====================
-async function _persistirNoCache(playerId, dados) {
-    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
-    try {
-        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: `[cache] player ${playerId}`,
-                body: '```json\n' + JSON.stringify({ playerId, dados }) + '\n```',
-                labels: ['player-cache-update']
-            })
-        });
-    } catch (e) { /* silencioso */ }
-}
-
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag) {
-    const cache = await _lerPlayersCache();
-    const entry = cache[playerId];
-    if (_cacheEstaFresco(entry)) {
-        return { dados: entry, fonte: 'cache' };
-    }
+    // Tenta ler do cache do GitHub (se existir) - opcional
+    // Se quiser manter, pode deixar; senão, remova.
+    // Como removemos as ligas, a busca não depende mais do cache do GitHub.
+    // Mas o perfil pode usar se houver.
+    try {
+        const resp = await fetch('https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json?t=' + Date.now());
+        const cache = await resp.json();
+        const entry = cache.players?.[playerId];
+        if (entry && entry.updatedAt && (Date.now() - new Date(entry.updatedAt).getTime()) / 36e5 < 24) {
+            return { dados: entry, fonte: 'cache' };
+        }
+    } catch (e) {}
+
+    // Busca ao vivo
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
     _salvarPlayerLocal(playerId, gamerTag);
-    _persistirNoCache(playerId, dados);
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (com localStorage) ====================
-let _listaPlayersConhecidos = null;
-async function carregarPlayersConhecidos() {
-    if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
-
-    const mapa = new Map();
-
-    // 1. Players das ligas monitoradas (LIGAS_MONITORADAS é definido no script.js)
-    if (typeof LIGAS_MONITORADAS !== 'undefined') {
-        const query = `query LeagueStandings($slug: String) {
-            league(slug: $slug) {
-                standings(query: { page: 1, perPage: 40 }) {
-                    nodes {
-                        placement
-                        entrant {
-                            name
-                            participants {
-                                player { id }
-                            }
-                        }
-                    }
-                }
-            }
-        }`;
-        const resultados = await Promise.all(LIGAS_MONITORADAS.map(liga =>
-            callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
-        ));
-        resultados.flat().forEach(node => {
-            const playerId = node.entrant?.participants?.[0]?.player?.id;
-            const gamerTag = node.entrant?.name;
-            if (playerId && gamerTag && !mapa.has(playerId)) {
-                mapa.set(playerId, { playerId, gamerTag, placement: node.placement });
-            }
-        });
-    }
-
-    // 2. Players salvos localmente (localStorage)
-    const locais = _carregarPlayersLocal();
-    locais.forEach(p => {
-        if (!mapa.has(p.playerId)) {
-            mapa.set(p.playerId, { playerId: p.playerId, gamerTag: p.gamerTag, placement: null });
-        }
-    });
-
-    // Converte para array e garante que não haja duplicatas (o Map já garante)
-    _listaPlayersConhecidos = Array.from(mapa.values());
-    return _listaPlayersConhecidos;
-}
-
+// A função carregarPlayersConhecidos não é mais usada, pois a busca depende apenas do localStorage.
+// Mantemos a função filtrarPlayers para compatibilidade, mas não é usada.
 function filtrarPlayers(lista, termo) {
     const t = termo.trim().toLowerCase();
     if (!t) return lista.slice(0, 15);
-    // Filtra e retorna até 15 resultados
-    const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
-    return filtrados.slice(0, 15);
+    return lista.filter(p => p.gamerTag.toLowerCase().includes(t)).slice(0, 15);
 }
+
+// Exporta a função de salvamento para ser usada no script.js (abrirAttendees)
+window._salvarPlayerLocal = _salvarPlayerLocal;

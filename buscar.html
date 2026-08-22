@@ -15,7 +15,7 @@
 
         <div class="text-center mb-10">
             <h1 class="text-3xl md:text-4xl font-black text-white uppercase italic">Buscar <span class="text-red-600">Player</span></h1>
-            <p class="text-slate-400 text-sm mt-2">Winrate geral, por torneio e por personagem.</p>
+            <p class="text-slate-400 text-sm mt-2">Players carregados da lista de inscritos.</p>
         </div>
 
         <div class="glass-card p-3 rounded-xl mb-8 flex items-center gap-3">
@@ -96,10 +96,10 @@
             `).join('');
         }
 
-        async function carregarDados() {
-            resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
-            listaCompleta = await carregarPlayersConhecidos();
-            // Não renderiza nada inicialmente – mostra a mensagem
+        function carregarDados() {
+            // Carrega apenas do localStorage, sem ligas
+            const locais = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
+            listaCompleta = locais;
             resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
             atualizarContador();
         }
@@ -114,7 +114,10 @@
                     resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
                     return;
                 }
-                const filtrados = filtrarPlayers(listaCompleta, termo);
+                // Filtrar localmente
+                const filtrados = listaCompleta.filter(p => 
+                    p.gamerTag.toLowerCase().includes(termo.toLowerCase())
+                ).slice(0, 15);
                 renderizarLista(filtrados);
             }, 300);
         });
@@ -129,7 +132,6 @@
         btnLimpar.addEventListener('click', () => {
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
-                atualizarContador();
                 carregarDados();
             }
         });
