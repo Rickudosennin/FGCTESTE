@@ -1,7 +1,7 @@
 // ==================== CONFIG ====================
 const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = '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';
+const GITHUB_ISSUES_TOKEN = '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';
 const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LEITURA DO CACHE ====================
