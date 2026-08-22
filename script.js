@@ -230,7 +230,7 @@ let _charReportsCache = null;
 async function buscarReportsChar() {
     if (_charReportsCache) return _charReportsCache;
     try {
-        const resp = await fetch('https://raw.githubusercontent.com/Rickudosennin/fgchub/main/data/character-reports.json');
+        const resp = await fetch('https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/character-reports.json');
         const json = await resp.json();
         _charReportsCache = json.reports || [];
     } catch (e) { _charReportsCache = []; }

@@ -1,6 +1,6 @@
 // ==================== CONFIG DA DATABASE DE PLAYERS ====================
-const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/fgchub/main/data/players-cache.json';
-const GITHUB_REPO = 'Rickudosennin/fgchub';
+const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
+const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
 // Token de acesso pessoal (fine-grained) com escopo ÚNICO E EXCLUSIVO de "Issues: write" neste repositório.
 // NUNCA usar aqui um token com permissão de escrita em Contents/Actions/Admin — este token fica visível
 // para qualquer visitante do site (é client-side), então o escopo precisa ser o mínimo possível.
