@@ -1,11 +1,10 @@
 // ==================== CONFIG ====================
-const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
-const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio para não usar Issues
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
 const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
 function _salvarPlayerLocal(playerId, gamerTag) {
     try {
@@ -26,22 +25,31 @@ function _carregarPlayersLocal() {
     } catch (e) { return []; }
 }
 
-// ==================== LEITURA DO CACHE DO GITHUB (opcional) ====================
-let _playersCacheData = null;
-async function _lerPlayersCache() {
-    if (_playersCacheData) return _playersCacheData;
+// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
+function _salvarPerfilCache(playerId, dados) {
     try {
-        const resp = await fetch(PLAYERS_CACHE_URL + '?t=' + Date.now());
-        const json = await resp.json();
-        _playersCacheData = json.players || {};
-    } catch (e) { _playersCacheData = {}; }
-    return _playersCacheData;
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const cacheData = {
+            dados: dados,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (e) {}
 }
 
-function _cacheEstaFresco(entry) {
-    if (!entry || !entry.updatedAt) return false;
-    const idadeHoras = (Date.now() - new Date(entry.updatedAt).getTime()) / 36e5;
-    return idadeHoras < CACHE_MAX_IDADE_HORAS;
+function _lerPerfilCache(playerId) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const cacheData = JSON.parse(raw);
+        // Verifica se o cache ainda é fresco (menos de 24h)
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
+        return null;
+    } catch (e) { return null; }
 }
 
 // ==================== PROCESSAMENTO ====================
@@ -148,51 +156,40 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
-// ==================== PERSISTÊNCIA NO GITHUB (OPCIONAL) ====================
-async function _persistirNoCache(playerId, dados) {
-    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
-    try {
-        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: `[cache] player ${playerId}`,
-                body: '```json\n' + JSON.stringify({ playerId, dados }) + '\n```',
-                labels: ['player-cache-update']
-            })
-        });
-    } catch (e) { /* silencioso */ }
-}
-
 // ==================== FUNÇÃO PRINCIPAL ====================
-async function obterDadosPlayer(playerId, gamerTag) {
-    const cache = await _lerPlayersCache();
-    const entry = cache[playerId];
-    if (_cacheEstaFresco(entry)) {
-        return { dados: entry, fonte: 'cache' };
+async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false) {
+    // Se não for forçado, tenta o cache do localStorage primeiro
+    if (!forceRefresh) {
+        const cacheData = _lerPerfilCache(playerId);
+        if (cacheData) {
+            return { dados: cacheData, fonte: 'cache' };
+        }
     }
+    // Busca ao vivo
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
+    // Salva no cache local
+    _salvarPerfilCache(playerId, dados);
+    // Salva também na lista de players conhecidos (para a busca)
     _salvarPlayerLocal(playerId, gamerTag);
-    _persistirNoCache(playerId, dados);
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (APENAS LOCALSTORAGE) ====================
+// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
 
-    // SÓ CARREGA DO LOCALSTORAGE - SEM LIGAS
+    // Retorna apenas os players salvos localmente (dos inscritos)
     const locais = _carregarPlayersLocal();
-    
-    // Usa um Map para garantir unicidade
+    // Remove duplicatas (caso haja) usando Map
     const mapa = new Map();
     locais.forEach(p => {
-        if (p.playerId && p.gamerTag && !mapa.has(p.playerId)) {
-            mapa.set(p.playerId, { playerId: p.playerId, gamerTag: p.gamerTag, placement: null });
+        // Garantir que o playerId seja string para evitar duplicação
+        const id = String(p.playerId);
+        if (!mapa.has(id)) {
+            mapa.set(id, { playerId: id, gamerTag: p.gamerTag, placement: null });
         }
     });
-
     _listaPlayersConhecidos = Array.from(mapa.values());
     return _listaPlayersConhecidos;
 }
@@ -200,16 +197,6 @@ async function carregarPlayersConhecidos() {
 function filtrarPlayers(lista, termo) {
     const t = termo.trim().toLowerCase();
     if (!t) return [];
-    // Filtra e retorna até 15 resultados (já únicos)
     const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
-    // Remove duplicatas novamente (por segurança)
-    const vistos = new Set();
-    const unicos = [];
-    for (const p of filtrados) {
-        if (!vistos.has(p.playerId)) {
-            vistos.add(p.playerId);
-            unicos.push(p);
-        }
-    }
-    return unicos.slice(0, 15);
+    return filtrados.slice(0, 15);
 }

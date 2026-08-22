@@ -21,9 +21,8 @@
     <script src="players.js"></script>
     <script>
         (function() {
-            // Evita execução duplicada
             if (window._playerLoaded) {
-                console.log('Perfil já carregado, ignorando segunda execução.');
+                console.log('Perfil já carregado.');
                 return;
             }
             window._playerLoaded = true;
@@ -72,6 +71,9 @@
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
                             <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
                             <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
+                                <i class="fa-solid fa-rotate"></i> Atualizar dados
+                            </button>
                         </div>
 
                         <div class="profile-summary">
@@ -126,17 +128,18 @@
                 `;
             }
 
-            async function iniciar() {
+            async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
                     return;
                 }
                 try {
-                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
-                    // Limpa o conteúdo antes de montar
+                    conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
+                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh);
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
+                    // Reatribui os eventos das abas
                     document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -151,7 +154,13 @@
                 }
             }
 
-            iniciar();
+            // Função global para ser chamada pelo botão
+            window.atualizarDados = function() {
+                carregarPerfil(true);
+            };
+
+            // Inicializa
+            carregarPerfil(false);
         })();
     </script>
 </body>
