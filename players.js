@@ -1,7 +1,7 @@
 // ==================== CONFIG ====================
 const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = '';
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio para não usar Issues
 const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
@@ -13,7 +13,9 @@ function _salvarPlayerLocal(playerId, gamerTag) {
         if (!lista.some(p => p.playerId === playerId)) {
             lista.push({ playerId, gamerTag });
             localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
-            console.log('Player salvo localmente:', playerId, gamerTag);
+            // Atualiza o contador visual se existir
+            const contador = document.getElementById('contador_salvos');
+            if (contador) contador.textContent = lista.length;
         }
     } catch (e) {}
 }
@@ -182,7 +184,7 @@ async function carregarPlayersConhecidos() {
 
     const mapa = new Map();
 
-    // 1. Players das ligas monitoradas
+    // 1. Players das ligas monitoradas (LIGAS_MONITORADAS é definido no script.js)
     if (typeof LIGAS_MONITORADAS !== 'undefined') {
         const query = `query LeagueStandings($slug: String) {
             league(slug: $slug) {

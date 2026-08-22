@@ -142,7 +142,6 @@ async function _carregarPaginaAttendees() {
     const isFirstPage = page === 1;
 
     if (!isFirstPage) {
-        // Mantém itens existentes, substitui apenas o bloco de paginação por spinner
         const old = document.getElementById('_attendees_pagination');
         if (old) old.innerHTML = '<div class="loading-attendees" style="padding:20px 0;"><div class="spinner"></div></div>';
     }
@@ -162,7 +161,6 @@ async function _carregarPaginaAttendees() {
             return;
         }
 
-        // Renderiza os itens desta página
         let html = '';
         const offset = _attendeesState.globalOffset;
         participants.forEach((p, i) => {
@@ -174,12 +172,20 @@ async function _carregarPaginaAttendees() {
             const safeGamerTag = (p.gamerTag || 'Sem nome').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const playerId = p.player?.id || '';
             
-            // ========== NOVO: SALVAR PLAYER NO LOCALSTORAGE ==========
+            // ========== SALVAR PLAYER NO LOCALSTORAGE ==========
             if (playerId && p.gamerTag) {
-                // Chama a função do players.js para salvar localmente
-                if (typeof _salvarPlayerLocal === 'function') {
-                    _salvarPlayerLocal(playerId, p.gamerTag);
-                }
+                try {
+                    if (typeof _salvarPlayerLocal === 'function') {
+                        _salvarPlayerLocal(playerId, p.gamerTag);
+                    } else {
+                        // Fallback: salva diretamente
+                        const lista = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
+                        if (!lista.some(p => p.playerId === playerId)) {
+                            lista.push({ playerId, gamerTag: p.gamerTag });
+                            localStorage.setItem('fgchub_local_players', JSON.stringify(lista));
+                        }
+                    }
+                } catch (e) {}
             }
 
             html += `<div class="attendee-item"><span class="attendee-number">#${idx + 1}</span>${flagHTML}<span class="attendee-name clickable" onclick="event.stopPropagation();toggleHistorico('${playerId}', '${safeGamerTag}', ${idx})">${p.gamerTag || 'Sem nome'}</span>${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}</div><div id="history-${idx}" style="display:none;"></div>`;
@@ -188,7 +194,6 @@ async function _carregarPaginaAttendees() {
         _attendeesState.globalOffset += participants.length;
         const hasMore = _attendeesState.globalOffset < total;
 
-        // Rodapé: contador + botão próxima página (se houver)
         const pageInfo = `<div style="text-align:center;padding:8px 0 4px;color:#666;font-size:11px;font-weight:bold;letter-spacing:0.5px;">Exibindo ${_attendeesState.globalOffset} de ${total}</div>`;
         const nextBtn = hasMore
             ? `<button onclick="_proximaPaginaAttendees()" style="display:block;width:100%;margin-top:8px;padding:11px;background:linear-gradient(to right,#991b1b,#dc2626);color:white;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:1px;border:none;border-radius:8px;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"><i class="fa-solid fa-chevron-down" style="margin-right:6px;"></i>CARREGAR MAIS <span style="opacity:0.8;">(${total - _attendeesState.globalOffset} restantes)</span></button>`
