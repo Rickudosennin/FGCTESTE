@@ -96,10 +96,10 @@
             `).join('');
         }
 
-        function carregarDados() {
-            // Carrega apenas do localStorage, sem ligas
-            const locais = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
-            listaCompleta = locais;
+        async function carregarDados() {
+            resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
+            listaCompleta = await carregarPlayersConhecidos();
+            // Não renderiza nada inicialmente – mostra a mensagem
             resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
             atualizarContador();
         }
@@ -114,10 +114,7 @@
                     resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
                     return;
                 }
-                // Filtrar localmente
-                const filtrados = listaCompleta.filter(p => 
-                    p.gamerTag.toLowerCase().includes(termo.toLowerCase())
-                ).slice(0, 15);
+                const filtrados = filtrarPlayers(listaCompleta, termo);
                 renderizarLista(filtrados);
             }, 300);
         });
@@ -132,6 +129,7 @@
         btnLimpar.addEventListener('click', () => {
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
+                atualizarContador();
                 carregarDados();
             }
         });

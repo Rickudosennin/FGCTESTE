@@ -1,7 +1,12 @@
 // ==================== CONFIG ====================
-const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
+const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio para não usar Issues
+const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
+const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+
 function _salvarPlayerLocal(playerId, gamerTag) {
     try {
         const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
@@ -11,7 +16,6 @@ function _salvarPlayerLocal(playerId, gamerTag) {
             // Atualiza o contador visual se existir
             const contador = document.getElementById('contador_salvos');
             if (contador) contador.textContent = lista.length;
-            console.log('Player salvo localmente:', playerId, gamerTag);
         }
     } catch (e) {}
 }
@@ -22,10 +26,25 @@ function _carregarPlayersLocal() {
     } catch (e) { return []; }
 }
 
-// ==================== LEITURA DO CACHE DO GITHUB (opcional, mantido para compatibilidade) ====================
-// Se você quiser manter a leitura do cache do GitHub, pode deixar, mas não é mais usado na busca principal.
+// ==================== LEITURA DO CACHE DO GITHUB (opcional) ====================
+let _playersCacheData = null;
+async function _lerPlayersCache() {
+    if (_playersCacheData) return _playersCacheData;
+    try {
+        const resp = await fetch(PLAYERS_CACHE_URL + '?t=' + Date.now());
+        const json = await resp.json();
+        _playersCacheData = json.players || {};
+    } catch (e) { _playersCacheData = {}; }
+    return _playersCacheData;
+}
 
-// ==================== PROCESSAMENTO (mantido para o perfil) ====================
+function _cacheEstaFresco(entry) {
+    if (!entry || !entry.updatedAt) return false;
+    const idadeHoras = (Date.now() - new Date(entry.updatedAt).getTime()) / 36e5;
+    return idadeHoras < CACHE_MAX_IDADE_HORAS;
+}
+
+// ==================== PROCESSAMENTO ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
@@ -129,34 +148,68 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
+// ==================== PERSISTÊNCIA NO GITHUB (OPCIONAL) ====================
+async function _persistirNoCache(playerId, dados) {
+    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
+    try {
+        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: `[cache] player ${playerId}`,
+                body: '```json\n' + JSON.stringify({ playerId, dados }) + '\n```',
+                labels: ['player-cache-update']
+            })
+        });
+    } catch (e) { /* silencioso */ }
+}
+
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag) {
-    // Tenta ler do cache do GitHub (se existir) - opcional
-    // Se quiser manter, pode deixar; senão, remova.
-    // Como removemos as ligas, a busca não depende mais do cache do GitHub.
-    // Mas o perfil pode usar se houver.
-    try {
-        const resp = await fetch('https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json?t=' + Date.now());
-        const cache = await resp.json();
-        const entry = cache.players?.[playerId];
-        if (entry && entry.updatedAt && (Date.now() - new Date(entry.updatedAt).getTime()) / 36e5 < 24) {
-            return { dados: entry, fonte: 'cache' };
-        }
-    } catch (e) {}
-
-    // Busca ao vivo
+    const cache = await _lerPlayersCache();
+    const entry = cache[playerId];
+    if (_cacheEstaFresco(entry)) {
+        return { dados: entry, fonte: 'cache' };
+    }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
     _salvarPlayerLocal(playerId, gamerTag);
+    _persistirNoCache(playerId, dados);
     return { dados, fonte: 'live' };
 }
 
-// A função carregarPlayersConhecidos não é mais usada, pois a busca depende apenas do localStorage.
-// Mantemos a função filtrarPlayers para compatibilidade, mas não é usada.
-function filtrarPlayers(lista, termo) {
-    const t = termo.trim().toLowerCase();
-    if (!t) return lista.slice(0, 15);
-    return lista.filter(p => p.gamerTag.toLowerCase().includes(t)).slice(0, 15);
+// ==================== BUSCA DE PLAYERS (APENAS LOCALSTORAGE) ====================
+let _listaPlayersConhecidos = null;
+async function carregarPlayersConhecidos() {
+    if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
+
+    // SÓ CARREGA DO LOCALSTORAGE - SEM LIGAS
+    const locais = _carregarPlayersLocal();
+    
+    // Usa um Map para garantir unicidade
+    const mapa = new Map();
+    locais.forEach(p => {
+        if (p.playerId && p.gamerTag && !mapa.has(p.playerId)) {
+            mapa.set(p.playerId, { playerId: p.playerId, gamerTag: p.gamerTag, placement: null });
+        }
+    });
+
+    _listaPlayersConhecidos = Array.from(mapa.values());
+    return _listaPlayersConhecidos;
 }
 
-// Exporta a função de salvamento para ser usada no script.js (abrirAttendees)
-window._salvarPlayerLocal = _salvarPlayerLocal;
+function filtrarPlayers(lista, termo) {
+    const t = termo.trim().toLowerCase();
+    if (!t) return [];
+    // Filtra e retorna até 15 resultados (já únicos)
+    const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
+    // Remove duplicatas novamente (por segurança)
+    const vistos = new Set();
+    const unicos = [];
+    for (const p of filtrados) {
+        if (!vistos.has(p.playerId)) {
+            vistos.add(p.playerId);
+            unicos.push(p);
+        }
+    }
+    return unicos.slice(0, 15);
+}
