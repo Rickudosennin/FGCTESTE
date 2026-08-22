@@ -7,7 +7,7 @@ const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
 // Como gerar: GitHub > Settings > Developer settings > Fine-grained tokens > New token
 //   Repository access: Only select repositories > fgchub
 //   Permissions: Issues = Read and write (todas as outras em "No access")
-const GITHUB_ISSUES_TOKEN = 'COLOQUE_AQUI_SEU_TOKEN_FINE_GRAINED_ISSUES_WRITE';
+const GITHUB_ISSUES_TOKEN = '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';
 const CACHE_MAX_IDADE_HORAS = 24; // acima disso, refaz busca ao vivo mesmo se já estiver em cache
 
 // ==================== LEITURA DO CACHE ====================
