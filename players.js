@@ -1,7 +1,7 @@
 // ==================== CONFIG ====================
 const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio para não usar Issues
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio se não quiser usar Issues
 const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
@@ -221,6 +221,7 @@ async function carregarPlayersConhecidos() {
         }
     });
 
+    // Converte para array e garante que não haja duplicatas (o Map já garante)
     _listaPlayersConhecidos = Array.from(mapa.values());
     return _listaPlayersConhecidos;
 }
@@ -228,5 +229,7 @@ async function carregarPlayersConhecidos() {
 function filtrarPlayers(lista, termo) {
     const t = termo.trim().toLowerCase();
     if (!t) return lista.slice(0, 15);
-    return lista.filter(p => p.gamerTag.toLowerCase().includes(t)).slice(0, 15);
+    // Filtra e retorna até 15 resultados
+    const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
+    return filtrados.slice(0, 15);
 }

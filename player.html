@@ -20,10 +20,12 @@
     <script src="script.js"></script>
     <script src="players.js"></script>
     <script>
-        // Evita carregamento duplicado
-        if (window._playerLoaded) {
-            console.log('Perfil já carregado, ignorando segunda execução.');
-        } else {
+        (function() {
+            // Evita execução duplicada
+            if (window._playerLoaded) {
+                console.log('Perfil já carregado, ignorando segunda execução.');
+                return;
+            }
             window._playerLoaded = true;
 
             const params = new URLSearchParams(window.location.search);
@@ -131,6 +133,7 @@
                 }
                 try {
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
+                    // Limpa o conteúdo antes de montar
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
@@ -149,7 +152,7 @@
             }
 
             iniciar();
-        }
+        })();
     </script>
 </body>
 </html>

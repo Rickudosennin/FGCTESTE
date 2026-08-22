@@ -40,7 +40,6 @@
             <div id="conteudo_salvos" class="text-sm text-white space-y-1"></div>
         </div>
 
-        <!-- Resultados da busca -->
         <div id="resultados_busca" class="space-y-2">
             <div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>
         </div>
@@ -77,14 +76,16 @@
         function renderizarLista(lista) {
             // Remove duplicatas baseado no playerId
             const vistos = new Set();
-            const unicos = lista.filter(p => {
-                if (vistos.has(p.playerId)) return false;
-                vistos.add(p.playerId);
-                return true;
-            });
+            const unicos = [];
+            for (const p of lista) {
+                if (!vistos.has(p.playerId)) {
+                    vistos.add(p.playerId);
+                    unicos.push(p);
+                }
+            }
 
             if (unicos.length === 0) {
-                resultadosDiv.innerHTML = '<div class="history-empty">Nenhum player encontrado com esse nome.</div>';
+                resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Nenhum player encontrado com esse nome.</div>';
                 return;
             }
             resultadosDiv.innerHTML = unicos.map(p => `
@@ -95,22 +96,27 @@
             `).join('');
         }
 
-        async function carregarListaCompleta() {
+        async function carregarDados() {
             resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
             listaCompleta = await carregarPlayersConhecidos();
-            atualizarContador();
-            // Não exibe nada automaticamente – apenas mantém a mensagem inicial
+            // Não renderiza nada inicialmente – mostra a mensagem
             resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
+            atualizarContador();
         }
 
+        // Debounce para evitar múltiplas chamadas durante a digitação
+        let timeoutId;
         inputBusca.addEventListener('input', () => {
-            const termo = inputBusca.value.trim();
-            if (termo === '') {
-                resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
-                return;
-            }
-            const filtrados = filtrarPlayers(listaCompleta, termo);
-            renderizarLista(filtrados);
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                const termo = inputBusca.value.trim();
+                if (termo === '') {
+                    resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
+                    return;
+                }
+                const filtrados = filtrarPlayers(listaCompleta, termo);
+                renderizarLista(filtrados);
+            }, 300);
         });
 
         btnMostrar.addEventListener('click', () => {
@@ -124,12 +130,11 @@
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
                 atualizarContador();
-                carregarListaCompleta();
+                carregarDados();
             }
         });
 
-        // Carrega a lista completa em background, mas não exibe automaticamente
-        carregarListaCompleta();
+        carregarDados();
     </script>
 </body>
 </html>
