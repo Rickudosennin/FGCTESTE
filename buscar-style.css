@@ -8,14 +8,54 @@
     box-shadow: 0 0 40px rgba(220, 38, 38, 0.1);
 }
 
-/* HEADER */
+/* ===== HEADER ===== */
 .profile-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    padding: 20px 32px 16px 32px;
+    gap: 20px;
+    padding: 20px 32px;
     border-bottom: 2px solid rgba(220, 38, 38, 0.4);
+    flex-wrap: wrap;
+}
+
+.profile-avatar-wrapper {
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #dc2626;
+    object-fit: cover;
+    background: #1a1a1c;
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.3);
+}
+
+.profile-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #dc2626;
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .profile-gamertag {
@@ -31,26 +71,50 @@
 }
 
 .winrate-badge {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 900;
-    padding: 2px 14px;
+    padding: 0 12px;
     border-radius: 8px;
     background: rgba(255,255,255,0.05);
     border: 1px solid currentColor;
-    line-height: 1.2;
+    line-height: 1.4;
 }
 
 .record-badge {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: #94a3b8;
     background: rgba(255,255,255,0.06);
-    padding: 4px 14px;
+    padding: 2px 12px;
     border-radius: 20px;
     border: 1px solid #334155;
 }
 
-/* STATS (apenas eventos) */
+.profile-real-name {
+    font-size: 16px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.profile-location {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.profile-bio {
+    font-size: 14px;
+    color: #cbd5e1;
+    font-style: italic;
+    margin-top: 4px;
+    opacity: 0.8;
+    max-width: 500px;
+}
+
+/* ===== STATS ===== */
 .profile-summary {
     display: flex;
     justify-content: center;
@@ -63,9 +127,9 @@
     background: rgba(255,255,255,0.03);
     border: 1px solid #1e293b;
     border-radius: 12px;
-    padding: 14px 24px;
+    padding: 12px 24px;
     text-align: center;
-    min-width: 200px;
+    min-width: 160px;
 }
 
 .stat-card .label {
@@ -92,7 +156,7 @@
     margin-top: 2px;
 }
 
-/* RECENT EVENTS (grade) */
+/* ===== RECENT EVENTS ===== */
 .recent-events {
     padding: 20px 32px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -112,51 +176,74 @@
 
 .recent-events-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 12px;
 }
 
-.recent-event-item {
-    background: rgba(255,255,255,0.04);
+.recent-event-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background-size: cover;
+    background-position: center;
+    background-color: #1a1a2e;
     border: 1px solid #1e293b;
-    border-radius: 10px;
-    padding: 12px 8px;
-    text-align: center;
-    transition: border-color 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    transition: transform 0.2s, border-color 0.2s;
+    min-height: 140px;
 }
 
-.recent-event-item:hover {
+.recent-event-card:hover {
+    transform: scale(1.03);
     border-color: #dc2626;
+    z-index: 2;
+}
+
+.recent-event-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%);
+    pointer-events: none;
+}
+
+.recent-event-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100%;
+    padding: 12px;
+    text-align: center;
+    color: #fff;
 }
 
 .recent-event-name {
     font-size: 11px;
     font-weight: 700;
-    color: #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     line-height: 1.2;
     margin-bottom: 4px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.8);
     word-break: break-word;
     max-width: 100%;
 }
 
 .recent-event-placement {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 900;
-    color: #facc15;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
 }
 
 .recent-event-detail {
-    font-size: 10px;
-    color: #94a3b8;
+    font-size: 11px;
+    color: #cbd5e1;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
 }
 
-/* HIGHLIGHTS */
+/* ===== HIGHLIGHTS ===== */
 .highlights {
     padding: 20px 32px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -197,7 +284,7 @@
     font-weight: 500;
 }
 
-/* ABAS */
+/* ===== ABAS ===== */
 .profile-tabs {
     padding: 20px 32px 24px 32px;
 }
@@ -243,20 +330,36 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* EVENT ROWS (lista completa) */
+/* ===== EVENT ROWS (com thumbnail) ===== */
 .event-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid rgba(255,255,255,0.04);
     font-size: 13px;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
-.event-name {
+.event-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     flex: 2;
+    min-width: 120px;
+}
+
+.event-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #1a1a2e;
+    border: 1px solid #1e293b;
+}
+
+.event-name {
     font-weight: 600;
     color: #e2e8f0;
 }
@@ -264,53 +367,76 @@
 .event-placement {
     flex: 1;
     font-weight: 700;
+    min-width: 60px;
 }
 
 .event-record {
     flex: 1;
     color: #94a3b8;
+    min-width: 60px;
 }
 
 .event-date {
     flex: 0.5;
     color: #64748b;
     font-size: 12px;
+    min-width: 50px;
 }
 
-/* Responsivo */
+/* ===== RESPONSIVO ===== */
 @media (max-width: 768px) {
     .player-profile {
         border-radius: 12px;
     }
     .profile-header {
         padding: 16px;
-        gap: 12px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .profile-avatar, .profile-avatar-placeholder {
+        width: 64px;
+        height: 64px;
     }
     .profile-gamertag {
         font-size: 24px;
     }
     .winrate-badge {
-        font-size: 22px;
+        font-size: 20px;
+    }
+    .profile-name-row {
+        justify-content: center;
+    }
+    .profile-info {
+        text-align: center;
+    }
+    .profile-location {
+        justify-content: center;
+    }
+    .profile-bio {
+        margin-left: auto;
+        margin-right: auto;
     }
     .profile-summary {
         padding: 12px 16px;
     }
     .stat-card {
-        min-width: auto;
         padding: 10px 16px;
+        min-width: auto;
     }
     .recent-events {
         padding: 16px;
     }
     .recent-events-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 8px;
     }
-    .recent-event-item {
-        padding: 8px 6px;
+    .recent-event-card {
+        min-height: 110px;
+        aspect-ratio: auto;
     }
     .recent-event-placement {
-        font-size: 16px;
+        font-size: 18px;
     }
     .highlights {
         padding: 16px;
@@ -337,8 +463,14 @@
     }
     .event-row {
         font-size: 12px;
+        gap: 6px;
     }
-    .event-name {
+    .event-name-wrapper {
         flex: 1 1 100%;
+        min-width: 0;
+    }
+    .event-thumb {
+        width: 28px;
+        height: 28px;
     }
 }
