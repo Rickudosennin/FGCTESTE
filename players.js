@@ -129,6 +129,19 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
 
 // ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
+    console.log('🔍 Buscando player ao vivo:', playerId, gamerTag);
+
+    if (!playerId) {
+        console.error('❌ playerId está vazio!');
+        throw new Error('ID do player não fornecido');
+    }
+
+    // Verifica se callStartGG existe
+    if (typeof callStartGG !== 'function') {
+        console.error('❌ callStartGG não está definida! Verifique se o script.js foi carregado.');
+        throw new Error('callStartGG não definida');
+    }
+
     const query = `query PlayerData($id: ID!) {
         player(id: $id) {
             gamerTag
@@ -160,52 +173,73 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
             }
         }
     }`;
-    const json = await callStartGG(query, { id: playerId });
-    const playerData = json.data?.player;
-    if (!playerData) {
-        throw new Error('Player not found');
-    }
-    const standings = playerData.recentStandings || [];
-    const userData = playerData.user || {};
 
-    const setsPorEvento = {};
-    for (const standing of standings) {
-        const eventId = standing.container?.id;
-        if (!eventId) continue;
-        const resultado = await buscarSetsDoEvento(eventId, playerId);
-        setsPorEvento[eventId] = resultado;
-    }
+    try {
+        console.log('📤 Enviando requisição para API...');
+        const json = await callStartGG(query, { id: playerId });
+        console.log('📥 Resposta da API:', json);
 
-    return processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, userData);
+        const playerData = json.data?.player;
+        if (!playerData) {
+            console.warn('⚠️ Player não encontrado na API.');
+            throw new Error('Player não encontrado');
+        }
+
+        const standings = playerData.recentStandings || [];
+        const userData = playerData.user || {};
+
+        console.log(`📊 ${standings.length} torneios encontrados.`);
+
+        const setsPorEvento = {};
+        for (const standing of standings) {
+            const eventId = standing.container?.id;
+            if (!eventId) continue;
+            try {
+                const resultado = await buscarSetsDoEvento(eventId, playerId);
+                setsPorEvento[eventId] = resultado;
+            } catch (e) {
+                console.warn('⚠️ Erro ao buscar sets do evento', eventId, e);
+                setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
+            }
+        }
+
+        const dados = processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, userData);
+        console.log('✅ Dados processados com sucesso.');
+        return dados;
+
+    } catch (e) {
+        console.error('❌ Erro em _buscarPlayerAoVivo:', e);
+        throw e; // Re-lança para ser capturado no player.html
+    }
 }
 
 // ==================== PERSISTÊNCIA ====================
 async function _persistirNoCache(playerId, dados) {
-    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
-    try {
-        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: `[cache] player ${playerId}`,
-                body: '```json\n' + JSON.stringify({ playerId, dados }) + '\n```',
-                labels: ['player-cache-update']
-            })
-        });
-    } catch (e) { /* silencioso */ }
+    // Desabilitado - sem token
+    return;
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false) {
+    console.log('⚙️ obterDadosPlayer chamado com:', { playerId, gamerTag, forceRefresh });
+
+    if (!playerId) {
+        console.error('❌ playerId é obrigatório');
+        throw new Error('ID do player não fornecido');
+    }
+
     if (!forceRefresh) {
         const cacheData = _lerPerfilCache(playerId);
         if (cacheData) {
+            console.log('⚡ Usando cache para:', playerId);
             return { dados: cacheData, fonte: 'cache' };
         }
     }
+
+    console.log('🌐 Buscando dados ao vivo...');
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
     _salvarPerfilCache(playerId, dados);
-    _salvarPlayerLocal(playerId, gamerTag);
+    _salvarPlayerLocal(playerId, dados.gamerTag || gamerTag);
     return { dados, fonte: 'live' };
 }
 
