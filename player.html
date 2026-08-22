@@ -20,128 +20,136 @@
     <script src="script.js"></script>
     <script src="players.js"></script>
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const playerId = params.get('id');
-        const gamerTag = params.get('tag') || 'Player';
-        const conteudo = document.getElementById('perfil_conteudo');
+        // Evita carregamento duplicado
+        if (window._playerLoaded) {
+            console.log('Perfil já carregado, ignorando segunda execução.');
+        } else {
+            window._playerLoaded = true;
 
-        function getDotClass(placement) {
-            if (placement === 1) return 'dot-1st';
-            if (placement <= 3) return 'dot-top3';
-            if (placement <= 8) return 'dot-top8';
-            return 'dot-other';
-        }
+            const params = new URLSearchParams(window.location.search);
+            const playerId = params.get('id');
+            const gamerTag = params.get('tag') || 'Player';
+            const conteudo = document.getElementById('perfil_conteudo');
 
-        function formatDate(timestamp) {
-            if (!timestamp) return '—';
-            const d = new Date(timestamp * 1000);
-            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-        }
+            function getDotClass(placement) {
+                if (placement === 1) return 'dot-1st';
+                if (placement <= 3) return 'dot-top3';
+                if (placement <= 8) return 'dot-top8';
+                return 'dot-other';
+            }
 
-        function montarHtmlPerfil(dados, fonte) {
-            const {
-                gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                wins6m, losses6m, recentForm, highlights, tournaments
-            } = dados;
+            function formatDate(timestamp) {
+                if (!timestamp) return '—';
+                const d = new Date(timestamp * 1000);
+                return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
 
-            const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
+            function montarHtmlPerfil(dados, fonte) {
+                const {
+                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    wins6m, losses6m, recentForm, highlights, tournaments
+                } = dados;
 
-            const eventsHtml = tournaments.slice(0, 15).map(t => `
-                <div class="event-row">
-                    <span class="event-name">${t.name}</span>
-                    <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
-                        ${t.placement}º / ${t.attendees}
-                    </span>
-                    <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
-                    <span class="event-date">${t.date}</span>
-                </div>
-            `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+                const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-            return `
-                <div class="player-profile">
-                    <div class="profile-header">
-                        <h1 class="profile-gamertag">${gamerTag}</h1>
-                        <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
-                        <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
-                        <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                const eventsHtml = tournaments.slice(0, 15).map(t => `
+                    <div class="event-row">
+                        <span class="event-name">${t.name}</span>
+                        <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
+                            ${t.placement}º / ${t.attendees}
+                        </span>
+                        <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
+                        <span class="event-date">${t.date}</span>
                     </div>
+                `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
-                    <div class="profile-summary">
-                        <div class="stat-card">
-                            <span class="label">ALL TIME</span>
-                            <span class="value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
-                            <span class="record">${totalWins}-${totalLosses}</span>
+                return `
+                    <div class="player-profile">
+                        <div class="profile-header">
+                            <h1 class="profile-gamertag">${gamerTag}</h1>
+                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
+                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
+                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="label">LAST 6 MONTHS</span>
-                            <span class="value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
-                            <span class="record">${wins6m}-${losses6m}</span>
-                        </div>
-                    </div>
 
-                    <div class="recent-form">
-                        <h3>RECENT FORM</h3>
-                        <div class="form-dots">
-                            ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
-                        </div>
-                    </div>
-
-                    <div class="highlights">
-                        <h3>HIGHLIGHTS</h3>
-                        ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
-                        ${highlights.map(h => `
-                            <div class="highlight-item">
-                                <span class="placement">${h.placement}</span>
-                                <span class="event">${h.eventName}</span>
-                                <span class="date">${h.date}</span>
+                        <div class="profile-summary">
+                            <div class="stat-card">
+                                <span class="label">ALL TIME</span>
+                                <span class="value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
+                                <span class="record">${totalWins}-${totalLosses}</span>
                             </div>
-                        `).join('')}
-                    </div>
+                            <div class="stat-card">
+                                <span class="label">LAST 6 MONTHS</span>
+                                <span class="value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
+                                <span class="record">${wins6m}-${losses6m}</span>
+                            </div>
+                        </div>
 
-                    <div class="profile-tabs">
-                        <div class="tab-header">
-                            <span class="tab-btn active" data-tab="events">EVENTS</span>
-                            <span class="tab-btn" data-tab="versus">VERSUS</span>
-                            <span class="tab-btn" data-tab="vods">VODS</span>
+                        <div class="recent-form">
+                            <h3>RECENT FORM</h3>
+                            <div class="form-dots">
+                                ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
+                            </div>
                         </div>
-                        <div class="tab-content" id="tab-events">
-                            ${eventsHtml}
+
+                        <div class="highlights">
+                            <h3>HIGHLIGHTS</h3>
+                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
+                            ${highlights.map(h => `
+                                <div class="highlight-item">
+                                    <span class="placement">${h.placement}</span>
+                                    <span class="event">${h.eventName}</span>
+                                    <span class="date">${h.date}</span>
+                                </div>
+                            `).join('')}
                         </div>
-                        <div class="tab-content" id="tab-versus" style="display:none;">
-                            <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
-                        </div>
-                        <div class="tab-content" id="tab-vods" style="display:none;">
-                            <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+
+                        <div class="profile-tabs">
+                            <div class="tab-header">
+                                <span class="tab-btn active" data-tab="events">EVENTS</span>
+                                <span class="tab-btn" data-tab="versus">VERSUS</span>
+                                <span class="tab-btn" data-tab="vods">VODS</span>
+                            </div>
+                            <div class="tab-content" id="tab-events">
+                                ${eventsHtml}
+                            </div>
+                            <div class="tab-content" id="tab-versus" style="display:none;">
+                                <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
+                            </div>
+                            <div class="tab-content" id="tab-vods" style="display:none;">
+                                <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        }
-
-        async function iniciar() {
-            if (!playerId) {
-                conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
-                return;
+                `;
             }
-            try {
-                const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
-                conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                        this.classList.add('active');
-                        const target = this.dataset.tab;
-                        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                        document.getElementById('tab-' + target).style.display = 'block';
+            async function iniciar() {
+                if (!playerId) {
+                    conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
+                    return;
+                }
+                try {
+                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
+                    conteudo.innerHTML = '';
+                    conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
+
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                            this.classList.add('active');
+                            const target = this.dataset.tab;
+                            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                            document.getElementById('tab-' + target).style.display = 'block';
+                        });
                     });
-                });
-            } catch (e) {
-                conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
+                } catch (e) {
+                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
+                }
             }
-        }
 
-        iniciar();
+            iniciar();
+        }
     </script>
 </body>
 </html>

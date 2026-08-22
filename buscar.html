@@ -40,7 +40,10 @@
             <div id="conteudo_salvos" class="text-sm text-white space-y-1"></div>
         </div>
 
-        <div id="resultados_busca" class="space-y-2"></div>
+        <!-- Resultados da busca -->
+        <div id="resultados_busca" class="space-y-2">
+            <div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>
+        </div>
     </div>
 
     <script src="script.js"></script>
@@ -59,7 +62,6 @@
             try {
                 const lista = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
                 contadorSalvos.textContent = lista.length;
-                // Atualiza a lista de salvos se estiver visível
                 if (!listaSalvosDiv.classList.contains('hidden')) {
                     if (lista.length === 0) {
                         conteudoSalvos.innerHTML = '<span class="text-slate-500">Nenhum player salvo.</span>';
@@ -73,11 +75,19 @@
         }
 
         function renderizarLista(lista) {
-            if (lista.length === 0) {
+            // Remove duplicatas baseado no playerId
+            const vistos = new Set();
+            const unicos = lista.filter(p => {
+                if (vistos.has(p.playerId)) return false;
+                vistos.add(p.playerId);
+                return true;
+            });
+
+            if (unicos.length === 0) {
                 resultadosDiv.innerHTML = '<div class="history-empty">Nenhum player encontrado com esse nome.</div>';
                 return;
             }
-            resultadosDiv.innerHTML = lista.map(p => `
+            resultadosDiv.innerHTML = unicos.map(p => `
                 <a href="player.html?id=${p.playerId}&tag=${encodeURIComponent(p.gamerTag)}" class="attendee-item flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg px-3">
                     <span class="attendee-name">${p.gamerTag}</span>
                     <span class="text-slate-500 text-xs">Ver perfil &rarr;</span>
@@ -85,18 +95,24 @@
             `).join('');
         }
 
-        async function iniciar() {
+        async function carregarListaCompleta() {
             resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
             listaCompleta = await carregarPlayersConhecidos();
-            renderizarLista(listaCompleta.slice(0, 15));
             atualizarContador();
+            // Não exibe nada automaticamente – apenas mantém a mensagem inicial
+            resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
         }
 
         inputBusca.addEventListener('input', () => {
-            renderizarLista(filtrarPlayers(listaCompleta, inputBusca.value));
+            const termo = inputBusca.value.trim();
+            if (termo === '') {
+                resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
+                return;
+            }
+            const filtrados = filtrarPlayers(listaCompleta, termo);
+            renderizarLista(filtrados);
         });
 
-        // Botão para mostrar players salvos
         btnMostrar.addEventListener('click', () => {
             listaSalvosDiv.classList.toggle('hidden');
             if (!listaSalvosDiv.classList.contains('hidden')) {
@@ -104,17 +120,16 @@
             }
         });
 
-        // Botão para limpar cache local
         btnLimpar.addEventListener('click', () => {
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
                 atualizarContador();
-                // Recarrega a lista
-                iniciar();
+                carregarListaCompleta();
             }
         });
 
-        iniciar();
+        // Carrega a lista completa em background, mas não exibe automaticamente
+        carregarListaCompleta();
     </script>
 </body>
 </html>
