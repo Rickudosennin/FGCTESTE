@@ -54,42 +54,9 @@
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-                // ===== RECENT EVENTS (substitui o recent form) =====
-                const recentEvents = tournaments.slice(0, 10).map(t => {
-                    const bgImage = t.imageUrl ? `background-image: url('${t.imageUrl}');` : '';
-                    const bgColor = t.imageUrl ? '' : 'background: #1a1a2e;';
-                    return `
-                        <div class="recent-event-card" style="${bgImage} ${bgColor}">
-                            <div class="recent-event-overlay"></div>
-                            <div class="recent-event-content">
-                                <div class="recent-event-name">${t.eventName}</div>
-                                <div class="recent-event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
-                                    ${t.placement}º
-                                </div>
-                                <div class="recent-event-detail">${t.wins}W - ${t.losses}L</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('') || '<div class="text-slate-500 text-sm col-span-full">Nenhum torneio recente.</div>';
-
-                // ===== HIGHLIGHTS =====
-                const highlightsHtml = highlights.length === 0 
-                    ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>'
-                    : highlights.map(h => `
-                        <div class="highlight-item">
-                            <span class="placement">${h.placement}</span>
-                            <span class="event">${h.eventName}</span>
-                            <span class="date">${h.date}</span>
-                        </div>
-                    `).join('');
-
-                // ===== EVENTS (lista completa) =====
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
-                        <div class="event-name-wrapper">
-                            ${t.imageUrl ? `<img src="${t.imageUrl}" class="event-thumb" alt="${t.eventName}">` : ''}
-                            <span class="event-name">${t.eventName}</span>
-                        </div>
+                        <span class="event-name">${t.name}</span>
                         <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
                             ${t.placement}º / ${t.attendees}
                         </span>
@@ -100,6 +67,7 @@
 
                 return `
                     <div class="player-profile">
+                        <!-- HEADER -->
                         <div class="profile-header">
                             <h1 class="profile-gamertag">${gamerTag}</h1>
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
@@ -110,20 +78,25 @@
                             </button>
                         </div>
 
-                        <!-- RECENT EVENTS (antigo Recent Form) -->
-                        <div class="recent-events">
-                            <h3>RECENT EVENTS</h3>
-                            <div class="recent-events-grid">
-                                ${recentEvents}
+                        <!-- RECENT FORM (bolinhas) -->
+                        <div class="recent-form">
+                            <h3>RECENT FORM</h3>
+                            <div class="form-dots">
+                                ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
                             </div>
                         </div>
 
                         <!-- HIGHLIGHTS -->
                         <div class="highlights">
                             <h3>HIGHLIGHTS</h3>
-                            <div class="highlights-container">
-                                ${highlightsHtml}
-                            </div>
+                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
+                            ${highlights.map(h => `
+                                <div class="highlight-item">
+                                    <span class="placement">${h.placement}</span>
+                                    <span class="event">${h.eventName}</span>
+                                    <span class="date">${h.date}</span>
+                                </div>
+                            `).join('')}
                         </div>
 
                         <!-- ABAS -->
@@ -158,6 +131,7 @@
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
+                    // Reatribui os eventos das abas
                     document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -173,10 +147,12 @@
                 }
             }
 
+            // Função global para ser chamada pelo botão
             window.atualizarDados = function() {
                 carregarPerfil(true);
             };
 
+            // Inicializa
             carregarPerfil(false);
         })();
     </script>
