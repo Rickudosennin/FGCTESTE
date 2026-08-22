@@ -333,7 +333,7 @@ select:focus-visible,
     outline-offset: 2px;
 }
 
-/* ========== PERFIL SUPERMAJOR ========== */
+/* ========== PERFIL DO PLAYER (ESTILO SUPERMAJOR) ========== */
 .player-profile {
     background: rgba(10, 10, 15, 0.95);
     border: 1px solid #dc2626;
