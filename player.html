@@ -25,7 +25,6 @@
         const gamerTag = params.get('tag') || 'Player';
         const conteudo = document.getElementById('perfil_conteudo');
 
-        // ========== AUXILIARES ==========
         function getDotClass(placement) {
             if (placement === 1) return 'dot-1st';
             if (placement <= 3) return 'dot-top3';
@@ -39,7 +38,6 @@
             return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
         }
 
-        // ========== MONTAGEM DO PERFIL ==========
         function montarHtmlPerfil(dados, fonte) {
             const {
                 gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
@@ -48,7 +46,6 @@
 
             const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-            // Abas: apenas Events por enquanto
             const eventsHtml = tournaments.slice(0, 15).map(t => `
                 <div class="event-row">
                     <span class="event-name">${t.name}</span>
@@ -62,7 +59,6 @@
 
             return `
                 <div class="player-profile">
-                    <!-- HEADER -->
                     <div class="profile-header">
                         <h1 class="profile-gamertag">${gamerTag}</h1>
                         <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
@@ -70,7 +66,6 @@
                         <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
                     </div>
 
-                    <!-- SUMMARY (All Time / Last 6 Months) -->
                     <div class="profile-summary">
                         <div class="stat-card">
                             <span class="label">ALL TIME</span>
@@ -84,7 +79,6 @@
                         </div>
                     </div>
 
-                    <!-- RECENT FORM -->
                     <div class="recent-form">
                         <h3>RECENT FORM</h3>
                         <div class="form-dots">
@@ -92,7 +86,6 @@
                         </div>
                     </div>
 
-                    <!-- HIGHLIGHTS -->
                     <div class="highlights">
                         <h3>HIGHLIGHTS</h3>
                         ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
@@ -105,7 +98,6 @@
                         `).join('')}
                     </div>
 
-                    <!-- ABAS: Overview (Events) -->
                     <div class="profile-tabs">
                         <div class="tab-header">
                             <span class="tab-btn active" data-tab="events">EVENTS</span>
@@ -126,7 +118,6 @@
             `;
         }
 
-        // ========== INICIALIZAR ==========
         async function iniciar() {
             if (!playerId) {
                 conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
@@ -136,7 +127,6 @@
                 const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
                 conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                // Event listeners para abas
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));

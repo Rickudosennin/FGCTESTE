@@ -1,10 +1,30 @@
 // ==================== CONFIG ====================
 const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = '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';
+const GITHUB_ISSUES_TOKEN = '';
 const CACHE_MAX_IDADE_HORAS = 24;
 
-// ==================== LEITURA DO CACHE ====================
+// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
+const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+
+function _salvarPlayerLocal(playerId, gamerTag) {
+    try {
+        const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+        if (!lista.some(p => p.playerId === playerId)) {
+            lista.push({ playerId, gamerTag });
+            localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
+            console.log('Player salvo localmente:', playerId, gamerTag);
+        }
+    } catch (e) {}
+}
+
+function _carregarPlayersLocal() {
+    try {
+        return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+    } catch (e) { return []; }
+}
+
+// ==================== LEITURA DO CACHE DO GITHUB ====================
 let _playersCacheData = null;
 async function _lerPlayersCache() {
     if (_playersCacheData) return _playersCacheData;
@@ -67,7 +87,6 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     const totalPartidas = totalWins + totalLosses;
     const total6m = wins6m + losses6m;
 
-    // Highlights: melhores colocações (top 8)
     const highlights = [...torneios]
         .filter(t => t.placement && t.placement > 0 && t.attendees !== '?')
         .sort((a, b) => a.placement - b.placement)
@@ -127,7 +146,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
-// ==================== PERSISTÊNCIA ====================
+// ==================== PERSISTÊNCIA NO GITHUB (OPCIONAL) ====================
 async function _persistirNoCache(playerId, dados) {
     if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
     try {
@@ -140,7 +159,7 @@ async function _persistirNoCache(playerId, dados) {
                 labels: ['player-cache-update']
             })
         });
-    } catch (e) { /* falha silenciosa */ }
+    } catch (e) { /* silencioso */ }
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================
@@ -151,38 +170,55 @@ async function obterDadosPlayer(playerId, gamerTag) {
         return { dados: entry, fonte: 'cache' };
     }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
+    _salvarPlayerLocal(playerId, gamerTag);
     _persistirNoCache(playerId, dados);
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS ====================
+// ==================== BUSCA DE PLAYERS (com localStorage) ====================
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
-    const query = `query LeagueStandings($slug: String) {
-        league(slug: $slug) {
-            standings(query: { page: 1, perPage: 40 }) {
-                nodes {
-                    placement
-                    entrant {
-                        name
-                        participants {
-                            player { id }
+
+    const mapa = new Map();
+
+    // 1. Players das ligas monitoradas
+    if (typeof LIGAS_MONITORADAS !== 'undefined') {
+        const query = `query LeagueStandings($slug: String) {
+            league(slug: $slug) {
+                standings(query: { page: 1, perPage: 40 }) {
+                    nodes {
+                        placement
+                        entrant {
+                            name
+                            participants {
+                                player { id }
+                            }
                         }
                     }
                 }
             }
+        }`;
+        const resultados = await Promise.all(LIGAS_MONITORADAS.map(liga =>
+            callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
+        ));
+        resultados.flat().forEach(node => {
+            const playerId = node.entrant?.participants?.[0]?.player?.id;
+            const gamerTag = node.entrant?.name;
+            if (playerId && gamerTag && !mapa.has(playerId)) {
+                mapa.set(playerId, { playerId, gamerTag, placement: node.placement });
+            }
+        });
+    }
+
+    // 2. Players salvos localmente (localStorage)
+    const locais = _carregarPlayersLocal();
+    locais.forEach(p => {
+        if (!mapa.has(p.playerId)) {
+            mapa.set(p.playerId, { playerId: p.playerId, gamerTag: p.gamerTag, placement: null });
         }
-    }`;
-    const resultados = await Promise.all(LIGAS_MONITORADAS.map(liga =>
-        callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
-    ));
-    const mapa = new Map();
-    resultados.flat().forEach(node => {
-        const playerId = node.entrant?.participants?.[0]?.player?.id;
-        const gamerTag = node.entrant?.name;
-        if (playerId && gamerTag && !mapa.has(playerId)) mapa.set(playerId, { playerId, gamerTag, placement: node.placement });
     });
+
     _listaPlayersConhecidos = Array.from(mapa.values());
     return _listaPlayersConhecidos;
 }
