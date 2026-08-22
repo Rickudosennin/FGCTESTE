@@ -32,12 +32,121 @@
             const gamerTag = params.get('tag') || 'Player';
             const conteudo = document.getElementById('perfil_conteudo');
 
-            // ========== MONTA HTML ==========
             function montarHtmlPerfil(dados, fonte) {
+                // Verifica se houve erro na busca
+                if (dados._error === 'player_not_found') {
+                    return `
+                        <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
+                            <div class="profile-banner" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+                                <div class="profile-banner-overlay"></div>
+                                <div class="profile-header-content" style="justify-content:center;align-items:center;">
+                                    <div style="text-align:center;">
+                                        <div style="font-size:60px;margin-bottom:10px;">🔍</div>
+                                        <h2 style="color:white;font-size:24px;font-weight:bold;">Player não encontrado</h2>
+                                        <p style="color:#94a3b8;margin-top:8px;">O player "${gamerTag}" não foi encontrado na API do Start.gg</p>
+                                        <p style="color:#64748b;font-size:13px;margin-top:4px;">Verifique se o ID está correto ou tente buscar outro player.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (dados._error === 'api_error') {
+                    return `
+                        <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
+                            <div class="profile-banner" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+                                <div class="profile-banner-overlay"></div>
+                                <div class="profile-header-content" style="justify-content:center;align-items:center;">
+                                    <div style="text-align:center;">
+                                        <div style="font-size:60px;margin-bottom:10px;">⚠️</div>
+                                        <h2 style="color:white;font-size:24px;font-weight:bold;">Erro na API</h2>
+                                        <p style="color:#94a3b8;margin-top:8px;">Não foi possível obter os dados do player.</p>
+                                        <p style="color:#64748b;font-size:13px;margin-top:4px;">Tente novamente mais tarde.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Se não tiver torneios, mostra mensagem
+                if (dados.tournaments.length === 0) {
+                    return `
+                        <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
+                            <div class="profile-banner" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+                                <div class="profile-banner-overlay"></div>
+                                <div class="profile-header-content">
+                                    <div class="profile-avatar-wrapper">
+                                        ${dados.user?.avatarUrl ? `<img src="${dados.user.avatarUrl}" alt="${gamerTag}" class="profile-avatar">` : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`}
+                                    </div>
+                                    <div class="profile-info">
+                                        <div class="profile-name-row">
+                                            <h1 class="profile-gamertag">${gamerTag}</h1>
+                                            <span class="profile-verified"><i class="fa-solid fa-check-circle"></i> VERIFICADO</span>
+                                        </div>
+                                        ${dados.user?.name ? `<div class="profile-real-name">${dados.user.name}</div>` : ''}
+                                        <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${dados.user?.location?.country ? dados.user.location.country : 'Localização não informada'}</div>
+                                        ${dados.user?.bio ? `<div class="profile-bio">"${dados.user.bio}"</div>` : ''}
+                                    </div>
+                                    <div class="profile-source">
+                                        <span class="text-xs text-slate-400">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-stats-grid">
+                                <div class="stat-card">
+                                    <span class="stat-label">ALL TIME</span>
+                                    <span class="stat-value text-yellow-500">0%</span>
+                                    <span class="stat-record">0W - 0L</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">LAST 6 MONTHS</span>
+                                    <span class="stat-value text-yellow-500">0%</span>
+                                    <span class="stat-record">0W - 0L</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">EVENTS</span>
+                                    <span class="stat-value text-blue-400">0</span>
+                                    <span class="stat-record">torneios</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-section">
+                                <h3 class="section-title">RECENT FORM</h3>
+                                <div class="text-slate-500 text-sm py-4 text-center">Nenhum torneio encontrado para este player.</div>
+                            </div>
+
+                            <div class="profile-section">
+                                <h3 class="section-title">HIGHLIGHTS</h3>
+                                <div class="text-slate-500 text-sm py-4 text-center">Nenhum destaque encontrado.</div>
+                            </div>
+
+                            <div class="profile-tabs-modern">
+                                <div class="tab-header-modern">
+                                    <button class="tab-btn-modern active" data-tab="events">EVENTS</button>
+                                    <button class="tab-btn-modern" data-tab="versus">VERSUS</button>
+                                    <button class="tab-btn-modern" data-tab="vods">VODS</button>
+                                </div>
+                                <div class="tab-content-modern active" id="tab-events">
+                                    <div class="text-slate-500 text-sm py-8 text-center">Nenhum evento encontrado.</div>
+                                </div>
+                                <div class="tab-content-modern" id="tab-versus" style="display:none;">
+                                    <div class="text-slate-500 text-sm py-8 text-center">Em breve: confrontos diretos.</div>
+                                </div>
+                                <div class="tab-content-modern" id="tab-vods" style="display:none;">
+                                    <div class="text-slate-500 text-sm py-8 text-center">Em breve: VODs.</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Dados normais
                 const {
-                    gamerTag, user, totalWins, totalLosses,
-                    winrateAllTime, winrateLast6Months, wins6m, losses6m,
-                    recentForm, highlights, tournaments
+                    totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    wins6m, losses6m, recentForm, highlights, tournaments, user
                 } = dados;
 
                 const nomeReal = user?.name || '';
@@ -49,7 +158,6 @@
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-                // Recent Form (últimas 10)
                 const formDots = recentForm.map(pos => {
                     let cls = 'dot-other';
                     if (pos === 1) cls = 'dot-1st';
@@ -58,9 +166,8 @@
                     return `<span class="form-dot ${cls}">${pos}</span>`;
                 }).join('');
 
-                // Highlights
                 const highlightsHtml = highlights.length === 0 
-                    ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>'
+                    ? '<div class="text-slate-500 text-sm py-2">Nenhum destaque encontrado.</div>'
                     : highlights.map(h => `
                         <div class="highlight-item">
                             <span class="placement">${h.placement}</span>
@@ -69,7 +176,6 @@
                         </div>
                     `).join('');
 
-                // Events (lista de torneios)
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
                         <span class="event-name">${t.name}</span>
@@ -79,14 +185,12 @@
                         <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
                         <span class="event-date">${t.date}</span>
                     </div>
-                `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+                `).join('');
 
-                // Banner: usa um gradiente fixo (sem depender de personagem)
                 const bannerGradient = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
 
                 return `
                     <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
-                        <!-- BANNER -->
                         <div class="profile-banner" style="background: ${bannerGradient};">
                             <div class="profile-banner-overlay"></div>
                             <div class="profile-header-content">
@@ -108,11 +212,10 @@
                             </div>
                         </div>
 
-                        <!-- STATS CARDS -->
                         <div class="profile-stats-grid">
                             <div class="stat-card">
                                 <span class="stat-label">ALL TIME</span>
-                                <span class="stat-value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
+                                <span class="stat-value ${wrClass}">${winrateAllTime}%</span>
                                 <span class="stat-record">${totalWins}W - ${totalLosses}L</span>
                             </div>
                             <div class="stat-card">
@@ -127,7 +230,6 @@
                             </div>
                         </div>
 
-                        <!-- RECENT FORM -->
                         <div class="profile-section">
                             <h3 class="section-title">RECENT FORM</h3>
                             <div class="form-dots-container">
@@ -135,7 +237,6 @@
                             </div>
                         </div>
 
-                        <!-- HIGHLIGHTS -->
                         <div class="profile-section">
                             <h3 class="section-title">HIGHLIGHTS</h3>
                             <div class="highlights-container">
@@ -143,7 +244,6 @@
                             </div>
                         </div>
 
-                        <!-- ABAS -->
                         <div class="profile-tabs-modern">
                             <div class="tab-header-modern">
                                 <button class="tab-btn-modern active" data-tab="events">EVENTS</button>
@@ -164,7 +264,6 @@
                 `;
             }
 
-            // ========== INICIALIZAR ==========
             async function iniciar() {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
@@ -174,7 +273,6 @@
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                    // Abas
                     document.querySelectorAll('.tab-btn-modern').forEach(btn => {
                         btn.addEventListener('click', function() {
                             document.querySelectorAll('.tab-btn-modern').forEach(b => b.classList.remove('active'));

@@ -122,6 +122,8 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
 
 // ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
+    console.log('🔍 Buscando player:', playerId, gamerTag);
+    
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
             gamerTag
@@ -153,20 +155,74 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
             }
         }
     }`;
-    const json1 = await callStartGG(query1, { id: playerId });
-    const playerData = json1.data?.player;
-    const standings = playerData?.recentStandings || [];
-    const userData = playerData?.user || {};
+    
+    let json1, standings = [], userData = {};
+    let playerData = null;
+    
+    try {
+        json1 = await callStartGG(query1, { id: playerId });
+        console.log('📦 Resposta da API:', json1);
+        
+        playerData = json1.data?.player;
+        standings = playerData?.recentStandings || [];
+        userData = playerData?.user || {};
+        
+        if (!playerData) {
+            console.warn('⚠️ Player não encontrado na API.');
+            // Retorna dados vazios com indicação de erro
+            return {
+                gamerTag: gamerTag || 'Player',
+                user: { name: '', bio: '', location: {}, avatarUrl: '' },
+                totalWins: 0,
+                totalLosses: 0,
+                winrateAllTime: 0,
+                winrateLast6Months: 0,
+                wins6m: 0,
+                losses6m: 0,
+                recentForm: [],
+                highlights: [],
+                tournaments: [],
+                updatedAt: new Date().toISOString(),
+                _error: 'player_not_found'
+            };
+        }
+    } catch (e) {
+        console.error('❌ Erro na requisição:', e);
+        return {
+            gamerTag: gamerTag || 'Player',
+            user: { name: '', bio: '', location: {}, avatarUrl: '' },
+            totalWins: 0,
+            totalLosses: 0,
+            winrateAllTime: 0,
+            winrateLast6Months: 0,
+            wins6m: 0,
+            losses6m: 0,
+            recentForm: [],
+            highlights: [],
+            tournaments: [],
+            updatedAt: new Date().toISOString(),
+            _error: 'api_error'
+        };
+    }
+
+    console.log('📊 Standings encontrados:', standings.length);
 
     const setsPorEvento = {};
     for (const standing of standings) {
         const eventId = standing.container?.id;
         if (!eventId) continue;
-        const resultado = await buscarSetsDoEvento(eventId, playerId);
-        setsPorEvento[eventId] = resultado;
+        try {
+            const resultado = await buscarSetsDoEvento(eventId, playerId);
+            setsPorEvento[eventId] = resultado;
+        } catch (e) {
+            console.warn('⚠️ Erro ao buscar sets do evento', eventId, e);
+            setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
+        }
     }
 
-    return processarDadosPlayer(standings, setsPorEvento, playerData?.gamerTag || gamerTag, userData);
+    const dados = processarDadosPlayer(standings, setsPorEvento, playerData?.gamerTag || gamerTag, userData);
+    console.log('✅ Dados processados:', dados);
+    return dados;
 }
 
 // ==================== PERSISTÊNCIA ====================
@@ -187,14 +243,26 @@ async function _persistirNoCache(playerId, dados) {
 
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag) {
-    const cache = await _lerPlayersCache();
-    const entry = cache[playerId];
-    if (_cacheEstaFresco(entry)) {
-        return { dados: entry, fonte: 'cache' };
-    }
+    // Tenta cache
+    try {
+        const cache = await _lerPlayersCache();
+        const entry = cache[playerId];
+        if (_cacheEstaFresco(entry)) {
+            console.log('⚡ Usando cache para:', playerId);
+            return { dados: entry, fonte: 'cache' };
+        }
+    } catch (e) {}
+
+    // Busca ao vivo
+    console.log('🌐 Buscando ao vivo:', playerId);
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
-    _salvarPlayerLocal(playerId, gamerTag);
-    _persistirNoCache(playerId, dados);
+    
+    // Se o player foi encontrado, salva no cache local
+    if (dados && !dados._error) {
+        _salvarPlayerLocal(playerId, gamerTag);
+        _persistirNoCache(playerId, dados);
+    }
+    
     return { dados, fonte: 'live' };
 }
 
