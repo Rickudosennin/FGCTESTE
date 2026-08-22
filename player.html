@@ -33,13 +33,6 @@
             const gamerTag = params.get('tag') || 'Player';
             const conteudo = document.getElementById('perfil_conteudo');
 
-            function getDotClass(placement) {
-                if (placement === 1) return 'dot-1st';
-                if (placement <= 3) return 'dot-top3';
-                if (placement <= 8) return 'dot-top8';
-                return 'dot-other';
-            }
-
             function formatDate(timestamp) {
                 if (!timestamp) return '—';
                 const d = new Date(timestamp * 1000);
@@ -48,15 +41,60 @@
 
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    gamerTag, user, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
                     wins6m, losses6m, recentForm, highlights, tournaments
                 } = dados;
 
+                const nomeReal = user?.name || '';
+                const bio = user?.bio || '';
+                const country = user?.location?.country || '';
+                const city = user?.location?.city || '';
+                const localizacao = [city, country].filter(Boolean).join(', ') || 'Localização não informada';
+                const avatarUrl = user?.avatarUrl || '';
+
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
+                const bannerStyle = 'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);';
+                const avatarHtml = avatarUrl 
+                    ? `<img src="${avatarUrl}" alt="${gamerTag}" class="profile-avatar">` 
+                    : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`;
+
+                // ===== RECENT EVENTS (com imagem de fundo) =====
+                const recentEvents = tournaments.slice(0, 10).map(t => {
+                    const bgImage = t.imageUrl ? `background-image: url('${t.imageUrl}');` : '';
+                    const bgColor = t.imageUrl ? '' : 'background: #1a1a2e;';
+                    return `
+                        <div class="recent-event-card" style="${bgImage} ${bgColor}">
+                            <div class="recent-event-overlay"></div>
+                            <div class="recent-event-content">
+                                <div class="recent-event-name">${t.eventName}</div>
+                                <div class="recent-event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
+                                    ${t.placement}º
+                                </div>
+                                <div class="recent-event-detail">${t.wins}W - ${t.losses}L</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<div class="text-slate-500 text-sm col-span-full">Nenhum torneio recente.</div>';
+
+                // ===== HIGHLIGHTS =====
+                const highlightsHtml = highlights.length === 0 
+                    ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>'
+                    : highlights.map(h => `
+                        <div class="highlight-item">
+                            <span class="placement">${h.placement}</span>
+                            <span class="event">${h.eventName}</span>
+                            <span class="date">${h.date}</span>
+                        </div>
+                    `).join('');
+
+                // ===== EVENTS (lista completa) =====
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
-                        <span class="event-name">${t.name}</span>
+                        <div class="event-name-wrapper">
+                            ${t.imageUrl ? `<img src="${t.imageUrl}" class="event-thumb" alt="${t.eventName}">` : ''}
+                            <span class="event-name">${t.eventName}</span>
+                        </div>
                         <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
                             ${t.placement}º / ${t.attendees}
                         </span>
@@ -67,48 +105,53 @@
 
                 return `
                     <div class="player-profile">
+                        <!-- HEADER -->
                         <div class="profile-header">
-                            <h1 class="profile-gamertag">${gamerTag}</h1>
-                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
-                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
-                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
-                                <i class="fa-solid fa-rotate"></i> Atualizar dados
-                            </button>
+                            <div class="profile-avatar-wrapper">
+                                ${avatarHtml}
+                            </div>
+                            <div class="profile-info">
+                                <div class="profile-name-row">
+                                    <h1 class="profile-gamertag">${gamerTag}</h1>
+                                    <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
+                                    <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
+                                    <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                                    <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
+                                        <i class="fa-solid fa-rotate"></i> Atualizar
+                                    </button>
+                                </div>
+                                ${nomeReal ? `<div class="profile-real-name">${nomeReal}</div>` : ''}
+                                <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${localizacao}</div>
+                                ${bio ? `<div class="profile-bio">"${bio}"</div>` : ''}
+                            </div>
                         </div>
 
+                        <!-- STATS: apenas eventos -->
                         <div class="profile-summary">
                             <div class="stat-card">
-                                <span class="label">ALL TIME</span>
-                                <span class="value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
-                                <span class="record">${totalWins}-${totalLosses}</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="label">LAST 6 MONTHS</span>
-                                <span class="value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
-                                <span class="record">${wins6m}-${losses6m}</span>
+                                <span class="label">EVENTS</span>
+                                <span class="value text-blue-400">${tournaments.length}</span>
+                                <span class="record">torneios</span>
                             </div>
                         </div>
 
-                        <div class="recent-form">
-                            <h3>RECENT FORM</h3>
-                            <div class="form-dots">
-                                ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
+                        <!-- RECENT EVENTS -->
+                        <div class="recent-events">
+                            <h3>RECENT EVENTS</h3>
+                            <div class="recent-events-grid">
+                                ${recentEvents}
                             </div>
                         </div>
 
+                        <!-- HIGHLIGHTS -->
                         <div class="highlights">
                             <h3>HIGHLIGHTS</h3>
-                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
-                            ${highlights.map(h => `
-                                <div class="highlight-item">
-                                    <span class="placement">${h.placement}</span>
-                                    <span class="event">${h.eventName}</span>
-                                    <span class="date">${h.date}</span>
-                                </div>
-                            `).join('')}
+                            <div class="highlights-container">
+                                ${highlightsHtml}
+                            </div>
                         </div>
 
+                        <!-- ABAS -->
                         <div class="profile-tabs">
                             <div class="tab-header">
                                 <span class="tab-btn active" data-tab="events">EVENTS</span>
@@ -140,7 +183,6 @@
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                    // Reatribui os eventos das abas
                     document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -151,16 +193,15 @@
                         });
                     });
                 } catch (e) {
+                    console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
 
-            // Função global para ser chamada pelo botão
             window.atualizarDados = function() {
                 carregarPerfil(true);
             };
 
-            // Inicializa
             carregarPerfil(false);
         })();
     </script>
