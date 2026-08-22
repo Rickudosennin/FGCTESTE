@@ -75,8 +75,9 @@
             const vistos = new Set();
             const unicos = [];
             for (const p of lista) {
-                if (!vistos.has(p.playerId)) {
-                    vistos.add(p.playerId);
+                const id = String(p.playerId);
+                if (!vistos.has(id)) {
+                    vistos.add(id);
                     unicos.push(p);
                 }
             }
@@ -95,14 +96,9 @@
 
         async function carregarDados() {
             resultadosDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando players...</p></div>';
-            try {
-                listaCompleta = await carregarPlayersConhecidos();
-                resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
-                atualizarContador();
-            } catch (e) {
-                console.error('Erro ao carregar players:', e);
-                resultadosDiv.innerHTML = '<div class="history-empty">❌ Erro ao carregar players. Recarregue a página.</div>';
-            }
+            listaCompleta = await carregarPlayersConhecidos();
+            resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
+            atualizarContador();
         }
 
         let timeoutId;
@@ -129,6 +125,13 @@
         btnLimpar.addEventListener('click', () => {
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
+                // Remove também os perfis em cache
+                const keys = Object.keys(localStorage);
+                keys.forEach(key => {
+                    if (key.startsWith('fgchub_profile_')) {
+                        localStorage.removeItem(key);
+                    }
+                });
                 atualizarContador();
                 carregarDados();
             }

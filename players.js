@@ -1,11 +1,10 @@
 // ==================== CONFIG ====================
-const PLAYERS_CACHE_URL = 'https://raw.githubusercontent.com/Rickudosennin/FGCTESTE/main/data/players-cache.json';
-const GITHUB_REPO = 'Rickudosennin/FGCTESTE';
-const GITHUB_ISSUES_TOKEN = '';
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
 const CACHE_MAX_IDADE_HORAS = 24;
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
 function _salvarPlayerLocal(playerId, gamerTag) {
     try {
@@ -13,6 +12,7 @@ function _salvarPlayerLocal(playerId, gamerTag) {
         if (!lista.some(p => p.playerId === playerId)) {
             lista.push({ playerId, gamerTag });
             localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
+            // Atualiza o contador visual se existir
             const contador = document.getElementById('contador_salvos');
             if (contador) contador.textContent = lista.length;
         }
@@ -25,26 +25,35 @@ function _carregarPlayersLocal() {
     } catch (e) { return []; }
 }
 
-// ==================== LEITURA DO CACHE DO GITHUB ====================
-let _playersCacheData = null;
-async function _lerPlayersCache() {
-    if (_playersCacheData) return _playersCacheData;
+// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
+function _salvarPerfilCache(playerId, dados) {
     try {
-        const resp = await fetch(PLAYERS_CACHE_URL + '?t=' + Date.now());
-        const json = await resp.json();
-        _playersCacheData = json.players || {};
-    } catch (e) { _playersCacheData = {}; }
-    return _playersCacheData;
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const cacheData = {
+            dados: dados,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (e) {}
 }
 
-function _cacheEstaFresco(entry) {
-    if (!entry || !entry.updatedAt) return false;
-    const idadeHoras = (Date.now() - new Date(entry.updatedAt).getTime()) / 36e5;
-    return idadeHoras < CACHE_MAX_IDADE_HORAS;
+function _lerPerfilCache(playerId) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const cacheData = JSON.parse(raw);
+        // Verifica se o cache ainda é fresco (menos de 24h)
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
+        return null;
+    } catch (e) { return null; }
 }
 
 // ==================== PROCESSAMENTO ====================
-function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
+function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
     let totalWins = 0, totalLosses = 0;
@@ -100,13 +109,6 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
 
     return {
         gamerTag,
-        user: {
-            name: userData?.name || '',
-            bio: userData?.bio || '',
-            location: userData?.location || {},
-            avatarUrl: userData?.avatarUrl || '',
-            genderPronoun: userData?.genderPronoun || '',
-        },
         totalWins,
         totalLosses,
         winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
@@ -120,26 +122,10 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, userData) {
     };
 }
 
-// ==================== BUSCA AO VIVO (QUERY UNIFICADA) ====================
+// ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
-    console.log('🔍 Buscando player:', playerId, gamerTag);
-    
-    // Query única que busca tudo de uma vez
-    const query = `query PlayerData($id: ID!) {
+    const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
-            gamerTag
-            user {
-                id
-                name
-                bio
-                avatarUrl
-                location {
-                    country
-                    city
-                    state
-                }
-                genderPronoun
-            }
             recentStandings(limit: 15) {
                 placement
                 container {
@@ -156,181 +142,61 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
             }
         }
     }`;
-    
-    let json, playerData, standings = [], userData = {};
-    
-    try {
-        json = await callStartGG(query, { id: playerId });
-        console.log('📦 Resposta da API:', json);
-        
-        playerData = json.data?.player;
-        if (!playerData) {
-            console.warn('⚠️ Player não encontrado na API.');
-            return {
-                gamerTag: gamerTag || 'Player',
-                user: { name: '', bio: '', location: {}, avatarUrl: '' },
-                totalWins: 0,
-                totalLosses: 0,
-                winrateAllTime: 0,
-                winrateLast6Months: 0,
-                wins6m: 0,
-                losses6m: 0,
-                recentForm: [],
-                highlights: [],
-                tournaments: [],
-                updatedAt: new Date().toISOString(),
-                _error: 'player_not_found'
-            };
-        }
-        
-        userData = playerData.user || {};
-        standings = playerData.recentStandings || [];
-        console.log('📊 Standings encontrados:', standings.length);
-        
-    } catch (e) {
-        console.error('❌ Erro na requisição:', e);
-        return {
-            gamerTag: gamerTag || 'Player',
-            user: { name: '', bio: '', location: {}, avatarUrl: '' },
-            totalWins: 0,
-            totalLosses: 0,
-            winrateAllTime: 0,
-            winrateLast6Months: 0,
-            wins6m: 0,
-            losses6m: 0,
-            recentForm: [],
-            highlights: [],
-            tournaments: [],
-            updatedAt: new Date().toISOString(),
-            _error: 'api_error'
-        };
-    }
-    
-    // Busca sets para cada evento
-    const setsPorEvento = {};
-    if (standings.length > 0) {
-        for (const standing of standings) {
-            const eventId = standing.container?.id;
-            if (!eventId) continue;
-            try {
-                const resultado = await buscarSetsDoEvento(eventId, playerId);
-                setsPorEvento[eventId] = resultado;
-            } catch (e) {
-                console.warn('⚠️ Erro ao buscar sets do evento', eventId, e);
-                setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
-            }
-        }
-    }
-    
-    const dados = processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, userData);
-    console.log('✅ Dados processados:', dados);
-    return dados;
-}
+    const json1 = await callStartGG(query1, { id: playerId });
+    const standings = json1.data?.player?.recentStandings || [];
 
-// ==================== PERSISTÊNCIA ====================
-async function _persistirNoCache(playerId, dados) {
-    if (!GITHUB_ISSUES_TOKEN || GITHUB_ISSUES_TOKEN.startsWith('COLOQUE_AQUI')) return;
-    try {
-        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: `[cache] player ${playerId}`,
-                body: '```json\n' + JSON.stringify({ playerId, dados }) + '\n```',
-                labels: ['player-cache-update']
-            })
-        });
-    } catch (e) { /* silencioso */ }
+    const setsPorEvento = {};
+    for (const standing of standings) {
+        const eventId = standing.container?.id;
+        if (!eventId) continue;
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
+    }
+
+    return processarDadosPlayer(standings, setsPorEvento, gamerTag);
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================
-async function obterDadosPlayer(playerId, gamerTag) {
-    // Tenta cache
-    try {
-        const cache = await _lerPlayersCache();
-        const entry = cache[playerId];
-        if (_cacheEstaFresco(entry)) {
-            console.log('⚡ Usando cache para:', playerId);
-            return { dados: entry, fonte: 'cache' };
+async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false) {
+    // Se não for forçado, tenta o cache do localStorage primeiro
+    if (!forceRefresh) {
+        const cacheData = _lerPerfilCache(playerId);
+        if (cacheData) {
+            return { dados: cacheData, fonte: 'cache' };
         }
-    } catch (e) {}
-
-    // Busca ao vivo
-    console.log('🌐 Buscando ao vivo:', playerId);
-    const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
-    
-    if (dados && !dados._error) {
-        _salvarPlayerLocal(playerId, dados.gamerTag || gamerTag);
-        _persistirNoCache(playerId, dados);
     }
-    
+    // Busca ao vivo
+    const dados = await _buscarPlayerAoVivo(playerId, gamerTag);
+    // Salva no cache local
+    _salvarPerfilCache(playerId, dados);
+    // Salva também na lista de players conhecidos (para a busca)
+    _salvarPlayerLocal(playerId, gamerTag);
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (COM TIMEOUT E FALLBACK) ====================
+// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
 let _listaPlayersConhecidos = null;
-
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
 
-    const mapa = new Map();
-
-    // 1. Tenta carregar das ligas, mas com timeout de 5 segundos
-    if (typeof LIGAS_MONITORADAS !== 'undefined' && LIGAS_MONITORADAS.length > 0) {
-        try {
-            const query = `query LeagueStandings($slug: String) {
-                league(slug: $slug) {
-                    standings(query: { page: 1, perPage: 40 }) {
-                        nodes {
-                            placement
-                            entrant {
-                                name
-                                participants {
-                                    player { id }
-                                }
-                            }
-                        }
-                    }
-                }
-            }`;
-            
-            const fetchPromise = Promise.all(LIGAS_MONITORADAS.map(liga =>
-                callStartGG(query, { slug: liga.slug }).then(json => json.data?.league?.standings?.nodes || []).catch(() => [])
-            ));
-            
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout ao buscar ligas')), 5000)
-            );
-            
-            const resultados = await Promise.race([fetchPromise, timeoutPromise]);
-            
-            resultados.flat().forEach(node => {
-                const playerId = node.entrant?.participants?.[0]?.player?.id;
-                const gamerTag = node.entrant?.name;
-                if (playerId && gamerTag && !mapa.has(playerId)) {
-                    mapa.set(playerId, { playerId, gamerTag, placement: node.placement });
-                }
-            });
-        } catch (e) {
-            console.warn('Erro/timeout ao buscar ligas, usando apenas localStorage:', e);
-        }
-    }
-
-    // 2. SEMPRE adiciona os players do localStorage (fallback principal)
+    // Retorna apenas os players salvos localmente (dos inscritos)
     const locais = _carregarPlayersLocal();
+    // Remove duplicatas (caso haja) usando Map
+    const mapa = new Map();
     locais.forEach(p => {
-        if (!mapa.has(p.playerId)) {
-            mapa.set(p.playerId, { playerId: p.playerId, gamerTag: p.gamerTag, placement: null });
+        // Garantir que o playerId seja string para evitar duplicação
+        const id = String(p.playerId);
+        if (!mapa.has(id)) {
+            mapa.set(id, { playerId: id, gamerTag: p.gamerTag, placement: null });
         }
     });
-
     _listaPlayersConhecidos = Array.from(mapa.values());
     return _listaPlayersConhecidos;
 }
 
 function filtrarPlayers(lista, termo) {
     const t = termo.trim().toLowerCase();
-    if (!t) return lista.slice(0, 15);
+    if (!t) return [];
     const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
     return filtrados.slice(0, 15);
 }

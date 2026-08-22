@@ -22,7 +22,7 @@
     <script>
         (function() {
             if (window._playerLoaded) {
-                console.log('Perfil já carregado, ignorando segunda execução.');
+                console.log('Perfil já carregado.');
                 return;
             }
             window._playerLoaded = true;
@@ -32,78 +32,28 @@
             const gamerTag = params.get('tag') || 'Player';
             const conteudo = document.getElementById('perfil_conteudo');
 
+            function getDotClass(placement) {
+                if (placement === 1) return 'dot-1st';
+                if (placement <= 3) return 'dot-top3';
+                if (placement <= 8) return 'dot-top8';
+                return 'dot-other';
+            }
+
+            function formatDate(timestamp) {
+                if (!timestamp) return '—';
+                const d = new Date(timestamp * 1000);
+                return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+
             function montarHtmlPerfil(dados, fonte) {
-                // Verifica se houve erro na busca
-                if (dados._error === 'player_not_found') {
-                    return `
-                        <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
-                            <div class="profile-banner" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
-                                <div class="profile-banner-overlay"></div>
-                                <div class="profile-header-content" style="justify-content:center;align-items:center;">
-                                    <div style="text-align:center;">
-                                        <div style="font-size:60px;margin-bottom:10px;">🔍</div>
-                                        <h2 style="color:white;font-size:24px;font-weight:bold;">Player não encontrado</h2>
-                                        <p style="color:#94a3b8;margin-top:8px;">O player "${gamerTag}" não foi encontrado na API do Start.gg</p>
-                                        <p style="color:#64748b;font-size:13px;margin-top:4px;">Verifique se o ID está correto ou tente buscar outro player.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                if (dados._error === 'api_error') {
-                    return `
-                        <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
-                            <div class="profile-banner" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
-                                <div class="profile-banner-overlay"></div>
-                                <div class="profile-header-content" style="justify-content:center;align-items:center;">
-                                    <div style="text-align:center;">
-                                        <div style="font-size:60px;margin-bottom:10px;">⚠️</div>
-                                        <h2 style="color:white;font-size:24px;font-weight:bold;">Erro na API</h2>
-                                        <p style="color:#94a3b8;margin-top:8px;">Não foi possível obter os dados do player.</p>
-                                        <p style="color:#64748b;font-size:13px;margin-top:4px;">Tente novamente mais tarde.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Dados normais
-                const { user, tournaments, totalWins, totalLosses, winrateAllTime, winrateLast6Months, wins6m, losses6m, recentForm, highlights } = dados;
-                
-                const nomeReal = user?.name || '';
-                const bio = user?.bio || '';
-                const country = user?.location?.country || '';
-                const city = user?.location?.city || '';
-                const localizacao = [city, country].filter(Boolean).join(', ') || 'Localização não informada';
-                const avatarUrl = user?.avatarUrl || '';
+                const {
+                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    wins6m, losses6m, recentForm, highlights, tournaments
+                } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
-                // Recent Form
-                const formDots = recentForm.length > 0 ? recentForm.map(pos => {
-                    let cls = 'dot-other';
-                    if (pos === 1) cls = 'dot-1st';
-                    else if (pos <= 3) cls = 'dot-top3';
-                    else if (pos <= 8) cls = 'dot-top8';
-                    return `<span class="form-dot ${cls}">${pos}</span>`;
-                }).join('') : '<div class="text-slate-500 text-sm py-2">Nenhum torneio encontrado para este player.</div>';
-
-                // Highlights
-                const highlightsHtml = highlights.length === 0 
-                    ? '<div class="text-slate-500 text-sm py-2">Nenhum destaque encontrado.</div>'
-                    : highlights.map(h => `
-                        <div class="highlight-item">
-                            <span class="placement">${h.placement}</span>
-                            <span class="event">${h.eventName}</span>
-                            <span class="date">${h.date}</span>
-                        </div>
-                    `).join('');
-
-                // Events
-                const eventsHtml = tournaments.length > 0 ? tournaments.slice(0, 15).map(t => `
+                const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
                         <span class="event-name">${t.name}</span>
                         <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
@@ -112,113 +62,105 @@
                         <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
                         <span class="event-date">${t.date}</span>
                     </div>
-                `).join('') : '<div class="text-slate-500 text-sm py-8 text-center">Nenhum evento encontrado.</div>';
-
-                const bannerGradient = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+                `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
                 return `
-                    <div class="player-profile-modern" style="border-color: rgba(220,38,38,0.3);">
-                        <div class="profile-banner" style="background: ${bannerGradient};">
-                            <div class="profile-banner-overlay"></div>
-                            <div class="profile-header-content">
-                                <div class="profile-avatar-wrapper">
-                                    ${avatarUrl ? `<img src="${avatarUrl}" alt="${gamerTag}" class="profile-avatar">` : `<div class="profile-avatar-placeholder">${gamerTag.charAt(0)}</div>`}
-                                </div>
-                                <div class="profile-info">
-                                    <div class="profile-name-row">
-                                        <h1 class="profile-gamertag">${gamerTag}</h1>
-                                        <span class="profile-verified"><i class="fa-solid fa-check-circle"></i> VERIFICADO</span>
-                                    </div>
-                                    ${nomeReal ? `<div class="profile-real-name">${nomeReal}</div>` : ''}
-                                    <div class="profile-location"><i class="fa-solid fa-location-dot"></i> ${localizacao}</div>
-                                    ${bio ? `<div class="profile-bio">"${bio}"</div>` : ''}
-                                </div>
-                                <div class="profile-source">
-                                    <span class="text-xs text-slate-400">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                                </div>
-                            </div>
+                    <div class="player-profile">
+                        <div class="profile-header">
+                            <h1 class="profile-gamertag">${gamerTag}</h1>
+                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
+                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
+                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
+                                <i class="fa-solid fa-rotate"></i> Atualizar dados
+                            </button>
                         </div>
 
-                        <div class="profile-stats-grid">
+                        <div class="profile-summary">
                             <div class="stat-card">
-                                <span class="stat-label">ALL TIME</span>
-                                <span class="stat-value ${wrClass}">${winrateAllTime}%</span>
-                                <span class="stat-record">${totalWins}W - ${totalLosses}L</span>
+                                <span class="label">ALL TIME</span>
+                                <span class="value ${winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateAllTime}%</span>
+                                <span class="record">${totalWins}-${totalLosses}</span>
                             </div>
                             <div class="stat-card">
-                                <span class="stat-label">LAST 6 MONTHS</span>
-                                <span class="stat-value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
-                                <span class="stat-record">${wins6m}W - ${losses6m}L</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">EVENTS</span>
-                                <span class="stat-value text-blue-400">${tournaments.length}</span>
-                                <span class="stat-record">torneios</span>
+                                <span class="label">LAST 6 MONTHS</span>
+                                <span class="value ${winrateLast6Months >= 60 ? 'text-green-500' : (winrateLast6Months >= 40 ? 'text-yellow-500' : 'text-red-500')}">${winrateLast6Months}%</span>
+                                <span class="record">${wins6m}-${losses6m}</span>
                             </div>
                         </div>
 
-                        <div class="profile-section">
-                            <h3 class="section-title">RECENT FORM</h3>
-                            <div class="form-dots-container">
-                                ${formDots}
+                        <div class="recent-form">
+                            <h3>RECENT FORM</h3>
+                            <div class="form-dots">
+                                ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
                             </div>
                         </div>
 
-                        <div class="profile-section">
-                            <h3 class="section-title">HIGHLIGHTS</h3>
-                            <div class="highlights-container">
-                                ${highlightsHtml}
-                            </div>
+                        <div class="highlights">
+                            <h3>HIGHLIGHTS</h3>
+                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
+                            ${highlights.map(h => `
+                                <div class="highlight-item">
+                                    <span class="placement">${h.placement}</span>
+                                    <span class="event">${h.eventName}</span>
+                                    <span class="date">${h.date}</span>
+                                </div>
+                            `).join('')}
                         </div>
 
-                        <div class="profile-tabs-modern">
-                            <div class="tab-header-modern">
-                                <button class="tab-btn-modern active" data-tab="events">EVENTS</button>
-                                <button class="tab-btn-modern" data-tab="versus">VERSUS</button>
-                                <button class="tab-btn-modern" data-tab="vods">VODS</button>
+                        <div class="profile-tabs">
+                            <div class="tab-header">
+                                <span class="tab-btn active" data-tab="events">EVENTS</span>
+                                <span class="tab-btn" data-tab="versus">VERSUS</span>
+                                <span class="tab-btn" data-tab="vods">VODS</span>
                             </div>
-                            <div class="tab-content-modern active" id="tab-events">
+                            <div class="tab-content" id="tab-events">
                                 ${eventsHtml}
                             </div>
-                            <div class="tab-content-modern" id="tab-versus" style="display:none;">
-                                <div class="text-slate-500 text-sm py-8 text-center">Em breve: confrontos diretos.</div>
+                            <div class="tab-content" id="tab-versus" style="display:none;">
+                                <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
                             </div>
-                            <div class="tab-content-modern" id="tab-vods" style="display:none;">
-                                <div class="text-slate-500 text-sm py-8 text-center">Em breve: VODs.</div>
+                            <div class="tab-content" id="tab-vods" style="display:none;">
+                                <div class="text-slate-500 text-sm">Em breve: VODs.</div>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            async function iniciar() {
+            async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
                     return;
                 }
                 try {
-                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag);
+                    conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
+                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh);
+                    conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                    document.querySelectorAll('.tab-btn-modern').forEach(btn => {
+                    // Reatribui os eventos das abas
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
-                            document.querySelectorAll('.tab-btn-modern').forEach(b => b.classList.remove('active'));
+                            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                             this.classList.add('active');
                             const target = this.dataset.tab;
-                            document.querySelectorAll('.tab-content-modern').forEach(c => c.classList.remove('active'));
-                            document.getElementById('tab-' + target).classList.add('active');
+                            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
                             document.getElementById('tab-' + target).style.display = 'block';
-                            document.querySelectorAll('.tab-content-modern:not(.active)').forEach(c => c.style.display = 'none');
                         });
                     });
-
                 } catch (e) {
-                    console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
 
-            iniciar();
+            // Função global para ser chamada pelo botão
+            window.atualizarDados = function() {
+                carregarPerfil(true);
+            };
+
+            // Inicializa
+            carregarPerfil(false);
         })();
     </script>
 </body>
