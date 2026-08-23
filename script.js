@@ -189,14 +189,18 @@ async function _carregarPaginaAttendees() {
 
             const displayName = prefix ? `${prefix} | ${p.gamerTag}` : p.gamerTag;
 
-            html += `<div class="attendee-item">
-                <span class="attendee-number">#${idx + 1}</span>
-                ${flagHTML}
-                <a href="player.html?id=${playerId}&tag=${encodeURIComponent(p.gamerTag)}&prefix=${encodeURIComponent(prefix)}" class="attendee-name">
-                    ${displayName}
-                </a>
-                ${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}
-            </div><div id="history-${idx}" style="display:none;"></div>`;
+            // ========== LINK CORRIGIDO COM PREFIXO ==========
+            html += `
+                <div class="attendee-item">
+                    <span class="attendee-number">#${idx + 1}</span>
+                    ${flagHTML}
+                    <a href="player.html?id=${playerId}&tag=${encodeURIComponent(p.gamerTag)}&prefix=${encodeURIComponent(prefix)}" class="attendee-name">
+                        ${displayName}
+                    </a>
+                    ${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}
+                </div>
+                <div id="history-${idx}" style="display:none;"></div>
+            `;
         });
 
         _attendeesState.globalOffset += participants.length;
