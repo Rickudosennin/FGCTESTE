@@ -47,11 +47,9 @@
                 return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
             }
 
-            // Mapeamento de códigos de país para bandeiras (https://flagcdn.com)
             function getFlagUrl(countryCode) {
                 if (!countryCode) return null;
-                const code = countryCode.toLowerCase();
-                return `https://flagcdn.com/w40/${code}.png`;
+                return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
             }
 
             function montarHtmlPerfil(dados, fonte) {
@@ -63,13 +61,11 @@
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
 
-                // Bandeira
                 const flagUrl = getFlagUrl(country);
                 const flagHtml = flagUrl 
                     ? `<img src="${flagUrl}" class="profile-flag" alt="${country}" title="${country}">` 
                     : '';
 
-                // Logo do patrocinador (pasta sponsor_logo)
                 const sponsorLogoHtml = playerPrefix 
                     ? `<img src="sponsor_logo/${playerPrefix}.png" class="sponsor-logo" alt="${playerPrefix}" title="${playerPrefix}" onerror="this.style.display='none'">` 
                     : '';
@@ -89,7 +85,6 @@
 
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR + FLAG + SPONSOR LOGO -->
                         <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
                             ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
@@ -97,7 +92,6 @@
                             ${sponsorLogoHtml}
                         </div>
 
-                        <!-- HEADER -->
                         <div class="profile-header">
                             <h1 class="profile-gamertag">${displayName}</h1>
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
@@ -108,7 +102,6 @@
                             </button>
                         </div>
 
-                        <!-- RECENT FORM (bolinhas) -->
                         <div class="recent-form">
                             <h3>RECENT FORM</h3>
                             <div class="form-dots">
@@ -121,7 +114,6 @@
                             </div>
                         </div>
 
-                        <!-- HIGHLIGHTS -->
                         <div class="highlights">
                             <h3>HIGHLIGHTS</h3>
                             ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
@@ -134,7 +126,6 @@
                             `).join('')}
                         </div>
 
-                        <!-- ABAS -->
                         <div class="profile-tabs">
                             <div class="tab-header">
                                 <span class="tab-btn active" data-tab="events">EVENTS</span>
@@ -176,8 +167,12 @@
                         });
                     });
                 } catch (e) {
-                    console.error(e);
-                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
+                    console.error('Erro detalhado:', e);
+                    let msg = '❌ Erro ao carregar perfil do player.';
+                    if (e.message) {
+                        msg += `<br><span style="font-size:12px;color:#ef4444;">${e.message}</span>`;
+                    }
+                    conteudo.innerHTML = `<div class="history-empty">${msg}</div>`;
                 }
             }
 
