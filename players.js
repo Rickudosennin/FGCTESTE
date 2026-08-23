@@ -128,6 +128,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
         player(id: $id) {
             user {
                 images {
+                    id
                     type
                     url
                 }
@@ -151,8 +152,10 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     const json1 = await callStartGG(query1, { id: playerId });
     const standings = json1.data?.player?.recentStandings || [];
     const images = json1.data?.player?.user?.images || [];
-    const avatarUrl = images.find(img => img.type === 'profile')?.url || null;
-    const bannerUrl = images.find(img => img.type === 'banner')?.url || null;
+    // A API retorna o type como string ("profile"/"banner"); normaliza pra minúsculo
+    // caso algum torneio/usuário venha com variação de caixa.
+    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+    const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
 
     const setsPorEvento = {};
     for (const standing of standings) {
