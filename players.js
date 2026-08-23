@@ -127,28 +127,15 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         recentForm: colocacoesOrdenadas.slice(0, 10),
         highlights,
         tournaments: torneios,
-        updatedAt: new Date().toISOString(),
-        avatarUrl: null,
-        bannerUrl: null
+        updatedAt: new Date().toISOString()
     };
 }
 
 // ==================== BUSCA AO VIVO ====================
 async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
-    const query = `query PlayerData($id: ID!) {
+    const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
-            gamerTag
             user {
-                id
-                name
-                bio
-                avatarUrl
-                location {
-                    country
-                    city
-                    state
-                }
-                genderPronoun
                 images {
                     id
                     type
@@ -175,33 +162,21 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
             }
         }
     }`;
-    
-    const json = await callStartGG(query, { id: playerId });
-    const playerData = json.data?.player;
-    
-    if (!playerData) {
-        throw new Error('Player não encontrado');
-    }
-    
-    const standings = playerData.recentStandings || [];
-    const userData = playerData.user || {};
-    const images = userData.images || [];
-    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || userData.avatarUrl || null;
+    const json1 = await callStartGG(query1, { id: playerId });
+    const standings = json1.data?.player?.recentStandings || [];
+    const images = json1.data?.player?.user?.images || [];
+    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
 
     const setsPorEvento = {};
     for (const standing of standings) {
         const eventId = standing.container?.id;
         if (!eventId) continue;
-        try {
-            const resultado = await buscarSetsDoEvento(eventId, playerId);
-            setsPorEvento[eventId] = resultado;
-        } catch (e) {
-            setsPorEvento[eventId] = { wins: 0, losses: 0, sets: [] };
-        }
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
     }
 
-    const dados = processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, prefix);
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     return dados;

@@ -69,22 +69,14 @@
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
-                const bannerStyle = bannerUrl ? `background-image:url('${bannerUrl}')` : '';
-
-                // ========== LOGO DO PATROCINADOR ==========
-                const sponsorLogoPath = playerPrefix ? `sponsor_logo/${playerPrefix}.png` : '';
-                const sponsorLogoHtml = playerPrefix ? `
-                    <img src="${sponsorLogoPath}" class="sponsor-logo" alt="${playerPrefix}" 
-                         onerror="this.style.display='none'">
-                ` : '';
+                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
 
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR + LOGO -->
-                        <div class="profile-banner" style="${bannerStyle}">
+                        <!-- BANNER + AVATAR -->
+                        <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
                             ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
-                            ${sponsorLogoHtml}
                         </div>
 
                         <!-- HEADER -->
