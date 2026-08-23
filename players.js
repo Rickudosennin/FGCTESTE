@@ -51,7 +51,7 @@ function _lerPerfilCache(playerId) {
 }
 
 // ==================== PROCESSAMENTO ====================
-function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
+function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '', userData = {}) {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
     let totalWins = 0, totalLosses = 0;
@@ -115,6 +115,10 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
             date: t.date
         }));
 
+    // País do usuário
+    const country = userData?.location?.country || '';
+    const countryCode = country ? COUNTRY_MAP?.[country] || '' : '';
+
     return {
         gamerTag,
         playerPrefix: prefix || '',
@@ -127,7 +131,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         recentForm: colocacoesOrdenadas.slice(0, 10),
         highlights,
         tournaments: torneios,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        country,
+        countryCode
     };
 }
 
@@ -140,6 +146,11 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
                     id
                     type
                     url
+                }
+                location {
+                    country
+                    city
+                    state
                 }
             }
             recentStandings(limit: 15) {
@@ -163,8 +174,12 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         }
     }`;
     const json1 = await callStartGG(query1, { id: playerId });
-    const standings = json1.data?.player?.recentStandings || [];
-    const images = json1.data?.player?.user?.images || [];
+    const player = json1.data?.player;
+    if (!player) return processarDadosPlayer([], {}, gamerTag, prefix, {});
+    
+    const standings = player.recentStandings || [];
+    const userData = player.user || {};
+    const images = userData.images || [];
     const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
 
@@ -176,7 +191,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         setsPorEvento[eventId] = resultado;
     }
 
-    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix, userData);
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     return dados;

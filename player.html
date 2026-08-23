@@ -50,7 +50,8 @@
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
+                    countryCode, country
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
@@ -69,22 +70,19 @@
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
-                const bannerStyle = bannerUrl ? `background-image:url('${bannerUrl}')` : '';
+                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
 
-                // ========== LOGO DO PATROCINADOR ==========
-                const sponsorLogoPath = playerPrefix ? `sponsor_logo/${playerPrefix}.png` : '';
-                const sponsorLogoHtml = playerPrefix ? `
-                    <img src="${sponsorLogoPath}" class="sponsor-logo" alt="${playerPrefix}" 
-                         onerror="this.style.display='none'">
-                ` : '';
+                // Bandeira
+                const flagUrl = countryCode ? `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png` : '';
+                const flagHtml = flagUrl ? `<img src="${flagUrl}" class="profile-flag" alt="${country || 'País'}">` : '';
 
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR + LOGO -->
-                        <div class="profile-banner" style="${bannerStyle}">
+                        <!-- BANNER + AVATAR + BANDEIRA -->
+                        <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
                             ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
-                            ${sponsorLogoHtml}
+                            ${flagHtml}
                         </div>
 
                         <!-- HEADER -->
