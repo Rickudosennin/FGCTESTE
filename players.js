@@ -115,9 +115,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '', u
             date: t.date
         }));
 
-    // País do usuário
-    const country = userData?.location?.country || '';
-    const countryCode = country ? COUNTRY_MAP?.[country] || '' : '';
+    // Dados do usuário (localização para bandeira)
+    const userLocation = userData?.location || {};
+    const countryCode = userLocation?.country || '';
 
     return {
         gamerTag,
@@ -132,8 +132,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '', u
         highlights,
         tournaments: torneios,
         updatedAt: new Date().toISOString(),
-        country,
-        countryCode
+        country: countryCode,
+        avatarUrl: null,
+        bannerUrl: null
     };
 }
 
@@ -141,16 +142,22 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '', u
 async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
+            gamerTag
             user {
-                images {
-                    id
-                    type
-                    url
-                }
+                id
+                name
+                bio
+                avatarUrl
                 location {
                     country
                     city
                     state
+                }
+                genderPronoun
+                images {
+                    id
+                    type
+                    url
                 }
             }
             recentStandings(limit: 15) {
@@ -174,13 +181,14 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         }
     }`;
     const json1 = await callStartGG(query1, { id: playerId });
-    const player = json1.data?.player;
-    if (!player) return processarDadosPlayer([], {}, gamerTag, prefix, {});
-    
-    const standings = player.recentStandings || [];
-    const userData = player.user || {};
+    const playerData = json1.data?.player;
+    if (!playerData) {
+        throw new Error('Player não encontrado');
+    }
+    const standings = playerData.recentStandings || [];
+    const userData = playerData.user || {};
     const images = userData.images || [];
-    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || userData.avatarUrl || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
 
     const setsPorEvento = {};
@@ -191,9 +199,10 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         setsPorEvento[eventId] = resultado;
     }
 
-    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix, userData);
+    const dados = processarDadosPlayer(standings, setsPorEvento, playerData.gamerTag || gamerTag, prefix, userData);
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
+    dados.country = userData.location?.country || '';
     return dados;
 }
 

@@ -47,17 +47,34 @@
                 return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
             }
 
+            // Mapeamento de códigos de país para bandeiras (https://flagcdn.com)
+            function getFlagUrl(countryCode) {
+                if (!countryCode) return null;
+                const code = countryCode.toLowerCase();
+                return `https://flagcdn.com/w40/${code}.png`;
+            }
+
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
-                    countryCode, country
+                    gamerTag, playerPrefix, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, country
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
-
-                // Define o display name com prefixo se disponível
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
+
+                // Bandeira
+                const flagUrl = getFlagUrl(country);
+                const flagHtml = flagUrl 
+                    ? `<img src="${flagUrl}" class="profile-flag" alt="${country}" title="${country}">` 
+                    : '';
+
+                // Logo do patrocinador (pasta sponsor_logo)
+                const sponsorLogoHtml = playerPrefix 
+                    ? `<img src="sponsor_logo/${playerPrefix}.png" class="sponsor-logo" alt="${playerPrefix}" title="${playerPrefix}" onerror="this.style.display='none'">` 
+                    : '';
+
+                const bannerStyle = bannerUrl ? `background-image:url('${bannerUrl}')` : '';
 
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
@@ -70,19 +87,14 @@
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
-                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
-
-                // Bandeira
-                const flagUrl = countryCode ? `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png` : '';
-                const flagHtml = flagUrl ? `<img src="${flagUrl}" class="profile-flag" alt="${country || 'País'}">` : '';
-
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR + BANDEIRA -->
+                        <!-- BANNER + AVATAR + FLAG + SPONSOR LOGO -->
                         <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
                             ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
                             ${flagHtml}
+                            ${sponsorLogoHtml}
                         </div>
 
                         <!-- HEADER -->
