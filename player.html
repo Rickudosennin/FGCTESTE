@@ -47,17 +47,51 @@
                 return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
             }
 
+            // Mapeamento de characterId para nome (exemplo, você pode expandir)
+            const CHARACTER_NAMES = {
+                'A2435': 'Steve',
+                'A2432': 'Reina',
+                'A2406': 'Alisa',
+                'A2408': 'Azucena',
+                'A2415': 'Jin',
+                'A2417': 'Kazuya',
+                'A2538': 'Lidia',
+                'A2425': 'Xiaoyu',
+                'A2436': 'Victor',
+                'A2437': 'Yoshimitsu',
+                'A2446': 'Eddy',
+                'A2620': 'Anna',
+                // Adicione mais conforme necessário
+            };
+
+            function getCharacterName(charId) {
+                return CHARACTER_NAMES[charId] || charId || '—';
+            }
+
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix
+                    gamerTag, playerPrefix, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, recentSets
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
-
-                // Define o display name com prefixo se disponível
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
 
+                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
+
+                // Recent Sets
+                const recentSetsHtml = recentSets && recentSets.length > 0 ? recentSets.slice(0, 10).map(set => `
+                    <div class="set-item">
+                        <div class="set-tournament">${set.tournamentName}</div>
+                        <div class="set-round">${set.fullRoundText}</div>
+                        <div class="set-result ${set.venceu ? 'set-win' : 'set-loss'}">
+                            ${set.venceu ? '✅' : '❌'}
+                        </div>
+                        <div class="set-character">${getCharacterName(set.characterId)}</div>
+                    </div>
+                `).join('') : '<div class="text-slate-500 text-sm">Nenhum set com personagem reportado.</div>';
+
+                // Events (lista completa)
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
                         <span class="event-name">${t.name}</span>
@@ -68,8 +102,6 @@
                         <span class="event-date">${t.date}</span>
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
-
-                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
 
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
@@ -100,6 +132,14 @@
                                         <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
                                     </div>
                                 `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- RECENT SETS (novo) -->
+                        <div class="recent-sets">
+                            <h3>RECENT SETS</h3>
+                            <div class="sets-grid">
+                                ${recentSetsHtml}
                             </div>
                         </div>
 

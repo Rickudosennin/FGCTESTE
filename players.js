@@ -50,19 +50,92 @@ function _lerPerfilCache(playerId) {
     } catch (e) { return null; }
 }
 
+// ==================== BUSCAR SETS COM PERSONAGENS ====================
+async function buscarSetsComPersonagens(eventId, playerId) {
+    try {
+        const query = `query EventSetsWithChars($eventId: ID!) {
+            event(id: $eventId) {
+                sets(perPage: 100, filters: {hideEmpty: true}) {
+                    nodes {
+                        id
+                        fullRoundText
+                        winnerId
+                        slots {
+                            entrant {
+                                id
+                                participants {
+                                    player { id }
+                                }
+                            }
+                        }
+                        games {
+                            selections {
+                                characterId
+                                entrantId
+                            }
+                        }
+                    }
+                }
+            }
+        }`;
+        const json = await callStartGG(query, { eventId });
+        const sets = json.data?.event?.sets?.nodes || [];
+        const result = [];
+
+        sets.forEach(set => {
+            // Encontra o slot do player
+            const playerSlot = set.slots?.find(slot => 
+                slot.entrant?.participants?.some(p => p.player?.id == playerId)
+            );
+            if (!playerSlot || !playerSlot.entrant) return;
+
+            const myEntrantId = playerSlot.entrant.id;
+            const isWinner = set.winnerId && String(set.winnerId) === String(myEntrantId);
+
+            // Extrai o characterId do player dos games
+            let characterId = null;
+            if (set.games && set.games.length > 0) {
+                // Pega a primeira selection do player no primeiro game
+                const game = set.games[0];
+                if (game && game.selections) {
+                    const mySelection = game.selections.find(sel => String(sel.entrantId) === String(myEntrantId));
+                    if (mySelection) {
+                        characterId = mySelection.characterId;
+                    }
+                }
+            }
+
+            result.push({
+                setId: set.id,
+                fullRoundText: set.fullRoundText || '—',
+                venceu: isWinner,
+                characterId: characterId,
+                opponentName: null // podemos buscar depois se quiser
+            });
+        });
+
+        return result;
+    } catch (e) {
+        console.warn('Erro ao buscar sets com personagens:', e);
+        return [];
+    }
+}
+
 // ==================== PROCESSAMENTO ====================
-function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
+function processarDadosPlayer(standings, setsPorEvento, setsComCharsPorEvento, gamerTag, prefix = '') {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
     let totalWins = 0, totalLosses = 0;
     let wins6m = 0, losses6m = 0;
     const torneios = [];
     const colocacoes = [];
+    const todosSets = [];
 
     standings.forEach(s => {
         const eventId = s.container?.id;
         const startAt = s.container?.startAt;
         const resultado = setsPorEvento[eventId] || { wins: 0, losses: 0 };
+        const setsChar = setsComCharsPorEvento[eventId] || [];
 
         totalWins += resultado.wins;
         totalLosses += resultado.losses;
@@ -91,16 +164,29 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
             date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
             startAt: startAt || 0,
             icon: tournamentIcon,
-            isRecent
+            isRecent,
+            sets: setsChar // adiciona os sets com personagens
+        });
+
+        // Adiciona os sets à lista global
+        setsChar.forEach(set => {
+            todosSets.push({
+                ...set,
+                eventName: s.container?.name || '—',
+                tournamentName: s.container?.tournament?.name || '—',
+                date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—'
+            });
         });
 
         if (s.placement) colocacoes.push(s.placement);
     });
 
-    torneios.sort((a, b) => b.startAt - a.startAt);
-    const colocacoesOrdenadas = torneios
-        .filter(t => t.placement && t.placement !== '?')
-        .map(t => ({ placement: t.placement, icon: t.icon }));
+    // Ordena os sets por data (mais recentes primeiro)
+    todosSets.sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('/'));
+        const dateB = new Date(b.date.split('/').reverse().join('/'));
+        return dateB - dateA;
+    });
 
     const totalPartidas = totalWins + totalLosses;
     const total6m = wins6m + losses6m;
@@ -124,9 +210,10 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         winrateLast6Months: total6m > 0 ? Math.round((wins6m / total6m) * 100) : 0,
         wins6m,
         losses6m,
-        recentForm: colocacoesOrdenadas.slice(0, 10),
+        recentForm: colocacoes.slice(0, 10),
         highlights,
         tournaments: torneios,
+        recentSets: todosSets.slice(0, 20), // últimos 20 sets com personagem
         updatedAt: new Date().toISOString()
     };
 }
@@ -169,14 +256,22 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
 
     const setsPorEvento = {};
+    const setsComCharsPorEvento = {};
+
     for (const standing of standings) {
         const eventId = standing.container?.id;
         if (!eventId) continue;
+
+        // Busca sets básicos (wins/losses)
         const resultado = await buscarSetsDoEvento(eventId, playerId);
         setsPorEvento[eventId] = resultado;
+
+        // Busca sets com personagens
+        const setsChar = await buscarSetsComPersonagens(eventId, playerId);
+        setsComCharsPorEvento[eventId] = setsChar;
     }
 
-    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
+    const dados = processarDadosPlayer(standings, setsPorEvento, setsComCharsPorEvento, gamerTag, prefix);
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     return dados;
