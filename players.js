@@ -79,6 +79,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
             ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100) 
             : 0;
 
+        const tournamentImages = s.container?.tournament?.images || [];
+        const tournamentIcon = tournamentImages.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+
         torneios.push({
             name: s.container?.tournament?.name || '—',
             eventName: s.container?.name || '—',
@@ -89,6 +92,7 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
             winrate,
             date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
             startAt: startAt || 0,
+            icon: tournamentIcon,
             isRecent
         });
 
@@ -97,7 +101,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
 
     // Mais recente primeiro
     torneios.sort((a, b) => b.startAt - a.startAt);
-    const colocacoesOrdenadas = torneios.filter(t => t.placement && t.placement !== '?').map(t => t.placement);
+    const colocacoesOrdenadas = torneios
+        .filter(t => t.placement && t.placement !== '?')
+        .map(t => ({ placement: t.placement, icon: t.icon }));
 
     const totalPartidas = totalWins + totalLosses;
     const total6m = wins6m + losses6m;
@@ -148,6 +154,10 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
                         tournament {
                             name
                             numAttendees
+                            images {
+                                type
+                                url
+                            }
                         }
                     }
                 }

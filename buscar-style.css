@@ -160,6 +160,27 @@
     flex-wrap: wrap;
 }
 
+.form-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.form-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #334155;
+    background: #1e293b;
+}
+
+.form-icon-empty {
+    background: #17171c;
+    border: 1px dashed #334155;
+}
+
 .form-dot {
     width: 36px;
     height: 36px;

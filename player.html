@@ -90,7 +90,12 @@
                         <div class="recent-form">
                             <h3>RECENT FORM</h3>
                             <div class="form-dots">
-                                ${recentForm.map(pos => `<span class="form-dot ${getDotClass(pos)}">${pos}</span>`).join('')}
+                                ${recentForm.map(r => `
+                                    <div class="form-entry">
+                                        ${r.icon ? `<img src="${r.icon}" class="form-icon" alt="">` : '<div class="form-icon form-icon-empty"></div>'}
+                                        <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
 
