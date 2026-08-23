@@ -171,6 +171,7 @@ async function _carregarPaginaAttendees() {
                 : '<div style="width:28px;height:20px;background:rgba(255,255,255,0.05);border-radius:3px;"></div>';
             const safeGamerTag = (p.gamerTag || 'Sem nome').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const playerId = p.player?.id || '';
+            const prefix = p.prefix || '';
             
             // ========== SALVAR PLAYER NO LOCALSTORAGE ==========
             if (playerId && p.gamerTag) {
@@ -178,7 +179,6 @@ async function _carregarPaginaAttendees() {
                     if (typeof _salvarPlayerLocal === 'function') {
                         _salvarPlayerLocal(playerId, p.gamerTag);
                     } else {
-                        // Fallback: salva diretamente
                         const lista = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
                         if (!lista.some(p => p.playerId === playerId)) {
                             lista.push({ playerId, gamerTag: p.gamerTag });
@@ -188,7 +188,10 @@ async function _carregarPaginaAttendees() {
                 } catch (e) {}
             }
 
-            html += `<div class="attendee-item"><span class="attendee-number">#${idx + 1}</span>${flagHTML}<span class="attendee-name clickable" onclick="event.stopPropagation();toggleHistorico('${playerId}', '${safeGamerTag}', ${idx})">${p.gamerTag || 'Sem nome'}</span>${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}</div><div id="history-${idx}" style="display:none;"></div>`;
+            // Link com prefixo
+            const linkTag = prefix ? `${prefix} | ${p.gamerTag}` : p.gamerTag;
+
+            html += `<div class="attendee-item"><span class="attendee-number">#${idx + 1}</span>${flagHTML}<span class="attendee-name clickable" onclick="event.stopPropagation();toggleHistorico('${playerId}', '${safeGamerTag}', ${idx})">${linkTag}</span>${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}</div><div id="history-${idx}" style="display:none;"></div>`;
         });
 
         _attendeesState.globalOffset += participants.length;

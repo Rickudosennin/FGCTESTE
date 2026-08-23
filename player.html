@@ -31,6 +31,7 @@
             const params = new URLSearchParams(window.location.search);
             const playerId = params.get('id');
             const gamerTag = params.get('tag') || 'Player';
+            const prefix = params.get('prefix') || '';
             const conteudo = document.getElementById('perfil_conteudo');
 
             function getDotClass(placement) {
@@ -49,10 +50,13 @@
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
+
+                // Define o display name com prefixo se disponível
+                const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
 
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
@@ -77,7 +81,7 @@
 
                         <!-- HEADER -->
                         <div class="profile-header">
-                            <h1 class="profile-gamertag">${gamerTag}</h1>
+                            <h1 class="profile-gamertag">${displayName}</h1>
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
                             <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
                             <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
@@ -140,11 +144,10 @@
                 }
                 try {
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
-                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh);
+                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                    // Reatribui os eventos das abas
                     document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
                             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -160,12 +163,10 @@
                 }
             }
 
-            // Função global para ser chamada pelo botão
             window.atualizarDados = function() {
                 carregarPerfil(true);
             };
 
-            // Inicializa
             carregarPerfil(false);
         })();
     </script>
