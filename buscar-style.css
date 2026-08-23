@@ -363,28 +363,6 @@
     }
 }
 
-/* ========== BANDEIRA NO BANNER ========== */
-.profile-flag {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    width: 36px;
-    height: 24px;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.2);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    z-index: 5;
-    object-fit: cover;
-}
-
-@media (max-width: 640px) {
-    .profile-flag {
-        width: 28px;
-        height: 18px;
-        top: 8px;
-        right: 10px;
-    }
-}
 
 /* ========== LOGO DO PATROCINADOR ========== */
 .sponsor-logo {

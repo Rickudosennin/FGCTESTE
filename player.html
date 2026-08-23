@@ -47,25 +47,16 @@
                 return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
             }
 
-            function getFlagUrl(countryCode) {
-                if (!countryCode) return null;
-                return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
-            }
-
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, playerPrefix, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, country
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
 
-                const flagUrl = getFlagUrl(country);
-                const flagHtml = flagUrl 
-                    ? `<img src="${flagUrl}" class="profile-flag" alt="${country}" title="${country}">` 
-                    : '';
-
+                // Logo do patrocinador
                 const sponsorLogoHtml = playerPrefix 
                     ? `<img src="sponsor_logo/${playerPrefix}.png" class="sponsor-logo" alt="${playerPrefix}" title="${playerPrefix}" onerror="this.style.display='none'">` 
                     : '';
@@ -88,7 +79,6 @@
                         <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
                             ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
-                            ${flagHtml}
                             ${sponsorLogoHtml}
                         </div>
 
@@ -167,12 +157,8 @@
                         });
                     });
                 } catch (e) {
-                    console.error('Erro detalhado:', e);
-                    let msg = '❌ Erro ao carregar perfil do player.';
-                    if (e.message) {
-                        msg += `<br><span style="font-size:12px;color:#ef4444;">${e.message}</span>`;
-                    }
-                    conteudo.innerHTML = `<div class="history-empty">${msg}</div>`;
+                    console.error('Erro ao carregar perfil:', e);
+                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
 
