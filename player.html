@@ -49,19 +49,14 @@
 
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, playerPrefix, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl
+                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
+
+                // Define o display name com prefixo se disponível
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
-
-                // Logo do patrocinador
-                const sponsorLogoHtml = playerPrefix 
-                    ? `<img src="sponsor_logo/${playerPrefix}.png" class="sponsor-logo" alt="${playerPrefix}" title="${playerPrefix}" onerror="this.style.display='none'">` 
-                    : '';
-
-                const bannerStyle = bannerUrl ? `background-image:url('${bannerUrl}')` : '';
 
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
@@ -74,14 +69,25 @@
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
+                const bannerStyle = bannerUrl ? `background-image:url('${bannerUrl}')` : '';
+
+                // ========== LOGO DO PATROCINADOR ==========
+                const sponsorLogoPath = playerPrefix ? `sponsor_logo/${playerPrefix}.png` : '';
+                const sponsorLogoHtml = playerPrefix ? `
+                    <img src="${sponsorLogoPath}" class="sponsor-logo" alt="${playerPrefix}" 
+                         onerror="this.style.display='none'">
+                ` : '';
+
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <div class="profile-banner" ${bannerStyle}>
+                        <!-- BANNER + AVATAR + LOGO -->
+                        <div class="profile-banner" style="${bannerStyle}">
                             <div class="profile-banner-overlay"></div>
                             ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
                             ${sponsorLogoHtml}
                         </div>
 
+                        <!-- HEADER -->
                         <div class="profile-header">
                             <h1 class="profile-gamertag">${displayName}</h1>
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
@@ -92,6 +98,7 @@
                             </button>
                         </div>
 
+                        <!-- RECENT FORM (bolinhas) -->
                         <div class="recent-form">
                             <h3>RECENT FORM</h3>
                             <div class="form-dots">
@@ -104,6 +111,7 @@
                             </div>
                         </div>
 
+                        <!-- HIGHLIGHTS -->
                         <div class="highlights">
                             <h3>HIGHLIGHTS</h3>
                             ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
@@ -116,6 +124,7 @@
                             `).join('')}
                         </div>
 
+                        <!-- ABAS -->
                         <div class="profile-tabs">
                             <div class="tab-header">
                                 <span class="tab-btn active" data-tab="events">EVENTS</span>
@@ -157,7 +166,7 @@
                         });
                     });
                 } catch (e) {
-                    console.error('Erro ao carregar perfil:', e);
+                    console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
