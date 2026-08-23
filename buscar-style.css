@@ -16,11 +16,12 @@
 
 .profile-banner {
     position: relative;
-    height: 0;
+    height: 100px;
     margin: -1px -1px 0 -1px;
     background-size: cover;
     background-position: center;
     background-color: #17171c;
+    background-image: linear-gradient(135deg, #1a1a22, #241014);
     transition: height 0.2s;
 }
 

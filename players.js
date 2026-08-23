@@ -88,11 +88,16 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
             losses: resultado.losses,
             winrate,
             date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
+            startAt: startAt || 0,
             isRecent
         });
 
         if (s.placement) colocacoes.push(s.placement);
     });
+
+    // Mais recente primeiro
+    torneios.sort((a, b) => b.startAt - a.startAt);
+    const colocacoesOrdenadas = torneios.filter(t => t.placement && t.placement !== '?').map(t => t.placement);
 
     const totalPartidas = totalWins + totalLosses;
     const total6m = wins6m + losses6m;
@@ -115,7 +120,7 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
         winrateLast6Months: total6m > 0 ? Math.round((wins6m / total6m) * 100) : 0,
         wins6m,
         losses6m,
-        recentForm: colocacoes.slice(0, 10),
+        recentForm: colocacoesOrdenadas.slice(0, 10),
         highlights,
         tournaments: torneios,
         updatedAt: new Date().toISOString()

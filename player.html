@@ -68,7 +68,7 @@
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
 
                 return `
-                    <div class="player-profile ${bannerUrl ? 'has-banner' : ''}">
+                    <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
                         <!-- BANNER + AVATAR -->
                         <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
