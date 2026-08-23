@@ -126,6 +126,12 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag) {
 async function _buscarPlayerAoVivo(playerId, gamerTag) {
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
+            user {
+                images {
+                    type
+                    url
+                }
+            }
             recentStandings(limit: 15) {
                 placement
                 container {
@@ -144,6 +150,9 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
     }`;
     const json1 = await callStartGG(query1, { id: playerId });
     const standings = json1.data?.player?.recentStandings || [];
+    const images = json1.data?.player?.user?.images || [];
+    const avatarUrl = images.find(img => img.type === 'profile')?.url || null;
+    const bannerUrl = images.find(img => img.type === 'banner')?.url || null;
 
     const setsPorEvento = {};
     for (const standing of standings) {
@@ -153,7 +162,10 @@ async function _buscarPlayerAoVivo(playerId, gamerTag) {
         setsPorEvento[eventId] = resultado;
     }
 
-    return processarDadosPlayer(standings, setsPorEvento, gamerTag);
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag);
+    dados.avatarUrl = avatarUrl;
+    dados.bannerUrl = bannerUrl;
+    return dados;
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================

@@ -49,7 +49,7 @@
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
@@ -65,8 +65,16 @@
                     </div>
                 `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
+                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
+
                 return `
-                    <div class="player-profile">
+                    <div class="player-profile ${bannerUrl ? 'has-banner' : ''}">
+                        <!-- BANNER + AVATAR -->
+                        <div class="profile-banner" ${bannerStyle}>
+                            <div class="profile-banner-overlay"></div>
+                            ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
+                        </div>
+
                         <!-- HEADER -->
                         <div class="profile-header">
                             <h1 class="profile-gamertag">${gamerTag}</h1>
