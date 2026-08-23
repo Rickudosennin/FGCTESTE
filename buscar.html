@@ -65,7 +65,7 @@
                         conteudoSalvos.innerHTML = '<span class="text-slate-500">Nenhum player salvo.</span>';
                     } else {
                         conteudoSalvos.innerHTML = lista.map(p => 
-                            `<span class="block text-xs">${p.gamerTag} (${p.playerId})</span>`
+                            `<span class="block text-xs">${p.prefix ? p.prefix + ' | ' : ''}${p.gamerTag} (${p.playerId})</span>`
                         ).join('');
                     }
                 }
@@ -87,12 +87,15 @@
                 resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Nenhum player encontrado com esse nome.</div>';
                 return;
             }
-            resultadosDiv.innerHTML = unicos.map(p => `
-                <a href="player.html?id=${p.playerId}&tag=${encodeURIComponent(p.gamerTag)}" class="attendee-item flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg px-3">
-                    <span class="attendee-name">${p.gamerTag}</span>
-                    <span class="text-slate-500 text-xs">Ver perfil &rarr;</span>
-                </a>
-            `).join('');
+            resultadosDiv.innerHTML = unicos.map(p => {
+                const displayName = p.prefix ? `${p.prefix} | ${p.gamerTag}` : p.gamerTag;
+                return `
+                    <a href="player.html?id=${p.playerId}&tag=${encodeURIComponent(p.gamerTag)}&prefix=${encodeURIComponent(p.prefix || '')}" class="attendee-item flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg px-3">
+                        <span class="attendee-name">${displayName}</span>
+                        <span class="text-slate-500 text-xs">Ver perfil &rarr;</span>
+                    </a>
+                `;
+            }).join('');
         }
 
         async function carregarDados() {
@@ -126,7 +129,6 @@
         btnLimpar.addEventListener('click', () => {
             if (confirm('Limpar todos os players salvos localmente?')) {
                 localStorage.removeItem('fgchub_local_players');
-                // Remove também os perfis em cache
                 const keys = Object.keys(localStorage);
                 keys.forEach(key => {
                     if (key.startsWith('fgchub_profile_')) {

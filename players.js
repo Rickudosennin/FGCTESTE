@@ -6,11 +6,11 @@ const CACHE_MAX_IDADE_HORAS = 24;
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
 const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
-function _salvarPlayerLocal(playerId, gamerTag) {
+function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
     try {
         const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
         if (!lista.some(p => p.playerId === playerId)) {
-            lista.push({ playerId, gamerTag });
+            lista.push({ playerId, gamerTag, prefix });
             localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
             const contador = document.getElementById('contador_salvos');
             if (contador) contador.textContent = lista.length;
@@ -51,7 +51,7 @@ function _lerPerfilCache(playerId) {
 }
 
 // ==================== PROCESSAMENTO ====================
-function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix) {
+function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
     let totalWins = 0, totalLosses = 0;
@@ -132,7 +132,7 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix) {
 }
 
 // ==================== BUSCA AO VIVO ====================
-async function _buscarPlayerAoVivo(playerId, gamerTag, prefix) {
+async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
             user {
@@ -187,7 +187,6 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix
     if (!forceRefresh) {
         const cacheData = _lerPerfilCache(playerId);
         if (cacheData) {
-            // Se o cache não tiver prefixo, mas o prefixo foi passado, adiciona
             if (prefix && !cacheData.playerPrefix) {
                 cacheData.playerPrefix = prefix;
             }
@@ -196,7 +195,7 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix
     }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
     _salvarPerfilCache(playerId, dados);
-    _salvarPlayerLocal(playerId, gamerTag);
+    _salvarPlayerLocal(playerId, gamerTag, prefix);
     return { dados, fonte: 'live' };
 }
 
@@ -210,7 +209,12 @@ async function carregarPlayersConhecidos() {
     locais.forEach(p => {
         const id = String(p.playerId);
         if (!mapa.has(id)) {
-            mapa.set(id, { playerId: id, gamerTag: p.gamerTag, placement: null });
+            mapa.set(id, { 
+                playerId: id, 
+                gamerTag: p.gamerTag, 
+                prefix: p.prefix || '',
+                placement: null 
+            });
         }
     });
     _listaPlayersConhecidos = Array.from(mapa.values());

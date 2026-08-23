@@ -123,7 +123,6 @@ async function abrirAttendees(tournamentUrl) {
     sidebar.classList.add('open'); overlay.classList.add('active'); document.body.style.overflow = 'hidden';
     content.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando inscritos...</p></div>'; countEl.textContent = '';
 
-    // Reseta estado de paginação para este torneio
     _attendeesState = {
         slug: tournamentUrl.replace('/tournament/', '').split('/')[0],
         page: 1,
@@ -173,25 +172,31 @@ async function _carregarPaginaAttendees() {
             const playerId = p.player?.id || '';
             const prefix = p.prefix || '';
             
-            // ========== SALVAR PLAYER NO LOCALSTORAGE ==========
+            // ========== SALVAR PLAYER NO LOCALSTORAGE (COM PREFIXO) ==========
             if (playerId && p.gamerTag) {
                 try {
                     if (typeof _salvarPlayerLocal === 'function') {
-                        _salvarPlayerLocal(playerId, p.gamerTag);
+                        _salvarPlayerLocal(playerId, p.gamerTag, prefix);
                     } else {
                         const lista = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
                         if (!lista.some(p => p.playerId === playerId)) {
-                            lista.push({ playerId, gamerTag: p.gamerTag });
+                            lista.push({ playerId, gamerTag: p.gamerTag, prefix });
                             localStorage.setItem('fgchub_local_players', JSON.stringify(lista));
                         }
                     }
                 } catch (e) {}
             }
 
-            // Link com prefixo
-            const linkTag = prefix ? `${prefix} | ${p.gamerTag}` : p.gamerTag;
+            const displayName = prefix ? `${prefix} | ${p.gamerTag}` : p.gamerTag;
 
-            html += `<div class="attendee-item"><span class="attendee-number">#${idx + 1}</span>${flagHTML}<span class="attendee-name clickable" onclick="event.stopPropagation();toggleHistorico('${playerId}', '${safeGamerTag}', ${idx})">${linkTag}</span>${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}</div><div id="history-${idx}" style="display:none;"></div>`;
+            html += `<div class="attendee-item">
+                <span class="attendee-number">#${idx + 1}</span>
+                ${flagHTML}
+                <a href="player.html?id=${playerId}&tag=${encodeURIComponent(p.gamerTag)}&prefix=${encodeURIComponent(prefix)}" class="attendee-name">
+                    ${displayName}
+                </a>
+                ${p.prefix ? `<span style="color:#aaa;font-size:11px;">${p.prefix}</span>` : ''}
+            </div><div id="history-${idx}" style="display:none;"></div>`;
         });
 
         _attendeesState.globalOffset += participants.length;
