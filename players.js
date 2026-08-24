@@ -136,17 +136,8 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
             user {
+                id
                 name
-                createdAt
-                location {
-                    city
-                    state
-                    country
-                }
-                authorizations {
-                    type
-                    externalUsername
-                }
                 images {
                     id
                     type
@@ -179,15 +170,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const images = user?.images || [];
     const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
-
     const realName = user?.name || null;
-    const createdAt = user?.createdAt || null;
-    const loc = user?.location;
-    const locationStr = loc ? [loc.city, loc.state, loc.country].filter(Boolean).join(', ') : null;
-    const socials = (user?.authorizations || []).map(auth => ({
-        type: auth.type,
-        username: auth.externalUsername
-    }));
 
     const setsPorEvento = {};
     for (const standing of standings) {
@@ -201,9 +184,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     dados.realName = realName;
-    dados.createdAt = createdAt;
-    dados.locationStr = locationStr;
-    dados.socials = socials;
     return dados;
 }
 
