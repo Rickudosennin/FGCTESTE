@@ -1,178 +1,229 @@
-const STARTGG_TOKEN = "43b15884e09284466a58db7b06350b50";
+// ==================== CONFIG ====================
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
+const CACHE_MAX_IDADE_HORAS = 24;
 
-async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefresh = false, prefixFallback = '') {
-    const cacheKey = `fgchub_player_${playerId}`;
-    
-    if (!forceRefresh) {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-            try {
-                const parsed = JSON.parse(cached);
-                if (Date.now() - parsed.timestamp < 3600000) {
-                    return { dados: parsed.dados, fonte: 'cache' };
-                }
-            } catch (e) {
-                console.warn("Erro ao ler cache do player:", e);
-            }
-        }
-    }
+// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
+const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
-    // Consulta GraphQL contendo o caminho exato de localização do participante e do usuário
-    const query = `
-    query GetPlayerProfile($userId: ID!) {
-      user(id: $userId) {
-        id
-        gamerTag
-        prefix
-        name
-        location {
-          country
-        }
-        images {
-          url
-          type
-        }
-        events(query: { perPage: 12, page: 1 }) {
-          nodes {
-            id
-            name
-            tournament {
-              name
-              images {
-                url
-                type
-              }
-            }
-            userEntrant(userId: $userId) {
-              id
-              standing {
-                placement
-              }
-              participants {
-                user {
-                  location {
-                    country
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }`;
-
+function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
     try {
-        const response = await fetch('https://api.start.gg/gql/alpha', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${STARTGG_TOKEN}`
-            },
-            body: JSON.stringify({
-                query: query,
-                variables: { userId: playerId }
-            })
+        const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+        if (!lista.some(p => p.playerId === playerId)) {
+            lista.push({ playerId, gamerTag, prefix });
+            localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
+            const contador = document.getElementById('contador_salvos');
+            if (contador) contador.textContent = lista.length;
+        }
+    } catch (e) {}
+}
+
+function _carregarPlayersLocal() {
+    try {
+        return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+    } catch (e) { return []; }
+}
+
+// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
+function _salvarPerfilCache(playerId, dados) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const cacheData = {
+            dados: dados,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (e) {}
+}
+
+function _lerPerfilCache(playerId) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const cacheData = JSON.parse(raw);
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
+        return null;
+    } catch (e) { return null; }
+}
+
+// ==================== PROCESSAMENTO ====================
+function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
+    const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
+
+    let totalWins = 0, totalLosses = 0;
+    let wins6m = 0, losses6m = 0;
+    const torneios = [];
+    const colocacoes = [];
+
+    standings.forEach(s => {
+        const eventId = s.container?.id;
+        const startAt = s.container?.startAt;
+        const resultado = setsPorEvento[eventId] || { wins: 0, losses: 0 };
+
+        totalWins += resultado.wins;
+        totalLosses += resultado.losses;
+
+        const isRecent = startAt && (startAt * 1000) > seisMesesAtras;
+        if (isRecent) {
+            wins6m += resultado.wins;
+            losses6m += resultado.losses;
+        }
+
+        const winrate = (resultado.wins + resultado.losses) > 0 
+            ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100) 
+            : 0;
+
+        const tournamentImages = s.container?.tournament?.images || [];
+        const tournamentIcon = tournamentImages.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+
+        torneios.push({
+            name: s.container?.tournament?.name || '—',
+            eventName: s.container?.name || '—',
+            placement: s.placement || '?',
+            attendees: s.container?.tournament?.numAttendees || '?',
+            wins: resultado.wins,
+            losses: resultado.losses,
+            winrate,
+            date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
+            startAt: startAt || 0,
+            icon: tournamentIcon,
+            isRecent
         });
 
-        const result = await response.json();
-        const user = result.data?.user;
+        if (s.placement) colocacoes.push(s.placement);
+    });
 
-        if (!user) {
-            throw new Error("Usuário não encontrado na Start.gg");
-        }
+    torneios.sort((a, b) => b.startAt - a.startAt);
+    const colocacoesOrdenadas = torneios
+        .filter(t => t.placement && t.placement !== '?')
+        .map(t => ({ placement: t.placement, icon: t.icon }));
 
-        const avatarObj = user.images?.find(img => img.type === 'profile');
-        const bannerObj = user.images?.find(img => img.type === 'banner');
+    const totalPartidas = totalWins + totalLosses;
+    const total6m = wins6m + losses6m;
 
-        // Extrai o país verificando o user principal ou o participante do evento (lógica da sua bracket)[cite: 3]
-        const entrantCountry = user.events?.nodes?.[0]?.userEntrant?.participants?.[0]?.user?.location?.country;[cite: 3]
-        const country = user.location?.country || entrantCountry || '';[cite: 3]
-
-        let totalWins = 0;
-        let totalLosses = 0;
-        const recentForm = [];
-        const highlights = [];
-        const tournaments = [];
-
-        if (user.events?.nodes) {
-            user.events.nodes.forEach(evt => {
-                const placement = evt.userEntrant?.standing?.placement || 0;
-                const tournamentName = evt.tournament?.name || 'Torneio';
-                const eventName = evt.name || '';
-                const logoObj = evt.tournament?.images?.find(img => img.type === 'profile');
-                const image = logoObj ? logoObj.url : '';
-
-                if (placement > 0) {
-                    recentForm.push({
-                        placement: placement,
-                        eventName: `${tournamentName} - ${eventName}`,
-                        image: image
-                    });
-
-                    highlights.push({
-                        eventName: `${tournamentName} (${eventName})`,
-                        placement: `${placement}`
-                    });
-
-                    tournaments.push({
-                        name: tournamentName,
-                        eventName: eventName,
-                        placement: placement,
-                        attendees: 'N/A',
-                        wins: 0,
-                        losses: 0,
-                        winrate: 0,
-                        date: 'Recente'
-                    });
-                }
-            });
-        }
-
-        totalWins = tournaments.reduce((acc, curr) => acc + (curr.placement <= 8 ? 3 : 1), 0);
-        totalLosses = tournaments.length * 2;
-        const totalSets = totalWins + totalLosses;
-        const winrateAllTime = totalSets > 0 ? Math.round((totalWins / totalSets) * 100) : 0;
-
-        const dadosProcessed = {
-            gamerTag: user.gamerTag || gamerTagFallback,
-            playerPrefix: user.prefix || prefixFallback,
-            realName: user.name || '',
-            country: country,
-            avatarUrl: avatarObj ? avatarObj.url : '',
-            bannerUrl: bannerObj ? bannerObj.url : '',
-            totalWins: totalWins,
-            totalLosses: totalLosses,
-            winrateAllTime: winrateAllTime,
-            recentForm: recentForm.slice(0, 6),
-            highlights: highlights.slice(0, 5),
-            tournaments: tournaments
-        };
-
-        localStorage.setItem(cacheKey, JSON.stringify({
-            timestamp: Date.now(),
-            dados: dadosProcessed
+    const highlights = [...torneios]
+        .filter(t => t.placement && t.placement > 0 && t.attendees !== '?')
+        .sort((a, b) => a.placement - b.placement)
+        .slice(0, 8)
+        .map(t => ({
+            placement: `${t.placement}º/${t.attendees}`,
+            eventName: t.eventName,
+            date: t.date
         }));
 
-        return { dados: dadosProcessed, fonte: 'live' };
+    return {
+        gamerTag,
+        playerPrefix: prefix || '',
+        totalWins,
+        totalLosses,
+        winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
+        winrateLast6Months: total6m > 0 ? Math.round((wins6m / total6m) * 100) : 0,
+        wins6m,
+        losses6m,
+        recentForm: colocacoesOrdenadas.slice(0, 10),
+        highlights,
+        tournaments: torneios,
+        updatedAt: new Date().toISOString()
+    };
+}
 
-    } catch (error) {
-        console.error("Erro na busca de dados do jogador:", error);
-        return {
-            dados: {
-                gamerTag: gamerTagFallback,
-                playerPrefix: prefixFallback,
-                realName: '',
-                country: '',
-                avatarUrl: '',
-                bannerUrl: '',
-                totalWins: 0,
-                totalLosses: 0,
-                winrateAllTime: 0,
-                recentForm: [],
-                highlights: [],
-                tournaments: []
-            },
-            fonte: 'error'
-        };
+// ==================== BUSCA AO VIVO ====================
+async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
+    const query1 = `query PlayerHistory($id: ID!) {
+        player(id: $id) {
+            user {
+                images {
+                    id
+                    type
+                    url
+                }
+            }
+            recentStandings(limit: 15) {
+                placement
+                container {
+                    ... on Event {
+                        id
+                        name
+                        startAt
+                        tournament {
+                            name
+                            numAttendees
+                            images {
+                                type
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`;
+    const json1 = await callStartGG(query1, { id: playerId });
+    const standings = json1.data?.player?.recentStandings || [];
+    const images = json1.data?.player?.user?.images || [];
+    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+    const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
+
+    const setsPorEvento = {};
+    for (const standing of standings) {
+        const eventId = standing.container?.id;
+        if (!eventId) continue;
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
     }
+
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
+    dados.avatarUrl = avatarUrl;
+    dados.bannerUrl = bannerUrl;
+    return dados;
+}
+
+// ==================== FUNÇÃO PRINCIPAL ====================
+async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '') {
+    if (!forceRefresh) {
+        const cacheData = _lerPerfilCache(playerId);
+        if (cacheData) {
+            if (prefix && !cacheData.playerPrefix) {
+                cacheData.playerPrefix = prefix;
+            }
+            return { dados: cacheData, fonte: 'cache' };
+        }
+    }
+    const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
+    _salvarPerfilCache(playerId, dados);
+    _salvarPlayerLocal(playerId, gamerTag, prefix);
+    return { dados, fonte: 'live' };
+}
+
+// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
+let _listaPlayersConhecidos = null;
+async function carregarPlayersConhecidos() {
+    if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
+
+    const locais = _carregarPlayersLocal();
+    const mapa = new Map();
+    locais.forEach(p => {
+        const id = String(p.playerId);
+        if (!mapa.has(id)) {
+            mapa.set(id, { 
+                playerId: id, 
+                gamerTag: p.gamerTag, 
+                prefix: p.prefix || '',
+                placement: null 
+            });
+        }
+    });
+    _listaPlayersConhecidos = Array.from(mapa.values());
+    return _listaPlayersConhecidos;
+}
+
+function filtrarPlayers(lista, termo) {
+    const t = termo.trim().toLowerCase();
+    if (!t) return [];
+    const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
+    return filtrados.slice(0, 15);
 }
