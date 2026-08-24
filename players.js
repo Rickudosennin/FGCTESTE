@@ -137,6 +137,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         player(id: $id) {
             user {
                 id
+                slug
                 name
                 authorizations {
                     type
@@ -176,6 +177,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
     const realName = user?.name || null;
+    const userSlug = user?.slug || null;
 
     const twitchAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITCH');
     const twitterAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITTER' || (a.type || '').toUpperCase() === 'X');
@@ -193,6 +195,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     dados.realName = realName;
+    dados.userSlug = userSlug;
     dados.social = {
         twitch: twitchAuth ? twitchAuth.externalUsername : null,
         twitter: twitterAuth ? twitterAuth.externalUsername : null,
