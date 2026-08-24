@@ -83,7 +83,7 @@
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
                 
-                const countryName = dados.country || dados.location?.country || dados.countryFlag || dados.user?.location?.country || dados.participants?.[0]?.user?.location?.country || '';
+                const countryName = dados.country || dados.location?.country || '';
                 const flagHtml = getFlagHTML(countryName);
                 const totalSets = totalWins + totalLosses;
 
@@ -122,7 +122,7 @@
                             </div>
                         </div>
 
-                        <!-- 4 STAT CARDS (DADOS START.GG) -->
+                        <!-- STAT CARDS -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
                                 <div class="text-2xl font-black text-white">${totalWins} W</div>
@@ -148,7 +148,7 @@
                             <div class="flex items-center gap-3 overflow-x-auto pb-2">
                                 ${recentForm.length === 0 ? '<span class="text-slate-500 text-sm">Sem dados recentes.</span>' : ''}
                                 ${recentForm.map(r => {
-                                    const eventImg = r.image || r.eventImage || r.tournamentImage || r.icon || '';
+                                    const eventImg = r.image || '';
                                     return `
                                         <div class="flex flex-col items-center gap-2 flex-shrink-0">
                                             <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center shadow-md">
@@ -193,14 +193,14 @@
                                                 <span class="text-lg">${getMedalEmoji(placementNum)}</span>
                                                 <span class="font-semibold text-slate-200">${h.eventName}</span>
                                             </div>
-                                            <span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded font-mono">${h.placement.split('/')[1] || '?'} participantes</span>
+                                            <span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded font-mono">${h.placement}º Lugar</span>
                                         </div>
                                     `;
                                 }).join('')}
                             </div>
                         </div>
 
-                        <!-- EVOLUÇÃO (GRÁFICO COM RESULTADOS REAIS) -->
+                        <!-- EVOLUÇÃO (GRÁFICO) -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Evolução de Colocação</h3>
                             <div class="h-48 relative w-full pt-2">
@@ -208,7 +208,7 @@
                             </div>
                         </div>
 
-                        <!-- HEAD TO HEAD (VAZIO) -->
+                        <!-- HEAD TO HEAD -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Head to Head</h3>
                             <div class="text-slate-500 text-sm py-6 text-center border border-dashed border-slate-800 rounded-lg">
@@ -224,8 +224,7 @@
                                     <div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-2 text-sm">
                                         <div class="font-medium text-slate-200">${t.name} <span class="text-xs text-slate-500">(${t.eventName})</span></div>
                                         <div class="flex items-center gap-4 text-xs">
-                                            <span class="font-bold ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">${t.placement}º / ${t.attendees}</span>
-                                            <span class="text-slate-400 font-mono">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
+                                            <span class="font-bold ${t.placement <= 3 ? 'text-green-500' : (t.placement <= 8 ? 'text-yellow-500' : 'text-red-500')}">${t.placement}º Lugar</span>
                                             <span class="text-slate-500">${t.date}</span>
                                         </div>
                                     </div>
