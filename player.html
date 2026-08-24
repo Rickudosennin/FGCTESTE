@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil do Player | FGC HUB</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="buscar-style.css">
@@ -59,11 +60,8 @@
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
-
-                const rating = dados.rating || 1842;
-                const rank = dados.rank || '#7';
-                const streak = dados.streak || 3;
                 const flag = dados.countryFlag || '🇧🇷';
+                const totalSets = totalWins + totalLosses;
 
                 return `
                     <div class="space-y-6">
@@ -85,8 +83,7 @@
                                         </h1>
                                         ${realName ? `<p class="text-sm text-slate-400 font-medium">${realName}</p>` : ''}
                                         <div class="flex items-center gap-3 text-xs font-semibold pt-2 text-slate-300">
-                                            <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">RATING <strong class="text-red-500">${rating}</strong></span>
-                                            <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">RANK <strong class="text-red-500">${rank}</strong></span>
+                                            <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">TORNEIOS <strong class="text-white">${tournaments.length}</strong></span>
                                             <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">WIN RATE <strong class="${wrClass}">${winrateAllTime}%</strong></span>
                                         </div>
                                     </div>
@@ -101,7 +98,7 @@
                             </div>
                         </div>
 
-                        <!-- 4 STAT CARDS -->
+                        <!-- 4 STAT CARDS (DADOS START.GG) -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
                                 <div class="text-2xl font-black text-white">${totalWins} W</div>
@@ -116,12 +113,12 @@
                                 <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Win Rate</div>
                             </div>
                             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
-                                <div class="text-2xl font-black text-orange-500">🔥 ${streak}</div>
-                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Streak</div>
+                                <div class="text-2xl font-black text-white">${tournaments.length}</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Torneios</div>
                             </div>
                         </div>
 
-                        <!-- RECENT FORM (COM AVATARES DOS EVENTOS) -->
+                        <!-- RECENT FORM -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Recent Form</h3>
                             <div class="flex items-center gap-3 overflow-x-auto pb-2">
@@ -145,16 +142,16 @@
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Performance</h3>
                             <div class="grid grid-cols-3 gap-4 pt-2 border-t border-slate-800 text-center">
                                 <div>
-                                    <div class="text-xs text-slate-400 mb-1">Rating</div>
-                                    <div class="text-xl font-bold text-white">${rating}</div>
+                                    <div class="text-xs text-slate-400 mb-1">Total de Sets</div>
+                                    <div class="text-xl font-bold text-white">${totalSets}</div>
                                 </div>
                                 <div>
                                     <div class="text-xs text-slate-400 mb-1">Win Rate</div>
                                     <div class="text-xl font-bold ${wrClass}">${winrateAllTime}%</div>
                                 </div>
                                 <div>
-                                    <div class="text-xs text-slate-400 mb-1">Ranking</div>
-                                    <div class="text-xl font-bold text-white">${rank}</div>
+                                    <div class="text-xs text-slate-400 mb-1">Torneios</div>
+                                    <div class="text-xl font-bold text-white">${tournaments.length}</div>
                                 </div>
                             </div>
                         </div>
@@ -179,30 +176,19 @@
                             </div>
                         </div>
 
-                        <!-- EVOLUÇÃO -->
+                        <!-- EVOLUÇÃO (GRÁFICO COM RESULTADOS REAIS) -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Evolução</h3>
-                            <div class="h-32 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 text-xs font-mono">
-                                📈 [ GRÁFICO DE EVOLUÇÃO DE RATING / WIN RATE ]
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Evolução de Colocação</h3>
+                            <div class="h-48 relative w-full pt-2">
+                                <canvas id="chartEvolucao"></canvas>
                             </div>
                         </div>
 
-                        <!-- HEAD TO HEAD -->
+                        <!-- HEAD TO HEAD (VAZIO) -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Head to Head</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
-                                    <span class="font-bold text-sm text-slate-300">Player X</span>
-                                    <span class="text-xs font-mono font-bold bg-green-950 text-green-400 px-2 py-1 rounded border border-green-800">7 – 3</span>
-                                </div>
-                                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
-                                    <span class="font-bold text-sm text-slate-300">Player Y</span>
-                                    <span class="text-xs font-mono font-bold bg-green-950 text-green-400 px-2 py-1 rounded border border-green-800">5 – 4</span>
-                                </div>
-                                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
-                                    <span class="font-bold text-sm text-slate-300">Player Z</span>
-                                    <span class="text-xs font-mono font-bold bg-red-950 text-red-400 px-2 py-1 rounded border border-red-800">2 – 6</span>
-                                </div>
+                            <div class="text-slate-500 text-sm py-6 text-center border border-dashed border-slate-800 rounded-lg">
+                                Nenhum confronto direto registrado via Start.gg.
                             </div>
                         </div>
 
@@ -242,6 +228,51 @@
                 `;
             }
 
+            function renderizarGraficoEvolucao(tournaments) {
+                const canvas = document.getElementById('chartEvolucao');
+                if (!canvas || !tournaments || tournaments.length === 0) return;
+
+                const dadosOrdenados = [...tournaments].reverse();
+                const labels = dadosOrdenados.map(t => t.name.length > 15 ? t.name.substring(0, 15) + '...' : t.name);
+                const placements = dadosOrdenados.map(t => parseInt(t.placement) || 1);
+
+                new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Colocação (1º no topo)',
+                            data: placements,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#ef4444',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                reverse: true,
+                                beginAtZero: false,
+                                ticks: { color: '#94a3b8', precision: 0 },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#1e293b' }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#cbd5e1' } }
+                        }
+                    }
+                });
+            }
+
             async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
@@ -250,8 +281,8 @@
                 try {
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
-                    conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
+                    renderizarGraficoEvolucao(dados.tournaments || []);
                 } catch (e) {
                     console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
