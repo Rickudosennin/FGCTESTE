@@ -1,393 +1,229 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil do Player | FGC HUB</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="buscar-style.css">
-</head>
-<body class="p-4 md:p-10">
-    <div class="max-w-5xl mx-auto">
-        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para a busca</a>
+// ==================== CONFIG ====================
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
+const CACHE_MAX_IDADE_HORAS = 24;
 
-        <div id="perfil_conteudo">
-            <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
-        </div>
-    </div>
+// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
+const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
-    <script src="script.js"></script>
-    <script src="players.js"></script>
-    <script src="player-extra.js"></script>
+function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
+    try {
+        const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+        if (!lista.some(p => p.playerId === playerId)) {
+            lista.push({ playerId, gamerTag, prefix });
+            localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
+            const contador = document.getElementById('contador_salvos');
+            if (contador) contador.textContent = lista.length;
+        }
+    } catch (e) {}
+}
 
-    <script>
-        (function() {
-            if (window._playerLoaded) {
-                console.log('Perfil já carregado.');
-                return;
+function _carregarPlayersLocal() {
+    try {
+        return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+    } catch (e) { return []; }
+}
+
+// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
+function _salvarPerfilCache(playerId, dados) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const cacheData = {
+            dados: dados,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (e) {}
+}
+
+function _lerPerfilCache(playerId) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const cacheData = JSON.parse(raw);
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
+        return null;
+    } catch (e) { return null; }
+}
+
+// ==================== PROCESSAMENTO ====================
+function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
+    const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
+
+    let totalWins = 0, totalLosses = 0;
+    let wins6m = 0, losses6m = 0;
+    const torneios = [];
+    const colocacoes = [];
+
+    standings.forEach(s => {
+        const eventId = s.container?.id;
+        const startAt = s.container?.startAt;
+        const resultado = setsPorEvento[eventId] || { wins: 0, losses: 0 };
+
+        totalWins += resultado.wins;
+        totalLosses += resultado.losses;
+
+        const isRecent = startAt && (startAt * 1000) > seisMesesAtras;
+        if (isRecent) {
+            wins6m += resultado.wins;
+            losses6m += resultado.losses;
+        }
+
+        const winrate = (resultado.wins + resultado.losses) > 0 
+            ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100) 
+            : 0;
+
+        const tournamentImages = s.container?.tournament?.images || [];
+        const tournamentIcon = tournamentImages.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+
+        torneios.push({
+            name: s.container?.tournament?.name || '—',
+            eventName: s.container?.name || '—',
+            placement: s.placement || '?',
+            attendees: s.container?.tournament?.numAttendees || '?',
+            wins: resultado.wins,
+            losses: resultado.losses,
+            winrate,
+            date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
+            startAt: startAt || 0,
+            icon: tournamentIcon,
+            isRecent
+        });
+
+        if (s.placement) colocacoes.push(s.placement);
+    });
+
+    torneios.sort((a, b) => b.startAt - a.startAt);
+    const colocacoesOrdenadas = torneios
+        .filter(t => t.placement && t.placement !== '?')
+        .map(t => ({ placement: t.placement, icon: t.icon }));
+
+    const totalPartidas = totalWins + totalLosses;
+    const total6m = wins6m + losses6m;
+
+    const highlights = [...torneios]
+        .filter(t => t.placement && t.placement > 0 && t.attendees !== '?')
+        .sort((a, b) => a.placement - b.placement)
+        .slice(0, 8)
+        .map(t => ({
+            placement: `${t.placement}º/${t.attendees}`,
+            eventName: t.eventName,
+            date: t.date
+        }));
+
+    return {
+        gamerTag,
+        playerPrefix: prefix || '',
+        totalWins,
+        totalLosses,
+        winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
+        winrateLast6Months: total6m > 0 ? Math.round((wins6m / total6m) * 100) : 0,
+        wins6m,
+        losses6m,
+        recentForm: colocacoesOrdenadas.slice(0, 10),
+        highlights,
+        tournaments: torneios,
+        updatedAt: new Date().toISOString()
+    };
+}
+
+// ==================== BUSCA AO VIVO ====================
+async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
+    const query1 = `query PlayerHistory($id: ID!) {
+        player(id: $id) {
+            user {
+                images {
+                    id
+                    type
+                    url
+                }
             }
-
-            window._playerLoaded = true;
-
-            const params = new URLSearchParams(window.location.search);
-            const playerId = params.get('id');
-            const gamerTag = params.get('tag') || 'Player';
-            const prefix = params.get('prefix') || '';
-            const conteudo = document.getElementById('perfil_conteudo');
-
-            function getDotClass(placement) {
-                if (placement === 1) return 'dot-1st';
-                if (placement <= 3) return 'dot-top3';
-                if (placement <= 8) return 'dot-top8';
-                return 'dot-other';
-            }
-
-            function formatDate(timestamp) {
-                if (!timestamp) return '—';
-
-                const d = new Date(timestamp * 1000);
-
-                return d.toLocaleDateString(
-                    'pt-BR',
-                    {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
+            recentStandings(limit: 15) {
+                placement
+                container {
+                    ... on Event {
+                        id
+                        name
+                        startAt
+                        tournament {
+                            name
+                            numAttendees
+                            images {
+                                type
+                                url
+                            }
+                        }
                     }
-                );
-            }
-
-            function montarHtmlPerfil(dados, fonte) {
-                const {
-                    gamerTag,
-                    totalWins,
-                    totalLosses,
-                    winrateAllTime,
-                    winrateLast6Months,
-                    wins6m,
-                    losses6m,
-                    recentForm,
-                    highlights,
-                    tournaments,
-                    avatarUrl,
-                    bannerUrl,
-                    playerPrefix
-                } = dados;
-
-                const wrClass =
-                    winrateAllTime >= 60
-                        ? 'text-green-500'
-                        : (
-                            winrateAllTime >= 40
-                                ? 'text-yellow-500'
-                                : 'text-red-500'
-                        );
-
-                // Define o display name com prefixo se disponível
-                const displayName =
-                    playerPrefix
-                        ? `${playerPrefix} | ${gamerTag}`
-                        : gamerTag;
-
-                const eventsHtml =
-                    tournaments
-                        .slice(0, 15)
-                        .map(t => `
-                            <div class="event-row">
-                                <span class="event-name">${t.name}</span>
-
-                                <span class="event-placement ${
-                                    t.winrate >= 60
-                                        ? 'text-green-500'
-                                        : (
-                                            t.winrate >= 40
-                                                ? 'text-yellow-500'
-                                                : 'text-red-500'
-                                        )
-                                }">
-                                    ${t.placement}º / ${t.attendees}
-                                </span>
-
-                                <span class="event-record">
-                                    ${t.wins}W - ${t.losses}L (${t.winrate}%)
-                                </span>
-
-                                <span class="event-date">
-                                    ${t.date}
-                                </span>
-                            </div>
-                        `)
-                        .join('')
-                    ||
-                    '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
-
-                const bannerStyle =
-                    bannerUrl
-                        ? `style="background-image:url('${bannerUrl}')"`
-                        : '';
-
-                return `
-                    <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-
-                        <!-- BANNER + AVATAR -->
-                        <div class="profile-banner" ${bannerStyle}>
-                            <div class="profile-banner-overlay"></div>
-
-                            ${
-                                avatarUrl
-                                    ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">`
-                                    : ''
-                            }
-                        </div>
-
-                        <!-- HEADER -->
-                        <div class="profile-header">
-
-                            <h1 class="profile-gamertag">
-                                ${displayName}
-                            </h1>
-
-                            <div class="winrate-badge ${wrClass}">
-                                ${winrateAllTime}%
-                            </div>
-
-                            <div class="record-badge">
-                                ${totalWins}W - ${totalLosses}L
-                            </div>
-
-                            <span class="text-xs text-slate-500 ml-auto">
-                                ${
-                                    fonte === 'cache'
-                                        ? '⚡ em cache'
-                                        : '🔴 ao vivo'
-                                }
-                            </span>
-
-                            <button
-                                onclick="atualizarDados()"
-                                class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition"
-                            >
-                                <i class="fa-solid fa-rotate"></i>
-                                Atualizar dados
-                            </button>
-
-                        </div>
-
-                        <!-- RECENT FORM (bolinhas) -->
-                        <div class="recent-form">
-
-                            <h3>RECENT FORM</h3>
-
-                            <div class="form-dots">
-
-                                ${recentForm.map(r => `
-                                    <div class="form-entry">
-
-                                        ${
-                                            r.icon
-                                                ? `<img src="${r.icon}" class="form-icon" alt="">`
-                                                : '<div class="form-icon form-icon-empty"></div>'
-                                        }
-
-                                        <span class="form-dot ${getDotClass(r.placement)}">
-                                            ${r.placement}
-                                        </span>
-
-                                    </div>
-                                `).join('')}
-
-                            </div>
-
-                        </div>
-
-                        <!-- HIGHLIGHTS -->
-                        <div class="highlights">
-
-                            <h3>HIGHLIGHTS</h3>
-
-                            ${
-                                highlights.length === 0
-                                    ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>'
-                                    : ''
-                            }
-
-                            ${highlights.map(h => `
-                                <div class="highlight-item">
-
-                                    <span class="placement">
-                                        ${h.placement}
-                                    </span>
-
-                                    <span class="event">
-                                        ${h.eventName}
-                                    </span>
-
-                                    <span class="date">
-                                        ${h.date}
-                                    </span>
-
-                                </div>
-                            `).join('')}
-
-                        </div>
-
-                        <!-- ABAS -->
-                        <div class="profile-tabs">
-
-                            <div class="tab-header">
-
-                                <span
-                                    class="tab-btn active"
-                                    data-tab="events"
-                                >
-                                    EVENTS
-                                </span>
-
-                                <span
-                                    class="tab-btn"
-                                    data-tab="versus"
-                                >
-                                    VERSUS
-                                </span>
-
-                                <span
-                                    class="tab-btn"
-                                    data-tab="vods"
-                                >
-                                    VODS
-                                </span>
-
-                            </div>
-
-                            <div
-                                class="tab-content"
-                                id="tab-events"
-                            >
-                                ${eventsHtml}
-                            </div>
-
-                            <div
-                                class="tab-content"
-                                id="tab-versus"
-                                style="display:none;"
-                            >
-                                <div class="text-slate-500 text-sm">
-                                    Em breve: confrontos diretos.
-                                </div>
-                            </div>
-
-                            <div
-                                class="tab-content"
-                                id="tab-vods"
-                                style="display:none;"
-                            >
-                                <div class="text-slate-500 text-sm">
-                                    Em breve: VODs.
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-                `;
-            }
-
-            async function carregarPerfil(
-                forceRefresh = false
-            ) {
-
-                if (!playerId) {
-
-                    conteudo.innerHTML =
-                        '<div class="history-empty">Player não especificado na URL.</div>';
-
-                    return;
-                }
-
-                try {
-
-                    conteudo.innerHTML =
-                        '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
-
-                    const {
-                        dados,
-                        fonte
-                    } =
-                        await obterDadosPlayer(
-                            playerId,
-                            gamerTag,
-                            forceRefresh,
-                            prefix
-                        );
-
-                    conteudo.innerHTML = '';
-
-                    conteudo.innerHTML =
-                        montarHtmlPerfil(
-                            dados,
-                            fonte
-                        );
-
-                    document
-                        .querySelectorAll('.tab-btn')
-                        .forEach(btn => {
-
-                            btn.addEventListener(
-                                'click',
-                                function() {
-
-                                    document
-                                        .querySelectorAll('.tab-btn')
-                                        .forEach(
-                                            b =>
-                                                b.classList.remove(
-                                                    'active'
-                                                )
-                                        );
-
-                                    this.classList.add(
-                                        'active'
-                                    );
-
-                                    const target =
-                                        this.dataset.tab;
-
-                                    document
-                                        .querySelectorAll('.tab-content')
-                                        .forEach(
-                                            c =>
-                                                c.style.display =
-                                                    'none'
-                                        );
-
-                                    document.getElementById(
-                                        'tab-' + target
-                                    ).style.display =
-                                        'block';
-                                }
-                            );
-
-                        });
-
-                } catch (e) {
-
-                    console.error(e);
-
-                    conteudo.innerHTML =
-                        '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
                 }
             }
+        }
+    }`;
+    const json1 = await callStartGG(query1, { id: playerId });
+    const standings = json1.data?.player?.recentStandings || [];
+    const images = json1.data?.player?.user?.images || [];
+    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+    const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
 
-            window.atualizarDados =
-                function() {
-                    carregarPerfil(true);
-                };
+    const setsPorEvento = {};
+    for (const standing of standings) {
+        const eventId = standing.container?.id;
+        if (!eventId) continue;
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
+    }
 
-            carregarPerfil(false);
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
+    dados.avatarUrl = avatarUrl;
+    dados.bannerUrl = bannerUrl;
+    return dados;
+}
 
-        })();
-    </script>
+// ==================== FUNÇÃO PRINCIPAL ====================
+async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '') {
+    if (!forceRefresh) {
+        const cacheData = _lerPerfilCache(playerId);
+        if (cacheData) {
+            if (prefix && !cacheData.playerPrefix) {
+                cacheData.playerPrefix = prefix;
+            }
+            return { dados: cacheData, fonte: 'cache' };
+        }
+    }
+    const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
+    _salvarPerfilCache(playerId, dados);
+    _salvarPlayerLocal(playerId, gamerTag, prefix);
+    return { dados, fonte: 'live' };
+}
 
-</body>
-</html>
+// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
+let _listaPlayersConhecidos = null;
+async function carregarPlayersConhecidos() {
+    if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
+
+    const locais = _carregarPlayersLocal();
+    const mapa = new Map();
+    locais.forEach(p => {
+        const id = String(p.playerId);
+        if (!mapa.has(id)) {
+            mapa.set(id, { 
+                playerId: id, 
+                gamerTag: p.gamerTag, 
+                prefix: p.prefix || '',
+                placement: null 
+            });
+        }
+    });
+    _listaPlayersConhecidos = Array.from(mapa.values());
+    return _listaPlayersConhecidos;
+}
+
+function filtrarPlayers(lista, termo) {
+    const t = termo.trim().toLowerCase();
+    if (!t) return [];
+    const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
+    return filtrados.slice(0, 15);
+}
