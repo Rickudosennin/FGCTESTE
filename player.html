@@ -54,13 +54,17 @@
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime,
                     recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
-                    realName
+                    realName, social
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
                 const totalSets = totalWins + totalLosses;
+
+                const twitchUrl = social?.twitch ? `https://twitch.tv/${social.twitch}` : null;
+                const twitterUrl = social?.twitter ? `https://x.com/${social.twitter}` : null;
+                const discordUser = social?.discord || null;
 
                 return `
                     <div class="space-y-6 w-full min-w-0">
@@ -212,15 +216,27 @@
                             <a href="https://start.gg/user/${playerId}" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-red-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                                 [ START.GG ]
                             </a>
-                            <a href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                            ${discordUser ? `
+                            <span class="bg-slate-900 text-slate-300 border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">
+                                [ DISCORD: ${discordUser} ]
+                            </span>` : `
+                            <a href="#" class="bg-slate-900 text-slate-600 border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider cursor-not-allowed opacity-50">
                                 [ DISCORD ]
-                            </a>
-                            <a href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-purple-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                            </a>`}
+                            ${twitchUrl ? `
+                            <a href="${twitchUrl}" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-purple-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                                 [ TWITCH ]
-                            </a>
-                            <a href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                            </a>` : `
+                            <a href="#" class="bg-slate-900 text-slate-600 border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider cursor-not-allowed opacity-50">
+                                [ TWITCH ]
+                            </a>`}
+                            ${twitterUrl ? `
+                            <a href="${twitterUrl}" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                                 [ X ]
-                            </a>
+                            </a>` : `
+                            <a href="#" class="bg-slate-900 text-slate-600 border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider cursor-not-allowed opacity-50">
+                                [ X ]
+                            </a>`}
                         </div>
                     </div>
                 `;
