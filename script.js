@@ -241,9 +241,22 @@ function fecharAttendees() { document.getElementById('attendees_sidebar').classL
 // ==================== HISTORICO ====================
 async function buscarSetsDoEvento(eventId, playerId) {
     try {
-        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id participants { player { id } } } } } } } }`;
+        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id name participants { player { id gamerTag } } } } } } } }`;
         const json = await callStartGG(query, { eventId }); const sets = json.data?.event?.sets?.nodes || []; let wins = 0, losses = 0; const setsDetalhados = [];
-        sets.forEach(set => { const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId)); if (!playerSlot || !playerSlot.entrant) return; const myEntrantId = playerSlot.entrant.id; if (set.winnerId) { const venceu = String(set.winnerId) === String(myEntrantId); if (venceu) wins++; else losses++; setsDetalhados.push({ setId: set.id, venceu }); } });
+        sets.forEach(set => {
+            const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId));
+            if (!playerSlot || !playerSlot.entrant) return;
+            const myEntrantId = playerSlot.entrant.id;
+            const oppSlot = set.slots?.find(slot => slot.entrant && String(slot.entrant.id) !== String(myEntrantId));
+            const oppEntrant = oppSlot?.entrant || null;
+            const opponentId = oppEntrant?.participants?.[0]?.player?.id || null;
+            const opponentTag = oppEntrant?.name || oppEntrant?.participants?.[0]?.player?.gamerTag || null;
+            if (set.winnerId) {
+                const venceu = String(set.winnerId) === String(myEntrantId);
+                if (venceu) wins++; else losses++;
+                setsDetalhados.push({ setId: set.id, venceu, opponentId, opponentTag });
+            }
+        });
         return { wins, losses, total: wins + losses, sets: setsDetalhados };
     } catch (e) { return { wins: 0, losses: 0, total: 0, error: true, sets: [] }; }
 }

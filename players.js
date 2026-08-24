@@ -1,143 +1,270 @@
-// ==================== PROCESSAMENTO HEAD TO HEAD ====================
-function processarHeadToHead(historicoSets, playerIdAtual) {
-    const rivaisMap = new Map();
+// ==================== CONFIG ====================
+const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
+const CACHE_MAX_IDADE_HORAS = 24;
 
-    historicoSets.forEach(set => {
-        // Identifica quem é o oponente no set
-        const slots = set.slots || [];
-        const oponenteSlot = slots.find(s => String(s.entrant?.id) !== String(playerIdAtual));
-        const jogadorSlot = slots.find(s => String(s.entrant?.id) === String(playerIdAtual));
+// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
+const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
-        if (!oponenteSlot || !oponenteSlot.entrant) return;
+function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
+    try {
+        const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+        if (!lista.some(p => p.playerId === playerId)) {
+            lista.push({ playerId, gamerTag, prefix });
+            localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
+            const contador = document.getElementById('contador_salvos');
+            if (contador) contador.textContent = lista.length;
+        }
+    } catch (e) {}
+}
 
-        const oponenteId = oponenteSlot.entrant.id;
-        const oponenteTag = oponenteSlot.entrant.name || 'Oponente Desconhecido';
-        const venceu = set.winnerId === jogadorSlot?.entrant?.id;
+function _carregarPlayersLocal() {
+    try {
+        return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
+    } catch (e) { return []; }
+}
 
-        if (!rivaisMap.has(oponenteId)) {
-            rivaisMap.set(oponenteId, {
-                oponenteId,
-                gamerTag: oponenteTag,
-                wins: 0,
-                losses: 0,
-                totalSets: 0,
-                matches: []
+// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
+function _salvarPerfilCache(playerId, dados) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const cacheData = {
+            dados: dados,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (e) {}
+}
+
+function _lerPerfilCache(playerId) {
+    try {
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const cacheData = JSON.parse(raw);
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
+        return null;
+    } catch (e) { return null; }
+}
+
+// ==================== PROCESSAMENTO ====================
+function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
+    const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
+
+    let totalWins = 0, totalLosses = 0;
+    let wins6m = 0, losses6m = 0;
+    const torneios = [];
+    const colocacoes = [];
+    const h2h = {};
+
+    standings.forEach(s => {
+        const eventId = s.container?.id;
+        const startAt = s.container?.startAt;
+        const resultado = setsPorEvento[eventId] || { wins: 0, losses: 0 };
+
+        totalWins += resultado.wins;
+        totalLosses += resultado.losses;
+
+        (resultado.sets || []).forEach(set => {
+            if (!set.opponentId) return;
+            const key = String(set.opponentId);
+            if (!h2h[key]) h2h[key] = { opponentId: set.opponentId, opponentTag: set.opponentTag || 'Desconhecido', wins: 0, losses: 0 };
+            if (set.venceu) h2h[key].wins++; else h2h[key].losses++;
+            if (set.opponentTag) h2h[key].opponentTag = set.opponentTag;
+        });
+
+        const isRecent = startAt && (startAt * 1000) > seisMesesAtras;
+        if (isRecent) {
+            wins6m += resultado.wins;
+            losses6m += resultado.losses;
+        }
+
+        const winrate = (resultado.wins + resultado.losses) > 0 
+            ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100) 
+            : 0;
+
+        const tournamentImages = s.container?.tournament?.images || [];
+        const tournamentIcon = tournamentImages.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+
+        torneios.push({
+            name: s.container?.tournament?.name || '—',
+            eventName: s.container?.name || '—',
+            placement: s.placement || '?',
+            attendees: s.container?.tournament?.numAttendees || '?',
+            wins: resultado.wins,
+            losses: resultado.losses,
+            winrate,
+            date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
+            startAt: startAt || 0,
+            icon: tournamentIcon,
+            isRecent
+        });
+
+        if (s.placement) colocacoes.push(s.placement);
+    });
+
+    torneios.sort((a, b) => b.startAt - a.startAt);
+
+    const headToHead = Object.values(h2h)
+        .map(r => {
+            const total = r.wins + r.losses;
+            return { ...r, total, winrate: total > 0 ? Math.round((r.wins / total) * 100) : 0 };
+        })
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+    const colocacoesOrdenadas = torneios
+        .filter(t => t.placement && t.placement !== '?')
+        .map(t => ({ placement: t.placement, icon: t.icon }));
+
+    const totalPartidas = totalWins + totalLosses;
+    const total6m = wins6m + losses6m;
+
+    const highlights = [...torneios]
+        .filter(t => t.placement && t.placement > 0 && t.attendees !== '?')
+        .sort((a, b) => a.placement - b.placement)
+        .slice(0, 8)
+        .map(t => ({
+            placement: `${t.placement}º/${t.attendees}`,
+            eventName: t.eventName,
+            date: t.date
+        }));
+
+    return {
+        gamerTag,
+        playerPrefix: prefix || '',
+        totalWins,
+        totalLosses,
+        winrateAllTime: totalPartidas > 0 ? Math.round((totalWins / totalPartidas) * 100) : 0,
+        winrateLast6Months: total6m > 0 ? Math.round((wins6m / total6m) * 100) : 0,
+        wins6m,
+        losses6m,
+        recentForm: colocacoesOrdenadas.slice(0, 10),
+        highlights,
+        headToHead,
+        tournaments: torneios,
+        updatedAt: new Date().toISOString()
+    };
+}
+
+// ==================== BUSCA AO VIVO ====================
+async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
+    const query1 = `query PlayerHistory($id: ID!) {
+        player(id: $id) {
+            user {
+                id
+                slug
+                name
+                authorizations {
+                    type
+                    externalUsername
+                }
+                images {
+                    id
+                    type
+                    url
+                }
+            }
+            recentStandings(limit: 15) {
+                placement
+                container {
+                    ... on Event {
+                        id
+                        name
+                        startAt
+                        tournament {
+                            name
+                            numAttendees
+                            images {
+                                type
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`;
+    const json1 = await callStartGG(query1, { id: playerId });
+    const user = json1.data?.player?.user;
+    const standings = json1.data?.player?.recentStandings || [];
+    const images = user?.images || [];
+    const authorizations = user?.authorizations || [];
+    const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
+    const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
+    const realName = user?.name || null;
+    const userSlug = user?.slug || null;
+
+    const twitchAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITCH');
+    const twitterAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITTER' || (a.type || '').toUpperCase() === 'X');
+    const discordAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'DISCORD');
+
+    const setsPorEvento = {};
+    for (const standing of standings) {
+        const eventId = standing.container?.id;
+        if (!eventId) continue;
+        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        setsPorEvento[eventId] = resultado;
+    }
+
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
+    dados.avatarUrl = avatarUrl;
+    dados.bannerUrl = bannerUrl;
+    dados.realName = realName;
+    dados.userSlug = userSlug;
+    dados.social = {
+        twitch: twitchAuth ? twitchAuth.externalUsername : null,
+        twitter: twitterAuth ? twitterAuth.externalUsername : null,
+        discord: discordAuth ? discordAuth.externalUsername : null
+    };
+    return dados;
+}
+
+// ==================== FUNÇÃO PRINCIPAL ====================
+async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '') {
+    if (!forceRefresh) {
+        const cacheData = _lerPerfilCache(playerId);
+        if (cacheData) {
+            if (prefix && !cacheData.playerPrefix) {
+                cacheData.playerPrefix = prefix;
+            }
+            return { dados: cacheData, fonte: 'cache' };
+        }
+    }
+    const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
+    _salvarPerfilCache(playerId, dados);
+    _salvarPlayerLocal(playerId, gamerTag, prefix);
+    return { dados, fonte: 'live' };
+}
+
+// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
+let _listaPlayersConhecidos = null;
+async function carregarPlayersConhecidos() {
+    if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
+
+    const locais = _carregarPlayersLocal();
+    const mapa = new Map();
+    locais.forEach(p => {
+        const id = String(p.playerId);
+        if (!mapa.has(id)) {
+            mapa.set(id, { 
+                playerId: id, 
+                gamerTag: p.gamerTag, 
+                prefix: p.prefix || '',
+                placement: null 
             });
         }
-
-        const rival = rivaisMap.get(oponenteId);
-        rival.totalSets += 1;
-        if (venceu) {
-            rival.wins += 1;
-        } else {
-            rival.losses += 1;
-        }
-
-        rival.matches.push({
-            tournamentName: set.event?.tournament?.name || 'Torneio',
-            eventName: set.event?.name || 'Evento',
-            fullScore: set.displayScore || '—',
-            result: venceu ? 'W' : 'L',
-            round: set.fullRoundText || '—',
-            date: set.completedAt ? new Date(set.completedAt * 1000).toLocaleDateString('pt-BR') : '—'
-        });
     });
-
-    // Converte para array e ordena pelos mais enfrentados
-    const listaRivais = Array.from(rivaisMap.values()).map(r => ({
-        ...r,
-        winrate: Math.round((r.wins / r.totalSets) * 100)
-    }));
-
-    return listaRivais.sort((a, b) => b.totalSets - a.totalSets);
+    _listaPlayersConhecidos = Array.from(mapa.values());
+    return _listaPlayersConhecidos;
 }
 
-// ==================== RENDERIZAÇÃO DA INTERFACE (Estilo Supermajor) ====================
-function renderizarH2H(listaRivais, containerId = 'tab_vs_content') {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    if (!listaRivais || listaRivais.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 py-8">Nenhum histórico de confronto encontrado.</div>';
-        return;
-    }
-
-    let html = `
-        <div class="mb-4">
-            <input type="text" id="h2h_search" placeholder="Buscar oponente..." 
-                   class="w-full bg-gray-800 text-white rounded px-4 py-2 border border-gray-700 focus:outline-none focus:border-red-500"
-                   onkeyup="filtrarRivaisH2H()">
-        </div>
-        <div class="space-y-3" id="h2h_list">
-    `;
-
-    listaRivais.forEach(r => {
-        const isDominating = r.wins > r.losses;
-        const isTied = r.wins === r.losses;
-        const scoreColor = isDominating ? 'text-green-400' : (isTied ? 'text-yellow-400' : 'text-red-400');
-
-        html += `
-            <div class="rival-card bg-gray-900 border border-gray-800 rounded-lg p-4 transition-all hover:border-gray-700" data-tag="${r.gamerTag.toLowerCase()}">
-                <div class="flex items-center justify-between cursor-pointer" onclick="toggleRivalDetails('${r.oponenteId}')">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center font-bold text-gray-300">
-                            ${r.gamerTag.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-white text-lg">${r.gamerTag}</h4>
-                            <p class="text-xs text-gray-400">${r.totalSets} ${r.totalSets === 1 ? 'set disputado' : 'sets disputados'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center space-x-6">
-                        <div class="text-right">
-                            <span class="text-2xl font-black ${scoreColor}">${r.wins} - ${r.losses}</span>
-                            <div class="text-xs text-gray-400">${r.winrate}% taxa de vitória</div>
-                        </div>
-                        <span class="text-gray-500 transform transition-transform" id="arrow_${r.oponenteId}">▼</span>
-                    </div>
-                </div>
-
-                <!-- Lista de Lutas Expandível -->
-                <div id="details_${r.oponenteId}" class="hidden mt-4 pt-3 border-t border-gray-800 space-y-2">
-                    ${r.matches.map(m => `
-                        <div class="flex items-center justify-between text-sm bg-gray-800/50 p-2 rounded">
-                            <div>
-                                <span class="font-semibold text-gray-200">${m.tournamentName}</span>
-                                <span class="text-xs text-gray-400 ml-2">(${m.round})</span>
-                            </div>
-                            <div class="flex items-center space-x-3">
-                                <span class="text-xs text-gray-400">${m.date}</span>
-                                <span class="font-mono ${m.result === 'W' ? 'text-green-400' : 'text-red-400'} font-bold">
-                                    ${m.fullScore}
-                                </span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    });
-
-    html += `</div>`;
-    container.innerHTML = html;
-}
-
-// ==================== AUXILIARES DE INTERAÇÃO ====================
-function toggleRivalDetails(oponenteId) {
-    const details = document.getElementById(`details_${oponenteId}`);
-    const arrow = document.getElementById(`arrow_${oponenteId}`);
-    if (details) {
-        details.classList.toggle('hidden');
-        if (arrow) arrow.classList.toggle('rotate-180');
-    }
-}
-
-function filtrarRivaisH2H() {
-    const termo = document.getElementById('h2h_search').value.toLowerCase();
-    const cards = document.querySelectorAll('.rival-card');
-    cards.forEach(card => {
-        const tag = card.getAttribute('data-tag');
-        card.style.display = tag.includes(termo) ? 'block' : 'none';
-    });
+function filtrarPlayers(lista, termo) {
+    const t = termo.trim().toLowerCase();
+    if (!t) return [];
+    const filtrados = lista.filter(p => p.gamerTag.toLowerCase().includes(t));
+    return filtrados.slice(0, 15);
 }
