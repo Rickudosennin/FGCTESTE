@@ -9,74 +9,194 @@
     <link rel="stylesheet" href="buscar-style.css">
 
     <style>
-        /* =========================================================
-           NOVO BLOCO: ESTATÍSTICAS DO PERFIL
-           Não altera o CSS original.
-           ========================================================= */
+        /* ===== FGC HUB - DADOS EXTRAS START.GG ===== */
 
-        .fgchub-profile-stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
-            margin: 18px 0 10px;
+        .fgchub-extra-profile {
+            margin: 18px 0 16px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
         }
 
-        .fgchub-stat-card {
-            background: rgba(255, 255, 255, 0.025);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 8px;
-            padding: 13px 12px;
-            min-width: 0;
-        }
-
-        .fgchub-stat-label {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.8px;
-            color: #64748b;
+        .fgchub-extra-title {
+            margin: 0 0 12px;
+            padding-left: 10px;
+            border-left: 3px solid #ef4444;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
 
-        .fgchub-stat-value {
-            font-size: 18px;
-            font-weight: 800;
-            color: #e2e8f0;
-            line-height: 1;
+        .fgchub-extra-profile-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
         }
 
-        .fgchub-stat-sub {
-            margin-top: 5px;
-            font-size: 10px;
+        .fgchub-extra-item {
+            min-width: 0;
+            padding: 11px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .fgchub-extra-label {
+            display: block;
+            margin-bottom: 4px;
             color: #64748b;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .8px;
+            text-transform: uppercase;
         }
 
-        .fgchub-profile-summary {
+        .fgchub-extra-value {
+            display: block;
+            color: #e2e8f0;
+            font-size: 13px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fgchub-extra-links {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 16px;
-            margin: 2px 0 16px;
+            gap: 7px;
+            margin-top: 10px;
+        }
+
+        .fgchub-social-link,
+        .fgchub-startgg-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 7px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.025);
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 800;
+            text-decoration: none;
+            transition: .2s ease;
+        }
+
+        .fgchub-social-link:hover,
+        .fgchub-startgg-link:hover {
+            border-color: rgba(239,68,68,.45);
+            color: #fff;
+            background: rgba(239,68,68,.08);
+        }
+
+        .fgchub-extra-section {
+            margin: 18px 0 0;
+        }
+
+        .fgchub-extra-section h3 {
+            margin: 0 0 10px;
+            padding-left: 11px;
+            border-left: 3px solid #ef4444;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .fgchub-upcoming-list,
+        .fgchub-h2h-list,
+        .fgchub-vod-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fgchub-upcoming-item,
+        .fgchub-h2h-item,
+        .fgchub-vod-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+
+        .fgchub-upcoming-item:last-child,
+        .fgchub-h2h-item:last-child,
+        .fgchub-vod-item:last-child {
+            border-bottom: 0;
+        }
+
+        .fgchub-item-main {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .fgchub-item-name {
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .fgchub-item-meta {
+            margin-top: 3px;
+            color: #64748b;
+            font-size: 10px;
+        }
+
+        .fgchub-item-result {
+            flex: 0 0 auto;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .fgchub-win {
+            color: #22c55e;
+        }
+
+        .fgchub-loss {
+            color: #ef4444;
+        }
+
+        .fgchub-neutral {
             color: #94a3b8;
+        }
+
+        .fgchub-empty {
+            padding: 12px 0;
+            color: #64748b;
             font-size: 11px;
         }
 
-        .fgchub-profile-summary strong {
-            color: #cbd5e1;
+        .fgchub-loading {
+            padding: 12px 0;
+            color: #64748b;
+            font-size: 11px;
         }
 
-        @media (max-width: 900px) {
-            .fgchub-profile-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+        .fgchub-tab-badge {
+            display: inline-block;
+            margin-left: 4px;
+            padding: 1px 5px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.07);
+            color: #94a3b8;
+            font-size: 9px;
+            vertical-align: middle;
         }
 
-        @media (max-width: 480px) {
-            .fgchub-profile-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+        @media (max-width: 760px) {
+            .fgchub-extra-profile-grid {
+                grid-template-columns: 1fr;
             }
 
-            .fgchub-stat-value {
-                font-size: 16px;
+            .fgchub-upcoming-item,
+            .fgchub-h2h-item,
+            .fgchub-vod-item {
+                align-items: flex-start;
             }
         }
     </style>
@@ -86,23 +206,15 @@
 
     <div class="max-w-5xl mx-auto">
 
-        <a
-            href="buscar.html"
-            class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block"
-        >
+        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">
             &larr; Voltar para a busca
         </a>
 
         <div id="perfil_conteudo">
-
             <div class="loading-attendees">
                 <div class="spinner"></div>
-
-                <p style="margin-top:15px;">
-                    Carregando perfil...
-                </p>
+                <p style="margin-top:15px;">Carregando perfil...</p>
             </div>
-
         </div>
 
     </div>
@@ -175,188 +287,1270 @@
 
             function escapeHtml(value) {
 
-                return String(
-                    value ?? ''
-                )
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
             }
 
-            function calcularEstatisticasExtras(
-                dados
+            function formatTimestamp(
+                timestamp,
+                withTime = false
             ) {
+
+                if (!timestamp)
+                    return '—';
+
+                const d =
+                    new Date(
+                        Number(timestamp) * 1000
+                    );
+
+                if (
+                    Number.isNaN(
+                        d.getTime()
+                    )
+                ) {
+                    return '—';
+                }
+
+                return d.toLocaleDateString(
+                    'pt-BR',
+                    withTime
+                        ? {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }
+                        : {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                        }
+                );
+            }
+
+            function buildStartGGUserUrl(
+                slug
+            ) {
+
+                if (!slug)
+                    return '';
+
+                if (
+                    /^https?:\/\//i.test(
+                        slug
+                    )
+                ) {
+                    return slug;
+                }
+
+                return (
+                    'https://www.start.gg/' +
+                    String(slug)
+                        .replace(/^\/+/, '')
+                );
+            }
+
+            function authLabel(type) {
+
+                const labels = {
+                    TWITCH: 'Twitch',
+                    TWITTER: 'X',
+                    DISCORD: 'Discord',
+                    STEAM: 'Steam',
+                    XBOX: 'Xbox',
+                    EPIC: 'Epic',
+                    BATTLENET: 'Battle.net',
+                    RIOT: 'Riot'
+                };
+
+                return (
+                    labels[type] ||
+                    type ||
+                    'Social'
+                );
+            }
+
+            function authIcon(type) {
+
+                const icons = {
+                    TWITCH: '◉',
+                    TWITTER: '𝕏',
+                    DISCORD: '◌',
+                    STEAM: '◉',
+                    XBOX: '◉',
+                    EPIC: '◆',
+                    BATTLENET: '◉',
+                    RIOT: '◉'
+                };
+
+                return (
+                    icons[type] ||
+                    '•'
+                );
+            }
+
+            function normalizeSocialUrl(
+                auth
+            ) {
+
+                if (
+                    auth?.url
+                ) {
+                    return auth.url;
+                }
+
+                const user =
+                    String(
+                        auth?.externalUsername ||
+                        ''
+                    ).trim();
+
+                if (!user)
+                    return '';
+
+                switch (
+                    auth?.type
+                ) {
+
+                    case 'TWITCH':
+                        return (
+                            'https://www.twitch.tv/' +
+                            encodeURIComponent(user)
+                        );
+
+                    case 'TWITTER':
+                        return (
+                            'https://x.com/' +
+                            encodeURIComponent(
+                                user.replace(
+                                    /^@/,
+                                    ''
+                                )
+                            )
+                        );
+
+                    case 'DISCORD':
+                        return '';
+
+                    default:
+                        return '';
+                }
+            }
+
+            async function buscarDadosExtrasStartGG(
+                playerId
+            ) {
+
+                const query = `
+                    query FGCPlayerExtended($id: ID!) {
+
+                        player(id: $id) {
+
+                            id
+                            gamerTag
+                            prefix
+
+                            user {
+
+                                id
+                                name
+                                slug
+
+                                location {
+                                    city
+                                    state
+                                    country
+                                }
+
+                                authorizations {
+                                    id
+                                    externalId
+                                    externalUsername
+                                    type
+                                    url
+                                }
+
+                                tournaments(
+                                    query: {
+                                        page: 1
+                                        perPage: 12
+                                        filter: {
+                                            upcoming: true
+                                        }
+                                    }
+                                ) {
+
+                                    nodes {
+
+                                        id
+                                        name
+                                        slug
+                                        shortSlug
+                                        startAt
+                                        endAt
+                                        state
+                                        numAttendees
+                                        isOnline
+                                        isRegistrationOpen
+                                        url(
+                                            relative: false
+                                        )
+
+                                    }
+                                }
+                            }
+
+                            sets(
+                                page: 1
+                                perPage: 100
+                            ) {
+
+                                nodes {
+
+                                    id
+                                    displayScore
+                                    winnerId
+                                    state
+                                    completedAt
+                                    startAt
+                                    fullRoundText
+                                    vodUrl
+
+                                    event {
+                                        id
+                                        name
+                                        startAt
+
+                                        tournament {
+                                            id
+                                            name
+
+                                            url(
+                                                relative: false
+                                            )
+                                        }
+                                    }
+
+                                    slots {
+
+                                        entrant {
+                                            id
+                                            name
+
+                                            participants {
+                                                player {
+                                                    id
+                                                }
+                                            }
+                                        }
+
+                                        standing {
+                                            placement
+
+                                            stats {
+                                                score {
+                                                    value
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                `;
+
+                try {
+
+                    const json =
+                        await callStartGG(
+                            query,
+                            {
+                                id: playerId
+                            }
+                        );
+
+                    if (
+                        json?.errors?.length
+                    ) {
+
+                        console.warn(
+                            '[FGC HUB] Extensão do perfil Start.gg:',
+                            json.errors
+                        );
+
+                        return null;
+                    }
+
+                    return (
+                        json?.data?.player ||
+                        null
+                    );
+
+                } catch (error) {
+
+                    console.warn(
+                        '[FGC HUB] Falha nos dados extras do Start.gg:',
+                        error
+                    );
+
+                    return null;
+                }
+            }
+
+            function renderExtraProfile(
+                player
+            ) {
+
+                const root =
+                    document.getElementById(
+                        'fgchub-extra-profile'
+                    );
+
+                if (!root)
+                    return;
+
+                const user =
+                    player?.user ||
+                    {};
+
+                const location =
+                    user.location ||
+                    {};
+
+                const locationText = [
+                    location.city,
+                    location.state,
+                    location.country
+                ]
+                    .filter(Boolean)
+                    .join(', ');
+
+                const startggUrl =
+                    buildStartGGUserUrl(
+                        user.slug
+                    );
+
+                const auths =
+                    Array.isArray(
+                        user.authorizations
+                    )
+                        ? user.authorizations
+                        : [];
+
+                const visibleAuths =
+                    auths.filter(
+                        auth =>
+                            auth &&
+                            auth.type &&
+                            (
+                                auth.externalUsername ||
+                                auth.url
+                            )
+                    );
+
+                root.innerHTML = `
+
+                    <div class="fgchub-extra-profile">
+
+                        <div class="fgchub-extra-title">
+                            PERFIL START.GG
+                        </div>
+
+                        <div class="fgchub-extra-profile-grid">
+
+                            <div class="fgchub-extra-item">
+
+                                <span class="fgchub-extra-label">
+                                    Nome
+                                </span>
+
+                                <span class="fgchub-extra-value">
+                                    ${
+                                        escapeHtml(
+                                            user.name ||
+                                            'Não informado'
+                                        )
+                                    }
+                                </span>
+
+                            </div>
+
+                            <div class="fgchub-extra-item">
+
+                                <span class="fgchub-extra-label">
+                                    Localização
+                                </span>
+
+                                <span class="fgchub-extra-value">
+                                    ${
+                                        escapeHtml(
+                                            locationText ||
+                                            'Não informado'
+                                        )
+                                    }
+                                </span>
+
+                            </div>
+
+                            <div class="fgchub-extra-item">
+
+                                <span class="fgchub-extra-label">
+                                    Perfil
+                                </span>
+
+                                <span class="fgchub-extra-value">
+
+                                    ${
+                                        startggUrl
+                                            ? `
+                                                <a
+                                                    class="fgchub-startgg-link"
+                                                    href="${escapeHtml(startggUrl)}"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Start.gg ↗
+                                                </a>
+                                            `
+                                            : '—'
+                                    }
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="fgchub-extra-links">
+
+                            ${
+                                visibleAuths
+                                    .map(
+                                        auth => {
+
+                                            const url =
+                                                normalizeSocialUrl(
+                                                    auth
+                                                );
+
+                                            const username =
+                                                auth.externalUsername ||
+                                                '';
+
+                                            if (
+                                                auth.type ===
+                                                'DISCORD' &&
+                                                !url
+                                            ) {
+
+                                                return `
+                                                    <span class="fgchub-social-link">
+
+                                                        ${authIcon(auth.type)}
+
+                                                        ${escapeHtml(
+                                                            authLabel(
+                                                                auth.type
+                                                            )
+                                                        )}
+
+                                                        <span
+                                                            style="
+                                                                color:#64748b;
+                                                                font-weight:600;
+                                                            "
+                                                        >
+                                                            ${escapeHtml(
+                                                                username
+                                                            )}
+                                                        </span>
+
+                                                    </span>
+                                                `;
+                                            }
+
+                                            return `
+                                                <a
+                                                    class="fgchub-social-link"
+                                                    href="${escapeHtml(url || '#')}"
+                                                    ${
+                                                        url
+                                                            ? 'target="_blank" rel="noopener noreferrer"'
+                                                            : ''
+                                                    }
+                                                >
+
+                                                    ${authIcon(auth.type)}
+
+                                                    ${escapeHtml(
+                                                        authLabel(
+                                                            auth.type
+                                                        )
+                                                    )}
+
+                                                    <span
+                                                        style="
+                                                            color:#64748b;
+                                                            font-weight:600;
+                                                        "
+                                                    >
+                                                        ${escapeHtml(
+                                                            username
+                                                        )}
+                                                    </span>
+
+                                                </a>
+                                            `;
+                                        }
+                                    )
+                                    .join('')
+                            }
+
+                        </div>
+
+                    </div>
+
+                `;
+            }
+
+            function renderUpcoming(
+                player
+            ) {
+
+                const root =
+                    document.getElementById(
+                        'tab-events'
+                    );
+
+                const existing =
+                    document.getElementById(
+                        'fgchub-upcoming-section'
+                    );
+
+                if (existing) {
+                    existing.remove();
+                }
 
                 const tournaments =
                     Array.isArray(
-                        dados.tournaments
+                        player?.user?.tournaments?.nodes
                     )
-                        ? dados.tournaments
+                        ? player.user.tournaments.nodes
                         : [];
 
-                const totalTorneios =
-                    tournaments.length;
+                if (!root)
+                    return;
 
-                const placements =
+                const now =
+                    Date.now();
+
+                const upcoming =
                     tournaments
-                        .map(
-                            t =>
-                                Number(
-                                    t.placement
-                                )
-                        )
+
                         .filter(
-                            n =>
-                                Number.isFinite(n) &&
-                                n > 0
+                            t =>
+                                t &&
+                                t.startAt &&
+                                Number(t.startAt) *
+                                1000 >=
+                                now -
+                                86400000
+                        )
+
+                        .sort(
+                            (a, b) =>
+                                Number(a.startAt || 0) -
+                                Number(b.startAt || 0)
                         );
 
-                const top8 =
-                    placements.filter(
-                        p =>
-                            p <= 8
-                    ).length;
-
-                const top3 =
-                    placements.filter(
-                        p =>
-                            p <= 3
-                    ).length;
-
-                const primeiros =
-                    placements.filter(
-                        p =>
-                            p === 1
-                    ).length;
-
-                const melhor =
-                    placements.length
-                        ? Math.min(
-                            ...placements
-                        )
-                        : null;
-
-                const totalSets =
-                    Number(
-                        dados.totalWins || 0
-                    ) +
-                    Number(
-                        dados.totalLosses || 0
+                const section =
+                    document.createElement(
+                        'div'
                     );
 
-                return {
-                    totalTorneios,
-                    top8,
-                    top3,
-                    primeiros,
-                    melhor,
-                    totalSets
-                };
+                section.id =
+                    'fgchub-upcoming-section';
+
+                section.className =
+                    'fgchub-extra-section';
+
+                section.innerHTML = `
+
+                    <h3>
+                        UPCOMING EVENTS
+                    </h3>
+
+                    <div class="fgchub-upcoming-list">
+
+                        ${
+                            upcoming.length
+
+                                ? upcoming
+                                    .map(
+                                        t => `
+
+                                            <div
+                                                class="fgchub-upcoming-item"
+                                            >
+
+                                                <div
+                                                    class="fgchub-item-main"
+                                                >
+
+                                                    <div
+                                                        class="fgchub-item-name"
+                                                    >
+                                                        ${escapeHtml(
+                                                            t.name ||
+                                                            '—'
+                                                        )}
+                                                    </div>
+
+                                                    <div
+                                                        class="fgchub-item-meta"
+                                                    >
+
+                                                        ${formatTimestamp(
+                                                            t.startAt
+                                                        )}
+
+                                                        ${
+                                                            t.endAt
+                                                                ? ` → ${formatTimestamp(t.endAt)}`
+                                                                : ''
+                                                        }
+
+                                                        ${
+                                                            t.numAttendees != null
+                                                                ? ` · ${t.numAttendees} participantes`
+                                                                : ''
+                                                        }
+
+                                                        ${
+                                                            t.isOnline === true
+                                                                ? ' · Online'
+                                                                : ''
+                                                        }
+
+                                                    </div>
+
+                                                </div>
+
+                                                ${
+                                                    t.url
+                                                        ? `
+                                                            <a
+                                                                href="${escapeHtml(t.url)}"
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                class="fgchub-startgg-link"
+                                                            >
+                                                                Abrir ↗
+                                                            </a>
+                                                        `
+                                                        : ''
+                                                }
+
+                                            </div>
+
+                                        `
+                                    )
+                                    .join('')
+
+                                : `
+                                    <div class="fgchub-empty">
+                                        Nenhum evento futuro encontrado no perfil.
+                                    </div>
+                                `
+                        }
+
+                    </div>
+
+                `;
+
+                root.prepend(
+                    section
+                );
             }
 
-            function montarEstatisticas(
-                dados
+            function getPlayerIsInSlot(
+                slot,
+                currentPlayerId
             ) {
 
-                const stats =
-                    calcularEstatisticasExtras(
-                        dados
+                return Boolean(
+                    slot?.entrant?.participants?.some(
+                        participant =>
+                            String(
+                                participant?.player?.id
+                            ) ===
+                            String(
+                                currentPlayerId
+                            )
+                    )
+                );
+            }
+
+            function buildHeadToHead(
+                player
+            ) {
+
+                const sets =
+                    Array.isArray(
+                        player?.sets?.nodes
+                    )
+                        ? player.sets.nodes
+                        : [];
+
+                const opponents =
+                    new Map();
+
+                sets.forEach(
+                    set => {
+
+                        const slots =
+                            Array.isArray(
+                                set?.slots
+                            )
+                                ? set.slots
+                                : [];
+
+                        const mySlot =
+                            slots.find(
+                                slot =>
+                                    getPlayerIsInSlot(
+                                        slot,
+                                        player.id
+                                    )
+                            );
+
+                        if (!mySlot)
+                            return;
+
+                        const opponentSlot =
+                            slots.find(
+                                slot =>
+                                    slot !== mySlot &&
+                                    slot?.entrant
+                            );
+
+                        if (
+                            !opponentSlot?.entrant
+                        ) {
+                            return;
+                        }
+
+                        const opponentId =
+                            opponentSlot.entrant.id;
+
+                        const opponentName =
+                            opponentSlot.entrant.name ||
+                            'Adversário';
+
+                        const key =
+                            String(
+                                opponentId ||
+                                opponentName
+                            );
+
+                        if (
+                            !opponents.has(key)
+                        ) {
+
+                            opponents.set(
+                                key,
+                                {
+                                    name:
+                                        opponentName,
+
+                                    total:
+                                        0,
+
+                                    wins:
+                                        0,
+
+                                    losses:
+                                        0,
+
+                                    lastDate:
+                                        0,
+
+                                    lastEvent:
+                                        '',
+
+                                    lastSet:
+                                        set.id
+                                }
+                            );
+                        }
+
+                        const item =
+                            opponents.get(
+                                key
+                            );
+
+                        item.total++;
+
+                        if (
+                            set.winnerId != null
+                        ) {
+
+                            if (
+                                String(
+                                    set.winnerId
+                                ) ===
+                                String(
+                                    mySlot.entrant.id
+                                )
+                            ) {
+
+                                item.wins++;
+
+                            } else {
+
+                                item.losses++;
+                            }
+                        }
+
+                        const date =
+                            Number(
+                                set.completedAt ||
+                                set.startAt ||
+                                0
+                            );
+
+                        if (
+                            date >=
+                            item.lastDate
+                        ) {
+
+                            item.lastDate =
+                                date;
+
+                            item.lastEvent =
+                                set.event?.tournament?.name ||
+                                set.event?.name ||
+                                '';
+
+                            item.lastSet =
+                                set.id;
+                        }
+
+                    }
+                );
+
+                return Array.from(
+                    opponents.values()
+                )
+                    .filter(
+                        opponent =>
+                            opponent.total > 0
+                    )
+                    .sort(
+                        (a, b) =>
+                            b.total -
+                            a.total ||
+                            b.wins -
+                            a.wins
+                    )
+                    .slice(
+                        0,
+                        12
+                    );
+            }
+
+            function renderHeadToHead(
+                player
+            ) {
+
+                const root =
+                    document.getElementById(
+                        'fgchub-h2h-content'
                     );
 
-                return `
-                    <div class="fgchub-profile-stats">
+                const badge =
+                    document.getElementById(
+                        'fgchub-h2h-badge'
+                    );
 
-                        <div class="fgchub-stat-card">
-                            <div class="fgchub-stat-label">
-                                Sets
+                if (!root)
+                    return;
+
+                const opponents =
+                    buildHeadToHead(
+                        player
+                    );
+
+                if (badge) {
+
+                    badge.textContent =
+                        opponents.length
+                            ? opponents.length
+                            : '';
+
+                    badge.style.display =
+                        opponents.length
+                            ? 'inline-block'
+                            : 'none';
+                }
+
+                if (!opponents.length) {
+
+                    root.innerHTML = `
+                        <div class="fgchub-empty">
+                            Nenhum confronto direto encontrado nos últimos sets retornados pelo Start.gg.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                root.innerHTML =
+                    opponents
+                        .map(
+                            opponent => {
+
+                                const total =
+                                    opponent.wins +
+                                    opponent.losses;
+
+                                const wr =
+                                    total > 0
+                                        ? Math.round(
+                                            (
+                                                opponent.wins /
+                                                total
+                                            ) *
+                                            100
+                                        )
+                                        : 0;
+
+                                const resultClass =
+                                    opponent.wins >
+                                    opponent.losses
+
+                                        ? 'fgchub-win'
+
+                                        : (
+                                            opponent.wins <
+                                            opponent.losses
+                                                ? 'fgchub-loss'
+                                                : 'fgchub-neutral'
+                                        );
+
+                                return `
+
+                                    <div
+                                        class="fgchub-h2h-item"
+                                    >
+
+                                        <div
+                                            class="fgchub-item-main"
+                                        >
+
+                                            <div
+                                                class="fgchub-item-name"
+                                            >
+                                                ${escapeHtml(
+                                                    opponent.name
+                                                )}
+                                            </div>
+
+                                            <div
+                                                class="fgchub-item-meta"
+                                            >
+
+                                                ${
+                                                    escapeHtml(
+                                                        opponent.lastEvent ||
+                                                        '—'
+                                                    )
+                                                }
+
+                                                ${
+                                                    opponent.lastDate
+                                                        ? ` · ${formatTimestamp(opponent.lastDate)}`
+                                                        : ''
+                                                }
+
+                                            </div>
+
+                                        </div>
+
+                                        <div
+                                            class="fgchub-item-result ${resultClass}"
+                                        >
+                                            ${opponent.wins}W -
+                                            ${opponent.losses}L
+                                            · ${wr}%
+                                        </div>
+
+                                    </div>
+
+                                `;
+                            }
+                        )
+                        .join('');
+            }
+
+            function renderVods(
+                player
+            ) {
+
+                const root =
+                    document.getElementById(
+                        'fgchub-vod-content'
+                    );
+
+                const badge =
+                    document.getElementById(
+                        'fgchub-vod-badge'
+                    );
+
+                if (!root)
+                    return;
+
+                const sets =
+                    Array.isArray(
+                        player?.sets?.nodes
+                    )
+                        ? player.sets.nodes
+                        : [];
+
+                const vods =
+                    sets
+
+                        .filter(
+                            set =>
+                                set?.vodUrl
+                        )
+
+                        .map(
+                            set => ({
+                                vodUrl:
+                                    set.vodUrl,
+
+                                score:
+                                    set.displayScore ||
+                                    'Set',
+
+                                event:
+                                    set.event?.tournament?.name ||
+                                    set.event?.name ||
+                                    'Torneio',
+
+                                date:
+                                    Number(
+                                        set.completedAt ||
+                                        set.startAt ||
+                                        0
+                                    )
+                            })
+                        )
+
+                        .sort(
+                            (a, b) =>
+                                b.date -
+                                a.date
+                        )
+
+                        .filter(
+                            (
+                                vod,
+                                index,
+                                array
+                            ) =>
+                                array.findIndex(
+                                    item =>
+                                        item.vodUrl ===
+                                        vod.vodUrl
+                                ) ===
+                                index
+                        )
+
+                        .slice(
+                            0,
+                            15
+                        );
+
+                if (badge) {
+
+                    badge.textContent =
+                        vods.length
+                            ? vods.length
+                            : '';
+
+                    badge.style.display =
+                        vods.length
+                            ? 'inline-block'
+                            : 'none';
+                }
+
+                if (!vods.length) {
+
+                    root.innerHTML = `
+                        <div class="fgchub-empty">
+                            Nenhum VOD associado aos sets retornados pelo Start.gg.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                root.innerHTML =
+                    vods
+                        .map(
+                            vod => `
+
+                                <div
+                                    class="fgchub-vod-item"
+                                >
+
+                                    <div
+                                        class="fgchub-item-main"
+                                    >
+
+                                        <div
+                                            class="fgchub-item-name"
+                                        >
+                                            ${escapeHtml(
+                                                vod.score
+                                            )}
+                                        </div>
+
+                                        <div
+                                            class="fgchub-item-meta"
+                                        >
+
+                                            ${escapeHtml(
+                                                vod.event
+                                            )}
+
+                                            ${
+                                                vod.date
+                                                    ? ` · ${formatTimestamp(vod.date)}`
+                                                    : ''
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                    <a
+                                        href="${escapeHtml(vod.vodUrl)}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="fgchub-startgg-link"
+                                    >
+                                        Assistir ↗
+                                    </a>
+
+                                </div>
+
+                            `
+                        )
+                        .join('');
+            }
+
+            async function carregarExtrasStartGG(
+                playerId
+            ) {
+
+                const root =
+                    document.getElementById(
+                        'fgchub-extra-profile'
+                    );
+
+                if (root) {
+
+                    root.innerHTML = `
+
+                        <div
+                            class="fgchub-extra-profile"
+                        >
+
+                            <div
+                                class="fgchub-extra-title"
+                            >
+                                PERFIL START.GG
                             </div>
 
-                            <div class="fgchub-stat-value">
-                                ${stats.totalSets}
+                            <div
+                                class="fgchub-loading"
+                            >
+                                Carregando informações adicionais...
                             </div>
 
-                            <div class="fgchub-stat-sub">
-                                ${dados.totalWins || 0}W -
-                                ${dados.totalLosses || 0}L
-                            </div>
                         </div>
 
-                        <div class="fgchub-stat-card">
-                            <div class="fgchub-stat-label">
-                                Torneios
+                    `;
+                }
+
+                const player =
+                    await buscarDadosExtrasStartGG(
+                        playerId
+                    );
+
+                if (!player) {
+
+                    if (root) {
+                        root.innerHTML = '';
+                    }
+
+                    const h2h =
+                        document.getElementById(
+                            'fgchub-h2h-content'
+                        );
+
+                    if (h2h) {
+
+                        h2h.innerHTML = `
+                            <div class="fgchub-empty">
+                                Não foi possível carregar dados extras do Start.gg.
+                                O histórico principal continua funcionando normalmente.
                             </div>
+                        `;
+                    }
 
-                            <div class="fgchub-stat-value">
-                                ${stats.totalTorneios}
+                    const vod =
+                        document.getElementById(
+                            'fgchub-vod-content'
+                        );
+
+                    if (vod) {
+
+                        vod.innerHTML = `
+                            <div class="fgchub-empty">
+                                Não foi possível carregar os VODs do Start.gg.
                             </div>
+                        `;
+                    }
 
-                            <div class="fgchub-stat-sub">
-                                histórico carregado
-                            </div>
-                        </div>
+                    return;
+                }
 
-                        <div class="fgchub-stat-card">
-                            <div class="fgchub-stat-label">
-                                Top 8
-                            </div>
+                renderExtraProfile(
+                    player
+                );
 
-                            <div class="fgchub-stat-value">
-                                ${stats.top8}
-                            </div>
+                renderUpcoming(
+                    player
+                );
 
-                            <div class="fgchub-stat-sub">
-                                eventos
-                            </div>
-                        </div>
+                renderHeadToHead(
+                    player
+                );
 
-                        <div class="fgchub-stat-card">
-                            <div class="fgchub-stat-label">
-                                Melhor posição
-                            </div>
-
-                            <div class="fgchub-stat-value">
-                                ${
-                                    stats.melhor !== null
-                                        ? `${stats.melhor}º`
-                                        : '—'
-                                }
-                            </div>
-
-                            <div class="fgchub-stat-sub">
-                                ${stats.primeiros} vitória(s) em evento
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="fgchub-profile-summary">
-
-                        <span>
-                            Top 3:
-                            <strong>
-                                ${stats.top3}
-                            </strong>
-                        </span>
-
-                        <span>
-                            Winrate 6 meses:
-                            <strong>
-                                ${dados.winrateLast6Months || 0}%
-                            </strong>
-                        </span>
-
-                        <span>
-                            Últimos 6 meses:
-                            <strong>
-                                ${dados.wins6m || 0}W -
-                                ${dados.losses6m || 0}L
-                            </strong>
-                        </span>
-
-                    </div>
-                `;
+                renderVods(
+                    player
+                );
             }
 
             function montarHtmlPerfil(
@@ -396,42 +1590,66 @@
 
                 const eventsHtml =
                     tournaments
-                        .slice(0, 15)
-                        .map(t => `
-                            <div class="event-row">
+                        .slice(
+                            0,
+                            15
+                        )
+                        .map(
+                            t => `
 
-                                <span class="event-name">
-                                    ${escapeHtml(t.name)}
-                                </span>
+                                <div
+                                    class="event-row"
+                                >
 
-                                <span class="event-placement ${
-                                    t.winrate >= 60
-                                        ? 'text-green-500'
-                                        : (
-                                            t.winrate >= 40
-                                                ? 'text-yellow-500'
-                                                : 'text-red-500'
-                                        )
-                                }">
-                                    ${t.placement}º / ${t.attendees}
-                                </span>
+                                    <span
+                                        class="event-name"
+                                    >
+                                        ${t.name}
+                                    </span>
 
-                                <span class="event-record">
-                                    ${t.wins}W -
-                                    ${t.losses}L
-                                    (${t.winrate}%)
-                                </span>
+                                    <span
+                                        class="event-placement ${
+                                            t.winrate >= 60
+                                                ? 'text-green-500'
+                                                : (
+                                                    t.winrate >= 40
+                                                        ? 'text-yellow-500'
+                                                        : 'text-red-500'
+                                                )
+                                        }"
+                                    >
+                                        ${t.placement}º /
+                                        ${t.attendees}
+                                    </span>
 
-                                <span class="event-date">
-                                    ${t.date}
-                                </span>
+                                    <span
+                                        class="event-record"
+                                    >
+                                        ${t.wins}W -
+                                        ${t.losses}L
+                                        (${t.winrate}%)
+                                    </span>
 
-                            </div>
-                        `)
+                                    <span
+                                        class="event-date"
+                                    >
+                                        ${t.date}
+                                    </span>
+
+                                </div>
+
+                            `
+                        )
                         .join('')
 
                     ||
-                    '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+                    `
+                        <div
+                            class="text-slate-500 text-sm"
+                        >
+                            Nenhum evento encontrado.
+                        </div>
+                    `;
 
                 const bannerStyle =
                     bannerUrl
@@ -440,11 +1658,16 @@
 
                 return `
 
-                    <div class="player-profile ${
-                        (avatarUrl || bannerUrl)
-                            ? 'has-banner'
-                            : ''
-                    }">
+                    <div
+                        class="player-profile ${
+                            (
+                                avatarUrl ||
+                                bannerUrl
+                            )
+                                ? 'has-banner'
+                                : ''
+                        }"
+                    >
 
                         <!-- BANNER + AVATAR -->
 
@@ -453,7 +1676,9 @@
                             ${bannerStyle}
                         >
 
-                            <div class="profile-banner-overlay"></div>
+                            <div
+                                class="profile-banner-overlay"
+                            ></div>
 
                             ${
                                 avatarUrl
@@ -461,7 +1686,7 @@
                                         <img
                                             src="${avatarUrl}"
                                             class="profile-avatar"
-                                            alt="${escapeHtml(gamerTag)}"
+                                            alt="${gamerTag}"
                                         >
                                     `
                                     : ''
@@ -469,13 +1694,16 @@
 
                         </div>
 
-
                         <!-- HEADER -->
 
-                        <div class="profile-header">
+                        <div
+                            class="profile-header"
+                        >
 
-                            <h1 class="profile-gamertag">
-                                ${escapeHtml(displayName)}
+                            <h1
+                                class="profile-gamertag"
+                            >
+                                ${displayName}
                             </h1>
 
                             <div
@@ -484,12 +1712,20 @@
                                 ${winrateAllTime}%
                             </div>
 
-                            <div class="record-badge">
+                            <div
+                                class="record-badge"
+                            >
                                 ${totalWins}W -
                                 ${totalLosses}L
                             </div>
 
-                            <span class="text-xs text-slate-500 ml-auto">
+                            <span
+                                class="
+                                    text-xs
+                                    text-slate-500
+                                    ml-auto
+                                "
+                            >
                                 ${
                                     fonte === 'cache'
                                         ? '⚡ em cache'
@@ -499,71 +1735,98 @@
 
                             <button
                                 onclick="atualizarDados()"
-                                class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition"
+                                class="
+                                    text-xs
+                                    bg-red-600
+                                    hover:bg-red-700
+                                    text-white
+                                    px-3
+                                    py-1
+                                    rounded
+                                    transition
+                                "
                             >
-                                <i class="fa-solid fa-rotate"></i>
+                                <i
+                                    class="fa-solid fa-rotate"
+                                ></i>
                                 Atualizar dados
                             </button>
 
                         </div>
 
+                        <!-- NOVAS INFORMAÇÕES START.GG -->
 
-                        <!-- NOVAS ESTATÍSTICAS
-                             Derivadas exclusivamente dos
-                             dados que o players.js original
-                             já fornece. -->
-
-                        ${montarEstatisticas(dados)}
-
+                        <div
+                            id="fgchub-extra-profile"
+                        ></div>
 
                         <!-- RECENT FORM -->
 
-                        <div class="recent-form">
+                        <div
+                            class="recent-form"
+                        >
 
                             <h3>
                                 RECENT FORM
                             </h3>
 
-                            <div class="form-dots">
+                            <div
+                                class="form-dots"
+                            >
 
-                                ${recentForm.map(r => `
+                                ${recentForm
+                                    .map(
+                                        r => `
 
-                                    <div class="form-entry">
+                                            <div
+                                                class="form-entry"
+                                            >
 
-                                        ${
-                                            r.icon
-                                                ? `
-                                                    <img
-                                                        src="${r.icon}"
-                                                        class="form-icon"
-                                                        alt=""
-                                                    >
-                                                `
-                                                : `
-                                                    <div
-                                                        class="form-icon form-icon-empty"
-                                                    ></div>
-                                                `
-                                        }
+                                                ${
+                                                    r.icon
+                                                        ? `
+                                                            <img
+                                                                src="${r.icon}"
+                                                                class="form-icon"
+                                                                alt=""
+                                                            >
+                                                        `
+                                                        : `
+                                                            <div
+                                                                class="
+                                                                    form-icon
+                                                                    form-icon-empty
+                                                                "
+                                                            ></div>
+                                                        `
+                                                }
 
-                                        <span
-                                            class="form-dot ${getDotClass(r.placement)}"
-                                        >
-                                            ${r.placement}
-                                        </span>
+                                                <span
+                                                    class="
+                                                        form-dot
+                                                        ${getDotClass(
+                                                            r.placement
+                                                        )}
+                                                    "
+                                                >
+                                                    ${r.placement}
+                                                </span>
 
-                                    </div>
+                                            </div>
 
-                                `).join('')}
+                                        `
+                                    )
+                                    .join('')}
 
                             </div>
 
                         </div>
 
-
                         <!-- HIGHLIGHTS -->
 
-                        <div class="highlights">
+                        <div
+                            class="highlights"
+                        >
 
                             <h3>
                                 HIGHLIGHTS
@@ -571,45 +1834,70 @@
 
                             ${
                                 highlights.length === 0
+
                                     ? `
-                                        <div class="text-slate-500 text-sm">
+                                        <div
+                                            class="
+                                                text-slate-500
+                                                text-sm
+                                            "
+                                        >
                                             Nenhum destaque encontrado.
                                         </div>
                                     `
+
                                     : ''
                             }
 
-                            ${highlights.map(h => `
+                            ${highlights
+                                .map(
+                                    h => `
 
-                                <div class="highlight-item">
+                                        <div
+                                            class="highlight-item"
+                                        >
 
-                                    <span class="placement">
-                                        ${h.placement}
-                                    </span>
+                                            <span
+                                                class="placement"
+                                            >
+                                                ${h.placement}
+                                            </span>
 
-                                    <span class="event">
-                                        ${escapeHtml(h.eventName)}
-                                    </span>
+                                            <span
+                                                class="event"
+                                            >
+                                                ${h.eventName}
+                                            </span>
 
-                                    <span class="date">
-                                        ${h.date}
-                                    </span>
+                                            <span
+                                                class="date"
+                                            >
+                                                ${h.date}
+                                            </span>
 
-                                </div>
+                                        </div>
 
-                            `).join('')}
+                                    `
+                                )
+                                .join('')}
 
                         </div>
 
-
                         <!-- ABAS -->
 
-                        <div class="profile-tabs">
+                        <div
+                            class="profile-tabs"
+                        >
 
-                            <div class="tab-header">
+                            <div
+                                class="tab-header"
+                            >
 
                                 <span
-                                    class="tab-btn active"
+                                    class="
+                                        tab-btn
+                                        active
+                                    "
                                     data-tab="events"
                                 >
                                     EVENTS
@@ -620,6 +1908,15 @@
                                     data-tab="versus"
                                 >
                                     VERSUS
+
+                                    <span
+                                        id="fgchub-h2h-badge"
+                                        class="
+                                            fgchub-tab-badge
+                                        "
+                                        style="display:none;"
+                                    ></span>
+
                                 </span>
 
                                 <span
@@ -627,10 +1924,18 @@
                                     data-tab="vods"
                                 >
                                     VODS
+
+                                    <span
+                                        id="fgchub-vod-badge"
+                                        class="
+                                            fgchub-tab-badge
+                                        "
+                                        style="display:none;"
+                                    ></span>
+
                                 </span>
 
                             </div>
-
 
                             <div
                                 class="tab-content"
@@ -639,19 +1944,24 @@
                                 ${eventsHtml}
                             </div>
 
-
                             <div
                                 class="tab-content"
                                 id="tab-versus"
                                 style="display:none;"
                             >
 
-                                <div class="text-slate-500 text-sm">
-                                    Em breve: confrontos diretos.
+                                <div
+                                    id="fgchub-h2h-content"
+                                    class="fgchub-h2h-list"
+                                >
+                                    <div
+                                        class="fgchub-loading"
+                                    >
+                                        Carregando confrontos diretos...
+                                    </div>
                                 </div>
 
                             </div>
-
 
                             <div
                                 class="tab-content"
@@ -659,8 +1969,15 @@
                                 style="display:none;"
                             >
 
-                                <div class="text-slate-500 text-sm">
-                                    Em breve: VODs.
+                                <div
+                                    id="fgchub-vod-content"
+                                    class="fgchub-vod-list"
+                                >
+                                    <div
+                                        class="fgchub-loading"
+                                    >
+                                        Carregando VODs...
+                                    </div>
                                 </div>
 
                             </div>
@@ -680,7 +1997,9 @@
 
                     conteudo.innerHTML =
                         `
-                            <div class="history-empty">
+                            <div
+                                class="history-empty"
+                            >
                                 Player não especificado na URL.
                             </div>
                         `;
@@ -692,11 +2011,17 @@
 
                     conteudo.innerHTML =
                         `
-                            <div class="loading-attendees">
+                            <div
+                                class="loading-attendees"
+                            >
 
-                                <div class="spinner"></div>
+                                <div
+                                    class="spinner"
+                                ></div>
 
-                                <p style="margin-top:15px;">
+                                <p
+                                    style="margin-top:15px;"
+                                >
                                     Carregando perfil...
                                 </p>
 
@@ -714,7 +2039,8 @@
                             prefix
                         );
 
-                    conteudo.innerHTML = '';
+                    conteudo.innerHTML =
+                        '';
 
                     conteudo.innerHTML =
                         montarHtmlPerfil(
@@ -722,62 +2048,86 @@
                             fonte
                         );
 
+                    /*
+                     * CONSULTA EXTRA
+                     *
+                     * Ela é independente do carregamento principal.
+                     * Se falhar, o perfil original continua funcionando.
+                     */
+                    carregarExtrasStartGG(
+                        playerId
+                    );
+
                     document
-                        .querySelectorAll('.tab-btn')
-                        .forEach(btn => {
+                        .querySelectorAll(
+                            '.tab-btn'
+                        )
+                        .forEach(
+                            btn => {
 
-                            btn.addEventListener(
-                                'click',
-                                function() {
+                                btn.addEventListener(
+                                    'click',
+                                    function() {
 
-                                    document
-                                        .querySelectorAll('.tab-btn')
-                                        .forEach(
-                                            b =>
-                                                b.classList.remove(
-                                                    'active'
-                                                )
+                                        document
+                                            .querySelectorAll(
+                                                '.tab-btn'
+                                            )
+                                            .forEach(
+                                                b =>
+                                                    b.classList.remove(
+                                                        'active'
+                                                    )
+                                            );
+
+                                        this.classList.add(
+                                            'active'
                                         );
 
-                                    this.classList.add(
-                                        'active'
-                                    );
+                                        const target =
+                                            this.dataset.tab;
 
-                                    const target =
-                                        this.dataset.tab;
+                                        document
+                                            .querySelectorAll(
+                                                '.tab-content'
+                                            )
+                                            .forEach(
+                                                c =>
+                                                    c.style.display =
+                                                        'none'
+                                            );
 
-                                    document
-                                        .querySelectorAll(
-                                            '.tab-content'
-                                        )
-                                        .forEach(
-                                            c =>
-                                                c.style.display =
-                                                    'none'
-                                        );
+                                        const targetTab =
+                                            document.getElementById(
+                                                'tab-' +
+                                                target
+                                            );
 
-                                    const targetTab =
-                                        document.getElementById(
-                                            'tab-' + target
-                                        );
+                                        if (
+                                            targetTab
+                                        ) {
 
-                                    if (targetTab) {
-                                        targetTab.style.display =
-                                            'block';
+                                            targetTab.style.display =
+                                                'block';
+                                        }
+
                                     }
+                                );
 
-                                }
-                            );
-
-                        });
+                            }
+                        );
 
                 } catch (e) {
 
-                    console.error(e);
+                    console.error(
+                        e
+                    );
 
                     conteudo.innerHTML =
                         `
-                            <div class="history-empty">
+                            <div
+                                class="history-empty"
+                            >
                                 ❌ Erro ao carregar perfil do player.
                             </div>
                         `;
@@ -786,10 +2136,16 @@
 
             window.atualizarDados =
                 function() {
-                    carregarPerfil(true);
+
+                    carregarPerfil(
+                        true
+                    );
+
                 };
 
-            carregarPerfil(false);
+            carregarPerfil(
+                false
+            );
 
         })();
     </script>
