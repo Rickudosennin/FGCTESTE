@@ -4,12 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil do Player | FGC HUB</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=52aUmby1dEShjGpx6d9amwzmPAyEUHP5Lz8tlpwgrv6DlHXaMk9wyUv1jn072BdMMYfhed99DYZy4up8VNIiuliNArIsvGznz5K6gy0K9YnkMZTyH9_YUK--tBV2IrTMSYyywAHwctEW8whGQ5mrWELMTL5c7whNA3FB0vgLTBo9GZSK_Bag4aW1uEvXIr_jA5ZDEZkC7yegwYOsUD8_8fX-RDUrGkGN_0qMNnKYX-MSqiVFJ5FiM5wgbSFvmy-O8zyGC3m_krJlVqPxg26BY25zoUL7uUo63v9k42qADi3qKqh6LfotHfoS2Ws8rXd9" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="buscar-style.css">
+    <style>
+        /* =========================================================
+           FGC HUB - PLAYER PROFILE EXPANSION
+           Mantém o visual existente e adiciona dados do Start.gg.
+           ========================================================= */
+        .profile-identity {
+            display:flex; flex-direction:column; gap:6px; margin:-4px 0 20px 0;
+        }
+        .profile-real-name {
+            color:#e2e8f0; font-size:15px; font-weight:700; letter-spacing:.2px;
+        }
+        .profile-meta {
+            display:flex; flex-wrap:wrap; gap:8px 18px; color:#64748b;
+            font-size:12px; font-weight:600;
+        }
+        .profile-meta span { display:inline-flex; align-items:center; gap:5px; }
+        .profile-links {
+            display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;
+        }
+        .profile-link {
+            display:inline-flex; align-items:center; gap:6px; padding:6px 10px;
+            border:1px solid rgba(255,255,255,.08); border-radius:7px;
+            background:rgba(255,255,255,.03); color:#cbd5e1; font-size:11px;
+            font-weight:800; text-decoration:none; transition:.2s;
+        }
+        .profile-link:hover { color:#fff; border-color:#dc2626; background:rgba(220,38,38,.10); }
+        .profile-link.startgg { border-color:rgba(220,38,38,.35); color:#fca5a5; }
+        .profile-stat-grid {
+            display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;
+            margin:0 0 28px;
+        }
+        .profile-stat {
+            min-width:0; padding:13px 10px; text-align:center;
+            background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07);
+            border-radius:10px;
+        }
+        .profile-stat-label {
+            display:block; color:#64748b; font-size:9px; font-weight:800;
+            letter-spacing:1.2px; text-transform:uppercase;
+        }
+        .profile-stat-value {
+            display:block; margin-top:4px; color:#f8fafc; font-size:22px;
+            font-weight:900; line-height:1.1;
+        }
+        .profile-stat-sub { display:block; margin-top:3px; color:#64748b; font-size:9px; }
+        .profile-section {
+            margin:0 0 26px; padding:16px; border:1px solid rgba(255,255,255,.06);
+            border-radius:10px; background:rgba(255,255,255,.015);
+        }
+        .profile-section-title {
+            margin:0 0 13px; padding-left:10px; border-left:4px solid #dc2626;
+            color:#94a3b8; font-size:12px; font-weight:800; letter-spacing:1.8px;
+            text-transform:uppercase;
+        }
+        .highlight-icon {
+            width:30px; height:30px; border-radius:6px; object-fit:cover;
+            border:1px solid #334155; background:#1e293b; flex-shrink:0;
+        }
+        .highlight-item { gap:8px; }
+        .highlight-item .placement { min-width:72px; }
+        .h2h-summary {
+            display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;
+            margin-bottom:16px;
+        }
+        .h2h-card {
+            text-align:center; padding:12px; border-radius:9px;
+            background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07);
+        }
+        .h2h-card strong { display:block; font-size:20px; color:#fff; }
+        .h2h-card span { display:block; margin-top:3px; color:#64748b; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+        .h2h-row {
+            display:grid; grid-template-columns:minmax(0,1fr) 90px 70px;
+            gap:10px; align-items:center; padding:10px 0;
+            border-bottom:1px solid rgba(255,255,255,.05);
+        }
+        .h2h-row:last-child { border-bottom:0; }
+        .h2h-opponent { min-width:0; color:#e2e8f0; font-size:12px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .h2h-record { color:#94a3b8; font-size:11px; font-weight:700; text-align:center; }
+        .h2h-rate { font-size:11px; font-weight:900; text-align:right; }
+        .result-win { color:#22c55e; }
+        .result-loss { color:#ef4444; }
+        .result-neutral { color:#94a3b8; }
+        .upcoming-empty, .vod-empty {
+            padding:18px; color:#64748b; text-align:center; font-size:11px;
+            border:1px dashed rgba(255,255,255,.08); border-radius:8px;
+        }
+        .event-row-main { min-width:0; flex:2; }
+        .event-row-title {
+            color:#e2e8f0; font-weight:700; font-size:13px; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap;
+        }
+        .event-row-sub { margin-top:3px; color:#64748b; font-size:10px; }
+        .event-row-link { color:inherit; text-decoration:none; }
+        .event-row-link:hover .event-row-title { color:#fff; }
+        .tab-count {
+            margin-left:5px; color:#64748b; font-size:9px; font-weight:800;
+        }
+        @media (max-width: 760px) {
+            .profile-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .h2h-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
+            .h2h-row { grid-template-columns:minmax(0,1fr) 72px 55px; }
+        }
+        @media (max-width: 480px) {
+            .profile-stat-value { font-size:19px; }
+            .profile-meta { gap:7px 12px; }
+            .h2h-row { grid-template-columns:minmax(0,1fr) 62px 48px; gap:6px; }
+        }
+    </style>
 </head>
 <body class="p-4 md:p-10">
-
     <div class="max-w-5xl mx-auto">
         <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para a busca</a>
 
@@ -22,10 +129,7 @@
     <script src="players.js"></script>
     <script>
         (function() {
-            if (window._playerLoaded) {
-                console.log('Perfil já carregado.');
-                return;
-            }
+            if (window._playerLoaded) return;
             window._playerLoaded = true;
 
             const params = new URLSearchParams(window.location.search);
@@ -34,7 +138,14 @@
             const prefix = params.get('prefix') || '';
             const conteudo = document.getElementById('perfil_conteudo');
 
+            function esc(value) {
+                return String(value ?? '').replace(/[&<>"']/g, c => ({
+                    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+                }[c]));
+            }
+
             function getDotClass(placement) {
+                placement = Number(placement) || 0;
                 if (placement === 1) return 'dot-1st';
                 if (placement <= 3) return 'dot-top3';
                 if (placement <= 8) return 'dot-top8';
@@ -44,133 +155,241 @@
             function formatDate(timestamp) {
                 if (!timestamp) return '—';
                 const d = new Date(timestamp * 1000);
-                return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+                return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
             }
 
-            // Mapeamento de characterId para nome (exemplo, você pode expandir)
-            const CHARACTER_NAMES = {
-                'A2435': 'Steve',
-                'A2432': 'Reina',
-                'A2406': 'Alisa',
-                'A2408': 'Azucena',
-                'A2415': 'Jin',
-                'A2417': 'Kazuya',
-                'A2538': 'Lidia',
-                'A2425': 'Xiaoyu',
-                'A2436': 'Victor',
-                'A2437': 'Yoshimitsu',
-                'A2446': 'Eddy',
-                'A2620': 'Anna',
-                // Adicione mais conforme necessário
-            };
+            function formatMemberDate(timestamp) {
+                if (!timestamp) return '';
+                return new Date(timestamp * 1000).toLocaleDateString('pt-BR', {
+                    month:'long', year:'numeric'
+                });
+            }
 
-            function getCharacterName(charId) {
-                return CHARACTER_NAMES[charId] || charId || '—';
+            function placementLabel(placement, attendees) {
+                if (!placement || placement === '?') return '—';
+                return `${placement}º/${attendees || '?'}`;
+            }
+
+            function medal(placement) {
+                const p = Number(placement);
+                if (p === 1) return '🥇';
+                if (p === 2) return '🥈';
+                if (p === 3) return '🥉';
+                return '';
+            }
+
+            function montarLinks(profile) {
+                const links = [];
+                if (profile.startggUrl) {
+                    links.push(`<a class="profile-link startgg" href="${esc(profile.startggUrl)}" target="_blank" rel="noopener noreferrer">↗ Start.gg</a>`);
+                }
+                if (profile.socialLinks && Array.isArray(profile.socialLinks)) {
+                    profile.socialLinks.forEach(s => {
+                        if (!s.url) return;
+                        links.push(`<a class="profile-link" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.label)}</a>`);
+                    });
+                }
+                return links.length ? `<div class="profile-links">${links.join('')}</div>` : '';
             }
 
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, playerPrefix, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, recentSets
+                    gamerTag, totalWins, totalLosses, winrateAllTime,
+                    recentForm = [], highlights = [], tournaments = [],
+                    avatarUrl, bannerUrl, playerPrefix,
+                    profile = {}, headToHead = {}
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
+                const totalSets = totalWins + totalLosses;
+                const tournamentsCount = tournaments.length;
+                const top8 = tournaments.filter(t => Number(t.placement) > 0 && Number(t.placement) <= 8).length;
+                const top3 = tournaments.filter(t => Number(t.placement) > 0 && Number(t.placement) <= 3).length;
+                const bestPlacement = tournaments.reduce((best, t) => {
+                    const p = Number(t.placement);
+                    return p > 0 && p < best ? p : best;
+                }, Infinity);
 
-                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
-
-                // Recent Sets
-                const recentSetsHtml = recentSets && recentSets.length > 0 ? recentSets.slice(0, 10).map(set => `
-                    <div class="set-item">
-                        <div class="set-tournament">${set.tournamentName}</div>
-                        <div class="set-round">${set.fullRoundText}</div>
-                        <div class="set-result ${set.venceu ? 'set-win' : 'set-loss'}">
-                            ${set.venceu ? '✅' : '❌'}
+                const eventsHtml = tournaments.slice(0, 20).map(t => {
+                    const link = t.url
+                        ? `<a class="event-row-link" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">`
+                        : '';
+                    const close = link ? '</a>' : '';
+                    return `
+                        <div class="event-row">
+                            <div class="event-row-main">
+                                ${link}
+                                <div class="event-row-title">${esc(t.name)}</div>
+                                <div class="event-row-sub">${esc(t.eventName)}${t.gameName ? ` · ${esc(t.gameName)}` : ''}</div>
+                                ${close}
+                            </div>
+                            <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
+                                ${esc(placementLabel(t.placement, t.attendees))}
+                            </span>
+                            <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
+                            <span class="event-date">${esc(t.date)}</span>
                         </div>
-                        <div class="set-character">${getCharacterName(set.characterId)}</div>
-                    </div>
-                `).join('') : '<div class="text-slate-500 text-sm">Nenhum set com personagem reportado.</div>';
+                    `;
+                }).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
 
-                // Events (lista completa)
-                const eventsHtml = tournaments.slice(0, 15).map(t => `
-                    <div class="event-row">
-                        <span class="event-name">${t.name}</span>
-                        <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
-                            ${t.placement}º / ${t.attendees}
-                        </span>
-                        <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
-                        <span class="event-date">${t.date}</span>
+                const bannerStyle = bannerUrl ? `style="background-image:url('${esc(bannerUrl)}')"` : '';
+
+                const recentHtml = recentForm.map(r => `
+                    <div class="form-entry" title="${esc(r.tooltip || `${r.placement}º`)}">
+                        ${r.icon ? `<img src="${esc(r.icon)}" class="form-icon" alt="">` : '<div class="form-icon form-icon-empty"></div>'}
+                        <span class="form-dot ${getDotClass(r.placement)}">${esc(r.placement)}</span>
                     </div>
-                `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+                `).join('');
+
+                const highlightsHtml = highlights.map(h => `
+                    <div class="highlight-item">
+                        ${h.icon ? `<img src="${esc(h.icon)}" class="highlight-icon" alt="">` : ''}
+                        <span class="placement">${medal(h.rawPlacement)} ${esc(h.placement)}</span>
+                        <span class="event">${esc(h.eventName)}</span>
+                        <span class="date">${esc(h.date)}</span>
+                    </div>
+                `).join('') || '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>';
+
+                const h2hRows = (headToHead.opponents || []).map(o => {
+                    const wr = o.total ? Math.round((o.wins / o.total) * 100) : 0;
+                    const cls = wr >= 60 ? 'result-win' : (wr >= 40 ? 'result-neutral' : 'result-loss');
+                    return `
+                        <div class="h2h-row">
+                            <div class="h2h-opponent">${esc(o.name)}</div>
+                            <div class="h2h-record">${o.wins}W - ${o.losses}L</div>
+                            <div class="h2h-rate ${cls}">${wr}%</div>
+                        </div>
+                    `;
+                }).join('');
+
+                const h2hHtml = h2hRows
+                    ? `
+                        <div class="h2h-summary">
+                            <div class="h2h-card"><strong>${headToHead.totalSets || 0}</strong><span>Sets</span></div>
+                            <div class="h2h-card"><strong class="result-win">${headToHead.totalWins || 0}</strong><span>Vitórias</span></div>
+                            <div class="h2h-card"><strong class="result-loss">${headToHead.totalLosses || 0}</strong><span>Derrotas</span></div>
+                        </div>
+                        ${h2hRows}
+                    `
+                    : '<div class="upcoming-empty">Nenhum confronto encontrado nos sets carregados.</div>';
+
+                const profileMeta = [];
+                if (profile.createdAt) profileMeta.push(`<span>📅 Membro desde ${esc(formatMemberDate(profile.createdAt))}</span>`);
+                if (profile.location) {
+                    const loc = [profile.location.city, profile.location.state, profile.location.country].filter(Boolean).join(', ');
+                    if (loc) profileMeta.push(`<span>📍 ${esc(loc)}</span>`);
+                }
 
                 return `
                     <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR -->
                         <div class="profile-banner" ${bannerStyle}>
                             <div class="profile-banner-overlay"></div>
-                            ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
+                            ${avatarUrl ? `<img src="${esc(avatarUrl)}" class="profile-avatar" alt="${esc(gamerTag)}">` : ''}
                         </div>
 
-                        <!-- HEADER -->
                         <div class="profile-header">
-                            <h1 class="profile-gamertag">${displayName}</h1>
+                            <h1 class="profile-gamertag">${esc(displayName)}</h1>
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
                             <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
                             <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
                             <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
-                                <i class="fa-solid fa-rotate"></i> Atualizar dados
+                                Atualizar dados
                             </button>
                         </div>
 
-                        <!-- RECENT FORM (bolinhas) -->
+                        <div class="profile-identity">
+                            ${profile.name ? `<div class="profile-real-name">${esc(profile.name)}</div>` : ''}
+                            ${profileMeta.length ? `<div class="profile-meta">${profileMeta.join('')}</div>` : ''}
+                            ${montarLinks(profile)}
+                        </div>
+
+                        <div class="profile-stat-grid">
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">Sets</span>
+                                <span class="profile-stat-value">${totalSets}</span>
+                                <span class="profile-stat-sub">${totalWins}W / ${totalLosses}L</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">Torneios</span>
+                                <span class="profile-stat-value">${tournamentsCount}</span>
+                                <span class="profile-stat-sub">${top8} Top 8</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">Top 3</span>
+                                <span class="profile-stat-value">${top3}</span>
+                                <span class="profile-stat-sub">${bestPlacement === Infinity ? '—' : bestPlacement + 'º melhor'}</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">WinRate</span>
+                                <span class="profile-stat-value ${wrClass}">${winrateAllTime}%</span>
+                                <span class="profile-stat-sub">geral</span>
+                            </div>
+                        </div>
+
                         <div class="recent-form">
                             <h3>RECENT FORM</h3>
-                            <div class="form-dots">
-                                ${recentForm.map(r => `
-                                    <div class="form-entry">
-                                        ${r.icon ? `<img src="${r.icon}" class="form-icon" alt="">` : '<div class="form-icon form-icon-empty"></div>'}
-                                        <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
+                            <div class="form-dots">${recentHtml}</div>
                         </div>
 
-                        <!-- RECENT SETS (novo) -->
-                        <div class="recent-sets">
-                            <h3>RECENT SETS</h3>
-                            <div class="sets-grid">
-                                ${recentSetsHtml}
-                            </div>
-                        </div>
-
-                        <!-- HIGHLIGHTS -->
                         <div class="highlights">
                             <h3>HIGHLIGHTS</h3>
-                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
-                            ${highlights.map(h => `
-                                <div class="highlight-item">
-                                    <span class="placement">${h.placement}</span>
-                                    <span class="event">${h.eventName}</span>
-                                    <span class="date">${h.date}</span>
-                                </div>
-                            `).join('')}
+                            ${highlightsHtml}
                         </div>
 
-                        <!-- ABAS -->
                         <div class="profile-tabs">
                             <div class="tab-header">
-                                <span class="tab-btn active" data-tab="events">EVENTS</span>
+                                <span class="tab-btn active" data-tab="events">RESULTS <span class="tab-count">${tournamentsCount}</span></span>
                                 <span class="tab-btn" data-tab="versus">VERSUS</span>
+                                <span class="tab-btn" data-tab="upcoming">UPCOMING</span>
                                 <span class="tab-btn" data-tab="vods">VODS</span>
                             </div>
-                            <div class="tab-content" id="tab-events">
-                                ${eventsHtml}
-                            </div>
+
+                            <div class="tab-content" id="tab-events">${eventsHtml}</div>
+
                             <div class="tab-content" id="tab-versus" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
+                                <div class="profile-section">
+                                    <h3 class="profile-section-title">HEAD TO HEAD</h3>
+                                    ${h2hHtml}
+                                </div>
                             </div>
+
+                            <div class="tab-content" id="tab-upcoming" style="display:none;">
+                                <div class="profile-section">
+                                    <h3 class="profile-section-title">UPCOMING EVENTS</h3>
+                                    ${(dados.upcomingEvents || []).length
+                                        ? dados.upcomingEvents.map(e => `
+                                            <div class="event-row">
+                                                <div class="event-row-main">
+                                                    ${e.url ? `<a class="event-row-link" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">` : ''}
+                                                    <div class="event-row-title">🟢 ${esc(e.name)}</div>
+                                                    <div class="event-row-sub">${esc(e.dateRange || e.date || 'Data não informada')}${e.eventName ? ` · ${esc(e.eventName)}` : ''}</div>
+                                                    ${e.url ? '</a>' : ''}
+                                                </div>
+                                            </div>
+                                        `).join('')
+                                        : '<div class="upcoming-empty">O Start.gg não expõe uma consulta pública simples para reproduzir integralmente esta lista de inscrições. A seção ficará pronta para receber esses dados sem inventar eventos.</div>'
+                                    }
+                                </div>
+                            </div>
+
                             <div class="tab-content" id="tab-vods" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+                                <div class="profile-section">
+                                    <h3 class="profile-section-title">VODS</h3>
+                                    ${(dados.vods || []).length
+                                        ? dados.vods.map(v => `
+                                            <div class="event-row">
+                                                <div class="event-row-main">
+                                                    <a class="event-row-link" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">
+                                                        <div class="event-row-title">▶ ${esc(v.title || 'VOD')}</div>
+                                                        <div class="event-row-sub">${esc(v.eventName || '')}</div>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `).join('')
+                                        : '<div class="vod-empty">Nenhum VOD público associado aos sets carregados.</div>'
+                                    }
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -182,10 +401,10 @@
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
                     return;
                 }
+
                 try {
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
-                    conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
                     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -194,12 +413,13 @@
                             this.classList.add('active');
                             const target = this.dataset.tab;
                             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                            document.getElementById('tab-' + target).style.display = 'block';
+                            const targetEl = document.getElementById('tab-' + target);
+                            if (targetEl) targetEl.style.display = 'block';
                         });
                     });
                 } catch (e) {
                     console.error(e);
-                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
+                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar o perfil do player.</div>';
                 }
             }
 
