@@ -2,133 +2,64 @@
 const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
 const CACHE_MAX_IDADE_HORAS = 24;
 
-// ==================== LISTA LOCAL DE PLAYERS ====================
+// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
-const PROFILE_CACHE_PREFIX = 'fgchub_profile_v2_';
+const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
 
 function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
     try {
         const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
-
         if (!lista.some(p => p.playerId === playerId)) {
-            lista.push({
-                playerId,
-                gamerTag,
-                prefix
-            });
-
-            localStorage.setItem(
-                LOCAL_PLAYERS_KEY,
-                JSON.stringify(lista)
-            );
-
+            lista.push({ playerId, gamerTag, prefix });
+            localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
             const contador = document.getElementById('contador_salvos');
-
-            if (contador) {
-                contador.textContent = lista.length;
-            }
+            if (contador) contador.textContent = lista.length;
         }
     } catch (e) {}
 }
 
 function _carregarPlayersLocal() {
     try {
-        return JSON.parse(
-            localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]'
-        );
+        return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
     } catch (e) {
         return [];
     }
 }
 
-// ==================== CACHE ====================
+// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
 function _salvarPerfilCache(playerId, dados) {
     try {
-        localStorage.setItem(
-            PROFILE_CACHE_PREFIX + playerId,
-            JSON.stringify({
-                dados,
-                timestamp: Date.now()
-            })
-        );
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const cacheData = {
+            dados: dados,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
     } catch (e) {}
 }
 
 function _lerPerfilCache(playerId) {
     try {
-        const raw = localStorage.getItem(
-            PROFILE_CACHE_PREFIX + playerId
-        );
-
+        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
+        const raw = localStorage.getItem(cacheKey);
         if (!raw) return null;
 
         const cacheData = JSON.parse(raw);
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
 
-        const idade =
-            (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
 
-        return idade < CACHE_MAX_IDADE_HORAS
-            ? cacheData.dados
-            : null;
-
+        return null;
     } catch (e) {
         return null;
     }
 }
 
-// ==================== HELPERS ====================
-function _normalizarUrlStartGG(url) {
-    if (!url) return null;
-
-    if (/^https?:\/\//i.test(url)) {
-        return url;
-    }
-
-    if (url.startsWith('/')) {
-        return 'https://www.start.gg' + url;
-    }
-
-    return 'https://www.start.gg/' + url;
-}
-
-function _getProfileImage(images, type) {
-    return (images || []).find(
-        img =>
-            String(img.type || '').toLowerCase() ===
-            String(type).toLowerCase()
-    )?.url || null;
-}
-
-function _safeNumber(value, fallback = 0) {
-    const n = Number(value);
-
-    return Number.isFinite(n)
-        ? n
-        : fallback;
-}
-
-function _dedupeById(items) {
-    const map = new Map();
-
-    (items || []).forEach(item => {
-        if (item && item.id != null) {
-            map.set(String(item.id), item);
-        }
-    });
-
-    return Array.from(map.values());
-}
-
-// ==================== PROCESSAMENTO DE RESULTADOS ====================
-function processarDadosPlayer(
-    standings,
-    setsPorEvento,
-    gamerTag,
-    prefix = ''
-) {
-    const seisMesesAtras =
-        Date.now() -
-        180 * 24 * 60 * 60 * 1000;
+// ==================== PROCESSAMENTO ====================
+function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
+    const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
     let totalWins = 0;
     let totalLosses = 0;
@@ -137,68 +68,59 @@ function processarDadosPlayer(
     let losses6m = 0;
 
     const torneios = [];
+    const colocacoes = [];
 
-    (standings || []).forEach(s => {
-        const eventId =
-            s.container?.id;
+    standings.forEach(s => {
+        const eventId = s.container?.id;
+        const startAt = s.container?.startAt;
 
-        const startAt =
-            s.container?.startAt || 0;
-
-        const resultado =
-            setsPorEvento[eventId] || {
-                wins: 0,
-                losses: 0
-            };
+        const resultado = setsPorEvento[eventId] || {
+            wins: 0,
+            losses: 0
+        };
 
         totalWins += resultado.wins;
         totalLosses += resultado.losses;
 
         const isRecent =
             startAt &&
-            (startAt * 1000) >
-            seisMesesAtras;
+            (startAt * 1000) > seisMesesAtras;
 
         if (isRecent) {
             wins6m += resultado.wins;
             losses6m += resultado.losses;
         }
 
-        const total =
-            resultado.wins +
-            resultado.losses;
+        const totalEvento =
+            resultado.wins + resultado.losses;
 
         const winrate =
-            total > 0
+            totalEvento > 0
                 ? Math.round(
-                    (resultado.wins / total) * 100
+                    (resultado.wins / totalEvento) * 100
                 )
                 : 0;
 
-        const tournament =
-            s.container?.tournament || {};
-
-        const tournamentImages =
-            tournament.images || [];
-
         /*
          * IMPORTANTE:
-         * Mantém o logo/banner atual do evento.
+         * Esta parte permanece exatamente baseada
+         * nos dados originais do Start.gg.
+         *
+         * O logo/profile image do evento continua
+         * sendo utilizado pelo Recent Form.
          */
+        const tournamentImages =
+            s.container?.tournament?.images || [];
+
         const tournamentIcon =
-            _getProfileImage(
-                tournamentImages,
-                'profile'
-            );
+            tournamentImages.find(
+                img =>
+                    (img.type || '').toLowerCase() === 'profile'
+            )?.url || null;
 
         torneios.push({
-            id: eventId,
-
-            tournamentId:
-                tournament.id || null,
-
             name:
-                tournament.name || '—',
+                s.container?.tournament?.name || '—',
 
             eventName:
                 s.container?.name || '—',
@@ -207,7 +129,7 @@ function processarDadosPlayer(
                 s.placement || '?',
 
             attendees:
-                tournament.numAttendees || '?',
+                s.container?.tournament?.numAttendees || '?',
 
             wins:
                 resultado.wins,
@@ -221,33 +143,24 @@ function processarDadosPlayer(
                 startAt
                     ? new Date(
                         startAt * 1000
-                    ).toLocaleDateString(
-                        'pt-BR'
-                    )
+                    ).toLocaleDateString('pt-BR')
                     : '—',
 
-            startAt,
+            startAt:
+                startAt || 0,
 
-            /*
-             * Mantém o logo do evento.
-             */
             icon:
                 tournamentIcon,
 
-            url:
-                tournament.url
-                    ? _normalizarUrlStartGG(
-                        tournament.url
-                    )
-                    : null,
-
             isRecent
         });
+
+        if (s.placement) {
+            colocacoes.push(s.placement);
+        }
     });
 
-    /*
-     * Mais recente primeiro.
-     */
+    // ==================== ORDENAÇÃO ====================
     torneios.sort(
         (a, b) =>
             b.startAt - a.startAt
@@ -256,8 +169,9 @@ function processarDadosPlayer(
     /*
      * RECENT FORM
      *
-     * Os logos dos eventos continuam
-     * sendo preservados.
+     * Mantido exatamente com o sistema atual:
+     * cada resultado continua carregando o
+     * logo/banner profile do torneio.
      */
     const colocacoesOrdenadas =
         torneios
@@ -271,27 +185,10 @@ function processarDadosPlayer(
                     t.placement,
 
                 icon:
-                    t.icon,
-
-                tooltip:
-                    `${t.placement}º/${t.attendees} · ${t.eventName}`,
-
-                date:
-                    t.date,
-
-                eventName:
-                    t.eventName,
-
-                attendees:
-                    t.attendees,
-
-                tournamentName:
-                    t.name,
-
-                url:
-                    t.url
+                    t.icon
             }));
 
+    // ==================== ESTATÍSTICAS ====================
     const totalPartidas =
         totalWins + totalLosses;
 
@@ -299,118 +196,94 @@ function processarDadosPlayer(
         wins6m + losses6m;
 
     /*
-     * HIGHLIGHTS
-     *
-     * Não altera o logo dos eventos.
-     *
-     * Apenas melhora a relevância:
-     *
-     * posição + tamanho do torneio.
+     * Quantidade de eventos em que o jogador
+     * terminou no Top 8.
      */
-    const highlights =
-        [...torneios]
-            .filter(
-                t =>
-                    t.placement &&
-                    Number(t.placement) > 0 &&
-                    t.attendees !== '?'
-            )
-            .sort((a, b) => {
-
-                const score = t => {
-
-                    const placement =
-                        Number(t.placement);
-
-                    const attendees =
-                        Math.max(
-                            1,
-                            Number(t.attendees) || 1
-                        );
-
-                    return (
-                        (1 / placement) *
-                        Math.log2(
-                            attendees + 1
-                        )
-                    );
-                };
-
-                return (
-                    score(b) -
-                    score(a)
-                ) ||
-                (
-                    b.startAt -
-                    a.startAt
-                );
-            })
-            .slice(0, 8)
-            .map(t => ({
-                placement:
-                    `${t.placement}º/${t.attendees}`,
-
-                rawPlacement:
-                    t.placement,
-
-                eventName:
-                    t.eventName,
-
-                tournamentName:
-                    t.name,
-
-                attendees:
-                    t.attendees,
-
-                date:
-                    t.date,
-
-                icon:
-                    t.icon,
-
-                url:
-                    t.url
-            }));
-
-    /*
-     * Estatísticas adicionais.
-     */
-    const top8 =
+    const totalTop8 =
         torneios.filter(
             t =>
                 Number(t.placement) >= 1 &&
                 Number(t.placement) <= 8
         ).length;
 
-    const top3 =
+    /*
+     * Quantidade de eventos em que o jogador
+     * terminou no Top 3.
+     */
+    const totalTop3 =
         torneios.filter(
             t =>
                 Number(t.placement) >= 1 &&
                 Number(t.placement) <= 3
         ).length;
 
-    const primeiroLugar =
+    /*
+     * Quantidade de primeiros lugares.
+     */
+    const totalPrimeiros =
         torneios.filter(
             t =>
                 Number(t.placement) === 1
         ).length;
 
+    /*
+     * Melhor colocação encontrada
+     * no histórico carregado.
+     */
+    const colocacoesNumericas =
+        torneios
+            .map(
+                t =>
+                    Number(t.placement)
+            )
+            .filter(
+                n =>
+                    Number.isFinite(n) &&
+                    n > 0
+            );
+
     const melhorColocacao =
-        torneios.length
+        colocacoesNumericas.length > 0
             ? Math.min(
-                ...torneios
-                    .map(
-                        t =>
-                            Number(t.placement)
-                    )
-                    .filter(
-                        n =>
-                            Number.isFinite(n) &&
-                            n > 0
-                    )
+                ...colocacoesNumericas
             )
             : null;
 
+    /*
+     * ====================
+     * HIGHLIGHTS
+     * ====================
+     *
+     * Mantemos o sistema original:
+     * prioridade pela colocação.
+     *
+     * Não alteramos o Recent Form.
+     */
+    const highlights =
+        [...torneios]
+            .filter(
+                t =>
+                    t.placement &&
+                    t.placement > 0 &&
+                    t.attendees !== '?'
+            )
+            .sort(
+                (a, b) =>
+                    a.placement - b.placement
+            )
+            .slice(0, 8)
+            .map(t => ({
+                placement:
+                    `${t.placement}º/${t.attendees}`,
+
+                eventName:
+                    t.eventName,
+
+                date:
+                    t.date
+            }));
+
+    // ==================== RETORNO ====================
     return {
         gamerTag,
 
@@ -421,24 +294,29 @@ function processarDadosPlayer(
 
         totalLosses,
 
+        /*
+         * Total de sets contabilizados.
+         */
         totalSets:
             totalPartidas,
 
+        /*
+         * Winrate geral.
+         */
         winrateAllTime:
             totalPartidas > 0
                 ? Math.round(
-                    (totalWins /
-                        totalPartidas) *
-                    100
+                    (totalWins / totalPartidas) * 100
                 )
                 : 0,
 
+        /*
+         * Estatísticas dos últimos 6 meses.
+         */
         winrateLast6Months:
             total6m > 0
                 ? Math.round(
-                    (wins6m /
-                        total6m) *
-                    100
+                    (wins6m / total6m) * 100
                 )
                 : 0,
 
@@ -447,574 +325,115 @@ function processarDadosPlayer(
         losses6m,
 
         /*
-         * Mantém os dados necessários
-         * para a apresentação visual atual.
+         * Estatísticas de colocação.
+         */
+        totalTop8,
+
+        totalTop3,
+
+        totalPrimeiros,
+
+        melhorColocacao,
+
+        /*
+         * Recent Form:
+         * mantém os logos dos eventos.
          */
         recentForm:
-            colocacoesOrdenadas.slice(
-                0,
-                10
-            ),
+            colocacoesOrdenadas.slice(0, 10),
 
+        /*
+         * Highlights:
+         * mantido conforme lógica original.
+         */
         highlights,
 
+        /*
+         * Histórico completo carregado.
+         */
         tournaments:
             torneios,
 
-        tournamentCount:
+        /*
+         * Quantidade de torneios/eventos
+         * carregados nesta consulta.
+         */
+        totalTournaments:
             torneios.length,
-
-        top8,
-
-        top3,
-
-        firstPlaces:
-            primeiroLugar,
-
-        bestPlacement:
-            Number.isFinite(
-                melhorColocacao
-            )
-                ? melhorColocacao
-                : null,
 
         updatedAt:
             new Date().toISOString()
     };
 }
 
-// ==================== PERFIL DO USUÁRIO ====================
-async function _buscarPerfilUsuario(playerId) {
-
-    const query = `
-        query PlayerProfile($id: ID!) {
-            player(id: $id) {
-                id
-                gamerTag
-                prefix
-
-                user {
-                    id
-                    slug
-                    name
-                    createdAt
-
-                    location {
-                        city
-                        state
-                        country
-                    }
-
-                    images {
-                        id
-                        type
-                        url
-                    }
-                }
-            }
-        }
-    `;
-
-    try {
-
-        const json =
-            await callStartGG(
-                query,
-                {
-                    id: playerId
-                }
-            );
-
-        if (json.errors?.length) {
-
-            console.warn(
-                'Perfil Start.gg retornou erros:',
-                json.errors
-            );
-
-            return null;
-        }
-
-        return (
-            json.data?.player ||
-            null
-        );
-
-    } catch (e) {
-
-        console.warn(
-            'Falha ao buscar dados do usuário:',
-            e
-        );
-
-        return null;
-    }
-}
-
-// ==================== SETS / HEAD-TO-HEAD ====================
-async function _buscarSetsDoPlayer(playerId) {
-
-    const query = `
-        query PlayerSets($id: ID!) {
-
-            player(id: $id) {
-
-                sets(
-                    perPage: 100
-                    page: 1
-                ) {
-
-                    pageInfo {
-                        total
-                    }
-
-                    nodes {
-
-                        id
-
-                        displayScore
-
-                        winnerId
-
-                        state
-
-                        slots {
-
-                            entrant {
-                                id
-                                name
-
-                                participants {
-                                    player {
-                                        id
-                                    }
-                                }
-                            }
-                        }
-
-                        event {
-                            id
-                            name
-
-                            tournament {
-                                id
-                                name
-                                url
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    `;
-
-    try {
-
-        const json =
-            await callStartGG(
-                query,
-                {
-                    id: playerId
-                }
-            );
-
-        if (json.errors?.length) {
-
-            console.warn(
-                'Sets do player retornaram erros:',
-                json.errors
-            );
-
-            return [];
-        }
-
-        return (
-            json.data?.player?.sets?.nodes ||
-            []
-        );
-
-    } catch (e) {
-
-        console.warn(
-            'Falha ao buscar sets do player:',
-            e
-        );
-
-        return [];
-    }
-}
-
-function _processarHeadToHead(
-    sets,
-    playerId
-) {
-
-    const opponents =
-        new Map();
-
-    let totalWins = 0;
-    let totalLosses = 0;
-
-    (sets || []).forEach(
-        set => {
-
-            const mySlot =
-                (set.slots || [])
-                    .find(
-                        slot =>
-                            slot.entrant?.participants?.some(
-                                p =>
-                                    String(
-                                        p.player?.id
-                                    ) ===
-                                    String(
-                                        playerId
-                                    )
-                            )
-                    );
-
-            if (!mySlot?.entrant) {
-                return;
-            }
-
-            const opponentSlot =
-                (set.slots || [])
-                    .find(
-                        slot =>
-                            slot !== mySlot &&
-                            slot.entrant
-                    );
-
-            if (!opponentSlot?.entrant) {
-                return;
-            }
-
-            const opponentName =
-                opponentSlot.entrant.name ||
-                'Adversário';
-
-            const opponentId =
-                opponentSlot.entrant.id ||
-                opponentName;
-
-            const key =
-                String(opponentId);
-
-            if (!opponents.has(key)) {
-
-                opponents.set(
-                    key,
-                    {
-                        id:
-                            opponentId,
-
-                        name:
-                            opponentName,
-
-                        wins:
-                            0,
-
-                        losses:
-                            0,
-
-                        total:
-                            0,
-
-                        lastSetId:
-                            null,
-
-                        lastEvent:
-                            null
-                    }
-                );
-            }
-
-            const item =
-                opponents.get(key);
-
-            item.total++;
-
-            item.lastSetId =
-                set.id;
-
-            item.lastEvent =
-                set.event?.tournament?.name ||
-                set.event?.name ||
-                null;
-
-            if (set.winnerId) {
-
-                if (
-                    String(
-                        set.winnerId
-                    ) ===
-                    String(
-                        mySlot.entrant.id
-                    )
-                ) {
-
-                    item.wins++;
-
-                    totalWins++;
-
-                } else {
-
-                    item.losses++;
-
-                    totalLosses++;
-                }
-            }
-        }
-    );
-
-    const opponentList =
-        Array.from(
-            opponents.values()
-        )
-            .sort(
-                (a, b) =>
-                    b.total - a.total ||
-                    b.wins - a.wins
-            )
-            .slice(0, 15);
-
-    /*
-     * Winrate de cada adversário.
-     */
-    opponentList.forEach(
-        opponent => {
-
-            opponent.winrate =
-                opponent.total > 0
-                    ? Math.round(
-                        (
-                            opponent.wins /
-                            opponent.total
-                        ) * 100
-                    )
-                    : 0;
-        }
-    );
-
-    return {
-
-        totalSets:
-            totalWins +
-            totalLosses,
-
-        totalWins,
-
-        totalLosses,
-
-        winrate:
-            (
-                totalWins +
-                totalLosses
-            ) > 0
-                ? Math.round(
-                    (
-                        totalWins /
-                        (
-                            totalWins +
-                            totalLosses
-                        )
-                    ) * 100
-                )
-                : 0,
-
-        opponents:
-            opponentList
-    };
-}
-
-// ==================== VODS ====================
-function _extrairVods(sets) {
-
-    return (sets || [])
-
-        .filter(
-            s =>
-                s.stream?.streamSource &&
-                s.stream?.streamName
-        )
-
-        .map(
-            s => ({
-
-                title:
-                    s.displayScore ||
-                    'Set',
-
-                eventName:
-                    s.event?.tournament?.name ||
-                    s.event?.name ||
-                    '',
-
-                source:
-                    s.stream.streamSource,
-
-                streamName:
-                    s.stream.streamName,
-
-                url:
-                    s.stream.streamSource ===
-                    'TWITCH'
-                        ? `https://www.twitch.tv/${s.stream.streamName}`
-                        : null
-            })
-        )
-
-        .filter(
-            v =>
-                v.url
-        );
-}
-
 // ==================== BUSCA AO VIVO ====================
-async function _buscarPlayerAoVivo(
-    playerId,
-    gamerTag,
-    prefix = ''
-) {
-
-    const query1 = `
-        query PlayerHistory($id: ID!) {
-
-            player(id: $id) {
-
-                id
-
-                gamerTag
-
-                prefix
-
-                user {
-
+async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
+    const query1 = `query PlayerHistory($id: ID!) {
+        player(id: $id) {
+            user {
+                images {
                     id
-
-                    slug
-
-                    name
-
-                    createdAt
-
-                    location {
-                        city
-                        state
-                        country
-                    }
-
-                    images {
-                        id
-                        type
-                        url
-                    }
+                    type
+                    url
                 }
-
-                recentStandings(
-                    limit: 15
-                ) {
-
-                    placement
-
-                    container {
-
-                        ... on Event {
-
-                            id
-
+            }
+            recentStandings(limit: 15) {
+                placement
+                container {
+                    ... on Event {
+                        id
+                        name
+                        startAt
+                        tournament {
                             name
-
-                            startAt
-
-                            tournament {
-
-                                id
-
-                                name
-
+                            numAttendees
+                            images {
+                                type
                                 url
-
-                                numAttendees
-
-                                images {
-                                    type
-                                    url
-                                }
                             }
                         }
                     }
                 }
             }
         }
-    `;
+    }`;
 
     const json1 =
         await callStartGG(
             query1,
-            {
-                id: playerId
-            }
+            { id: playerId }
         );
-
-    if (json1.errors?.length) {
-
-        console.warn(
-            'Histórico do player retornou erros:',
-            json1.errors
-        );
-    }
-
-    const player =
-        json1.data?.player ||
-        {};
 
     const standings =
-        player.recentStandings ||
-        [];
+        json1.data?.player?.recentStandings || [];
 
     const images =
-        player.user?.images ||
-        [];
+        json1.data?.player?.user?.images || [];
 
-    /*
-     * AVATAR
-     */
     const avatarUrl =
-        _getProfileImage(
-            images,
-            'profile'
-        );
+        images.find(
+            img =>
+                (img.type || '').toLowerCase() === 'profile'
+        )?.url || null;
 
-    /*
-     * BANNER
-     */
     const bannerUrl =
-        _getProfileImage(
-            images,
-            'banner'
-        );
+        images.find(
+            img =>
+                (img.type || '').toLowerCase() === 'banner'
+        )?.url || null;
 
     const setsPorEvento = {};
 
-    /*
-     * Mantemos a lógica atual
-     * de resultados por evento.
-     *
-     * Isso preserva o cálculo
-     * atual do WinRate.
-     */
-    for (
-        const standing of standings
-    ) {
-
+    for (const standing of standings) {
         const eventId =
             standing.container?.id;
 
-        if (!eventId) {
-            continue;
-        }
+        if (!eventId) continue;
 
+        /*
+         * Mantemos exatamente a função
+         * original utilizada pelo projeto.
+         */
         const resultado =
             await buscarSetsDoEvento(
                 eventId,
@@ -1029,10 +448,8 @@ async function _buscarPlayerAoVivo(
         processarDadosPlayer(
             standings,
             setsPorEvento,
-            player.gamerTag ||
-                gamerTag,
-            player.prefix ??
-                prefix
+            gamerTag,
+            prefix
         );
 
     dados.avatarUrl =
@@ -1040,105 +457,6 @@ async function _buscarPlayerAoVivo(
 
     dados.bannerUrl =
         bannerUrl;
-
-    /*
-     * ==========================
-     * PERFIL START.GG
-     * ==========================
-     */
-
-    const profileData =
-        await _buscarPerfilUsuario(
-            playerId
-        );
-
-    const profileUser =
-        profileData?.user ||
-        player.user ||
-        {};
-
-    dados.profile = {
-
-        id:
-            profileUser.id ||
-            null,
-
-        name:
-            profileUser.name ||
-            '',
-
-        createdAt:
-            profileUser.createdAt ||
-            null,
-
-        location: {
-
-            city:
-                profileUser.location?.city ||
-                '',
-
-            state:
-                profileUser.location?.state ||
-                '',
-
-            country:
-                profileUser.location?.country ||
-                ''
-        },
-
-        slug:
-            profileUser.slug ||
-            '',
-
-        startggUrl:
-            profileUser.slug
-                ? _normalizarUrlStartGG(
-                    profileUser.slug
-                )
-                : `https://www.start.gg/user/${playerId}`
-    };
-
-    /*
-     * ==========================
-     * HEAD-TO-HEAD
-     * ==========================
-     */
-
-    const sets =
-        await _buscarSetsDoPlayer(
-            playerId
-        );
-
-    dados.headToHead =
-        _processarHeadToHead(
-            sets,
-            playerId
-        );
-
-    /*
-     * ==========================
-     * VODS
-     * ==========================
-     */
-
-    dados.vods =
-        _extrairVods(
-            sets
-        );
-
-    /*
-     * ==========================
-     * UPCOMING EVENTS
-     * ==========================
-     *
-     * Não inventamos eventos.
-     *
-     * Esta estrutura fica pronta
-     * para a próxima consulta
-     * específica do Start.gg.
-     */
-
-    dados.upcomingEvents = [];
 
     return dados;
 }
@@ -1150,31 +468,22 @@ async function obterDadosPlayer(
     forceRefresh = false,
     prefix = ''
 ) {
-
     if (!forceRefresh) {
-
         const cacheData =
-            _lerPerfilCache(
-                playerId
-            );
+            _lerPerfilCache(playerId);
 
         if (cacheData) {
-
             if (
                 prefix &&
                 !cacheData.playerPrefix
             ) {
-
                 cacheData.playerPrefix =
                     prefix;
             }
 
             return {
-                dados:
-                    cacheData,
-
-                fonte:
-                    'cache'
+                dados: cacheData,
+                fonte: 'cache'
             };
         }
     }
@@ -1198,20 +507,15 @@ async function obterDadosPlayer(
     );
 
     return {
-
         dados,
-
-        fonte:
-            'live'
+        fonte: 'live'
     };
 }
 
-// ==================== BUSCA DE PLAYERS ====================
-let _listaPlayersConhecidos =
-    null;
+// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
+let _listaPlayersConhecidos = null;
 
 async function carregarPlayersConhecidos() {
-
     if (_listaPlayersConhecidos) {
         return _listaPlayersConhecidos;
     }
@@ -1222,35 +526,19 @@ async function carregarPlayersConhecidos() {
     const mapa =
         new Map();
 
-    locais.forEach(
-        p => {
+    locais.forEach(p => {
+        const id =
+            String(p.playerId);
 
-            const id =
-                String(
-                    p.playerId
-                );
-
-            if (!mapa.has(id)) {
-
-                mapa.set(
-                    id,
-                    {
-                        playerId:
-                            id,
-
-                        gamerTag:
-                            p.gamerTag,
-
-                        prefix:
-                            p.prefix || '',
-
-                        placement:
-                            null
-                    }
-                );
-            }
+        if (!mapa.has(id)) {
+            mapa.set(id, {
+                playerId: id,
+                gamerTag: p.gamerTag,
+                prefix: p.prefix || '',
+                placement: null
+            });
         }
-    );
+    });
 
     _listaPlayersConhecidos =
         Array.from(
@@ -1260,32 +548,21 @@ async function carregarPlayersConhecidos() {
     return _listaPlayersConhecidos;
 }
 
-function filtrarPlayers(
-    lista,
-    termo
-) {
-
+function filtrarPlayers(lista, termo) {
     const t =
         termo
             .trim()
             .toLowerCase();
 
-    if (!t) {
-        return [];
-    }
+    if (!t) return [];
 
     const filtrados =
         lista.filter(
             p =>
-                String(
-                    p.gamerTag || ''
-                )
+                p.gamerTag
                     .toLowerCase()
                     .includes(t)
         );
 
-    return filtrados.slice(
-        0,
-        15
-    );
+    return filtrados.slice(0, 15);
 }
