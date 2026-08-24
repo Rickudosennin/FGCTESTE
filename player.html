@@ -54,13 +54,13 @@
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime,
                     recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
-                    realName
+                    realName, countryCode
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
-                const flag = dados.countryFlag || '🇧🇷';
+                const siglaPais = countryCode || '';
                 const totalSets = totalWins + totalLosses;
 
                 return `
@@ -79,7 +79,7 @@
                                     <div class="space-y-1">
                                         <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-2">
                                             <span>${displayName}</span>
-                                            <span class="text-xl">${flag}</span>
+                                            ${siglaPais ? `<span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded font-mono font-bold uppercase">${siglaPais}</span>` : ''}
                                         </h1>
                                         ${realName ? `<p class="text-sm text-slate-400 font-medium">${realName}</p>` : ''}
                                         <div class="flex items-center gap-3 text-xs font-semibold pt-2 text-slate-300">
