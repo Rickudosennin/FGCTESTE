@@ -60,7 +60,6 @@
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
 
-                // Valores mockados/calculados para a camada de inteligência do wireframe
                 const rating = dados.rating || 1842;
                 const rank = dados.rank || '#7';
                 const streak = dados.streak || 3;
@@ -122,16 +121,22 @@
                             </div>
                         </div>
 
-                        <!-- RECENT FORM -->
+                        <!-- RECENT FORM (COM AVATARES DOS EVENTOS) -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Recent Form</h3>
-                            <div class="flex items-center gap-2 flex-wrap">
+                            <div class="flex items-center gap-3 overflow-x-auto pb-2">
                                 ${recentForm.length === 0 ? '<span class="text-slate-500 text-sm">Sem dados recentes.</span>' : ''}
-                                ${recentForm.map(r => `
-                                    <div class="flex flex-col items-center gap-1">
-                                        <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
-                                    </div>
-                                `).join('')}
+                                ${recentForm.map(r => {
+                                    const eventImg = r.image || r.eventImage || r.tournamentImage || r.icon || '';
+                                    return `
+                                        <div class="flex flex-col items-center gap-2 flex-shrink-0">
+                                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center shadow-md">
+                                                ${eventImg ? `<img src="${eventImg}" alt="${r.eventName || ''}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-trophy text-slate-500 text-xs"></i>`}
+                                            </div>
+                                            <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
 
@@ -218,7 +223,7 @@
                             </div>
                         </div>
 
-                        <!-- BOTÕES DE REDES SOCIAIS & LINKS EXTERNOS -->
+                        <!-- REDES SOCIAIS & LINKS EXTERNOS -->
                         <div class="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-800">
                             <a href="https://start.gg/user/${playerId}" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-red-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
                                 [ START.GG ]
