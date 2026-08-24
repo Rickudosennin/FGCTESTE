@@ -210,6 +210,7 @@
                         <!-- HEAD TO HEAD -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Head to Head</h3>
+                            <p class="text-[11px] text-slate-500 -mt-1">Calculado a partir dos sets dos últimos ${tournaments.length} torneios registrados no Start.gg para este player. Torneios mais antigos que isso não entram na conta.</p>
                             ${(!headToHead || headToHead.length === 0) ? `
                                 <div class="text-slate-500 text-sm py-6 text-center border border-dashed border-slate-800 rounded-lg">
                                     Nenhum confronto direto registrado via Start.gg.
