@@ -50,13 +50,32 @@
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix
+                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
+                    realName, locationStr, createdAt, socials
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
 
                 // Define o display name com prefixo se disponível
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
+
+                const memberSince = createdAt ? formatDate(createdAt) : null;
+
+                const socialsHtml = (socials && socials.length > 0) ? `
+                    <div class="flex gap-2 items-center flex-wrap my-2">
+                        ${socials.map(s => {
+                            const typeLower = (s.type || '').toLowerCase();
+                            let url = '#';
+                            if (typeLower === 'twitch') url = `https://twitch.tv/${s.username}`;
+                            else if (typeLower === 'twitter' || typeLower === 'x') url = `https://x.com/${s.username}`;
+                            return `
+                                <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700 transition inline-flex items-center gap-1">
+                                    <span class="text-red-500 font-bold uppercase text-[10px]">${s.type}:</span> ${s.username}
+                                </a>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : '';
 
                 const eventsHtml = tournaments.slice(0, 15).map(t => `
                     <div class="event-row">
@@ -81,7 +100,15 @@
 
                         <!-- HEADER -->
                         <div class="profile-header">
-                            <h1 class="profile-gamertag">${displayName}</h1>
+                            <div>
+                                <h1 class="profile-gamertag">${displayName}</h1>
+                                ${realName ? `<div class="text-sm text-slate-300 font-medium">${realName}</div>` : ''}
+                                <div class="text-xs text-slate-400 mt-1 flex flex-wrap gap-3">
+                                    ${locationStr ? `<span>📍 ${locationStr}</span>` : ''}
+                                    ${memberSince ? `<span>📅 Membro desde ${memberSince}</span>` : ''}
+                                </div>
+                                ${socialsHtml}
+                            </div>
                             <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
                             <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
                             <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
