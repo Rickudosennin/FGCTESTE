@@ -1,15 +1,14 @@
-const STARTGG_TOKEN = "43b15884e09284466a58db7b06350b50"; // Token Start.gg
+const STARTGG_TOKEN = "43b15884e09284466a58db7b06350b50";
 
 async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefresh = false, prefixFallback = '') {
     const cacheKey = `fgchub_player_${playerId}`;
     
-    // Verifica cache local se não for forçado o refresh
     if (!forceRefresh) {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
             try {
                 const parsed = JSON.parse(cached);
-                if (Date.now() - parsed.timestamp < 3600000) { // Cache por 1 hora
+                if (Date.now() - parsed.timestamp < 3600000) {
                     return { dados: parsed.dados, fonte: 'cache' };
                 }
             } catch (e) {
@@ -18,7 +17,7 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
         }
     }
 
-    // Query GraphQL buscando dados do usuário, localização e eventos
+    // Consulta GraphQL contendo o caminho exato de localização do participante e do usuário
     const query = `
     query GetPlayerProfile($userId: ID!) {
       user(id: $userId) {
@@ -49,6 +48,13 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
               standing {
                 placement
               }
+              participants {
+                user {
+                  location {
+                    country
+                  }
+                }
+              }
             }
           }
         }
@@ -75,17 +81,13 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
             throw new Error("Usuário não encontrado na Start.gg");
         }
 
-        // Extração de imagens (Avatar e Banner)
         const avatarObj = user.images?.find(img => img.type === 'profile');
         const bannerObj = user.images?.find(img => img.type === 'banner');
 
-        const avatarUrl = avatarObj ? avatarObj.url : '';
-        const bannerUrl = bannerObj ? bannerObj.url : '';
-        
-        // Extração do País (Localização)
-        const country = user.location?.country || '';
+        // Extrai o país verificando o user principal ou o participante do evento (lógica da sua bracket)[cite: 3]
+        const entrantCountry = user.events?.nodes?.[0]?.userEntrant?.participants?.[0]?.user?.location?.country;[cite: 3]
+        const country = user.location?.country || entrantCountry || '';[cite: 3]
 
-        // Processamento dos torneios
         let totalWins = 0;
         let totalLosses = 0;
         const recentForm = [];
@@ -126,7 +128,6 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
             });
         }
 
-        // Estimativa estatística baseada nos torneios listados
         totalWins = tournaments.reduce((acc, curr) => acc + (curr.placement <= 8 ? 3 : 1), 0);
         totalLosses = tournaments.length * 2;
         const totalSets = totalWins + totalLosses;
@@ -136,9 +137,9 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
             gamerTag: user.gamerTag || gamerTagFallback,
             playerPrefix: user.prefix || prefixFallback,
             realName: user.name || '',
-            country: country, // <-- Dado retornado do GraphQL da Start.gg
-            avatarUrl: avatarUrl,
-            bannerUrl: bannerUrl,
+            country: country,
+            avatarUrl: avatarObj ? avatarObj.url : '',
+            bannerUrl: bannerObj ? bannerObj.url : '',
             totalWins: totalWins,
             totalLosses: totalLosses,
             winrateAllTime: winrateAllTime,
@@ -147,7 +148,6 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
             tournaments: tournaments
         };
 
-        // Salva no cache local
         localStorage.setItem(cacheKey, JSON.stringify({
             timestamp: Date.now(),
             dados: dadosProcessed
@@ -157,8 +157,6 @@ async function obterDadosPlayer(playerId, gamerTagFallback = 'Player', forceRefr
 
     } catch (error) {
         console.error("Erro na busca de dados do jogador:", error);
-        
-        // Fallback genérico em caso de falha da API
         return {
             dados: {
                 gamerTag: gamerTagFallback,
