@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil do Player | FGC HUB</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="buscar-style.css">
 </head>
-<body class="p-4 md:p-10">
+<body class="p-4 md:p-10 bg-slate-950 text-slate-100">
 
-    <div class="max-w-5xl mx-auto">
-        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para a busca</a>
+    <div class="max-w-5xl mx-auto space-y-6">
+        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-2 inline-block transition">&larr; Voltar para a busca</a>
 
         <div id="perfil_conteudo">
             <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
@@ -41,93 +42,196 @@
                 return 'dot-other';
             }
 
+            function getMedalEmoji(placement) {
+                if (placement === 1) return '🥇';
+                if (placement === 2) return '🥈';
+                if (placement === 3) return '🥉';
+                return `${placement}º`;
+            }
+
             function montarHtmlPerfil(dados, fonte) {
                 const {
-                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
+                    gamerTag, totalWins, totalLosses, winrateAllTime,
+                    recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix,
                     realName
                 } = dados;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
-
-                const eventsHtml = tournaments.slice(0, 15).map(t => `
-                    <div class="event-row">
-                        <span class="event-name">${t.name}</span>
-                        <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
-                            ${t.placement}º / ${t.attendees}
-                        </span>
-                        <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
-                        <span class="event-date">${t.date}</span>
-                    </div>
-                `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
-
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
 
+                // Valores mockados/calculados para a camada de inteligência do wireframe
+                const rating = dados.rating || 1842;
+                const rank = dados.rank || '#7';
+                const streak = dados.streak || 3;
+                const flag = dados.countryFlag || '🇧🇷';
+
                 return `
-                    <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR -->
-                        <div class="profile-banner" ${bannerStyle}>
-                            <div class="profile-banner-overlay"></div>
-                            ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
-                        </div>
-
-                        <!-- HEADER -->
-                        <div class="profile-header">
-                            <div>
-                                <h1 class="profile-gamertag">${displayName}</h1>
-                                ${realName ? `<div class="text-sm text-slate-300 font-medium mt-1">${realName}</div>` : ''}
+                    <div class="space-y-6">
+                        <!-- BANNER DO PLAYER -->
+                        <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-xl">
+                            <div class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                             </div>
-                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
-                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
-                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
-                                <i class="fa-solid fa-rotate"></i> Atualizar dados
-                            </button>
+                            
+                            <div class="p-6 -mt-16 relative flex flex-col md:flex-row items-center md:items-end justify-between gap-4">
+                                <div class="flex flex-col md:flex-row items-center md:items-end gap-4 text-center md:text-left">
+                                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-xl border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl flex-shrink-0">
+                                        ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
+                                    </div>
+                                    <div class="space-y-1">
+                                        <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-2">
+                                            <span>${displayName}</span>
+                                            <span class="text-xl">${flag}</span>
+                                        </h1>
+                                        ${realName ? `<p class="text-sm text-slate-400 font-medium">${realName}</p>` : ''}
+                                        <div class="flex items-center gap-3 text-xs font-semibold pt-2 text-slate-300">
+                                            <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">RATING <strong class="text-red-500">${rating}</strong></span>
+                                            <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">RANK <strong class="text-red-500">${rank}</strong></span>
+                                            <span class="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">WIN RATE <strong class="${wrClass}">${winrateAllTime}%</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-500">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                                    <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-rotate"></i> Atualizar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- RECENT FORM (bolinhas) -->
-                        <div class="recent-form">
-                            <h3>RECENT FORM</h3>
-                            <div class="form-dots">
+                        <!-- 4 STAT CARDS -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
+                                <div class="text-2xl font-black text-white">${totalWins} W</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Vitórias</div>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
+                                <div class="text-2xl font-black text-white">${totalLosses} L</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Derrotas</div>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
+                                <div class="text-2xl font-black ${wrClass}">${winrateAllTime}%</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Win Rate</div>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center space-y-1">
+                                <div class="text-2xl font-black text-orange-500">🔥 ${streak}</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Streak</div>
+                            </div>
+                        </div>
+
+                        <!-- RECENT FORM -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Recent Form</h3>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${recentForm.length === 0 ? '<span class="text-slate-500 text-sm">Sem dados recentes.</span>' : ''}
                                 ${recentForm.map(r => `
-                                    <div class="form-entry">
-                                        ${r.icon ? `<img src="${r.icon}" class="form-icon" alt="">` : '<div class="form-icon form-icon-empty"></div>'}
+                                    <div class="flex flex-col items-center gap-1">
                                         <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
 
-                        <!-- HIGHLIGHTS -->
-                        <div class="highlights">
-                            <h3>HIGHLIGHTS</h3>
-                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
-                            ${highlights.map(h => `
-                                <div class="highlight-item">
-                                    <span class="placement">${h.placement}</span>
-                                    <span class="event">${h.eventName}</span>
-                                    <span class="date">${h.date}</span>
+                        <!-- PERFORMANCE -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Performance</h3>
+                            <div class="grid grid-cols-3 gap-4 pt-2 border-t border-slate-800 text-center">
+                                <div>
+                                    <div class="text-xs text-slate-400 mb-1">Rating</div>
+                                    <div class="text-xl font-bold text-white">${rating}</div>
                                 </div>
-                            `).join('')}
+                                <div>
+                                    <div class="text-xs text-slate-400 mb-1">Win Rate</div>
+                                    <div class="text-xl font-bold ${wrClass}">${winrateAllTime}%</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-400 mb-1">Ranking</div>
+                                    <div class="text-xl font-bold text-white">${rank}</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- ABAS -->
-                        <div class="profile-tabs">
-                            <div class="tab-header">
-                                <span class="tab-btn active" data-tab="events">EVENTS</span>
-                                <span class="tab-btn" data-tab="versus">VERSUS</span>
-                                <span class="tab-btn" data-tab="vods">VODS</span>
+                        <!-- ÚLTIMOS RESULTADOS -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Últimos Resultados</h3>
+                            <div class="divide-y divide-slate-800">
+                                ${highlights.length === 0 ? '<div class="text-slate-500 text-sm py-2">Nenhum resultado recente encontrado.</div>' : ''}
+                                ${highlights.map(h => {
+                                    const placementNum = parseInt(h.placement) || 1;
+                                    return `
+                                        <div class="py-3 flex items-center justify-between text-sm">
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-lg">${getMedalEmoji(placementNum)}</span>
+                                                <span class="font-semibold text-slate-200">${h.eventName}</span>
+                                            </div>
+                                            <span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded font-mono">${h.placement.split('/')[1] || '?'} participantes</span>
+                                        </div>
+                                    `;
+                                }).join('')}
                             </div>
-                            <div class="tab-content" id="tab-events">
-                                ${eventsHtml}
+                        </div>
+
+                        <!-- EVOLUÇÃO -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Evolução</h3>
+                            <div class="h-32 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 text-xs font-mono">
+                                📈 [ GRÁFICO DE EVOLUÇÃO DE RATING / WIN RATE ]
                             </div>
-                            <div class="tab-content" id="tab-versus" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
+                        </div>
+
+                        <!-- HEAD TO HEAD -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Head to Head</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
+                                    <span class="font-bold text-sm text-slate-300">Player X</span>
+                                    <span class="text-xs font-mono font-bold bg-green-950 text-green-400 px-2 py-1 rounded border border-green-800">7 – 3</span>
+                                </div>
+                                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
+                                    <span class="font-bold text-sm text-slate-300">Player Y</span>
+                                    <span class="text-xs font-mono font-bold bg-green-950 text-green-400 px-2 py-1 rounded border border-green-800">5 – 4</span>
+                                </div>
+                                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg flex justify-between items-center">
+                                    <span class="font-bold text-sm text-slate-300">Player Z</span>
+                                    <span class="text-xs font-mono font-bold bg-red-950 text-red-400 px-2 py-1 rounded border border-red-800">2 – 6</span>
+                                </div>
                             </div>
-                            <div class="tab-content" id="tab-vods" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+                        </div>
+
+                        <!-- HISTÓRICO COMPLETO -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Histórico Completo</h3>
+                            <div class="divide-y divide-slate-800">
+                                ${tournaments.slice(0, 15).map(t => `
+                                    <div class="py-3 flex flex-col md:flex-row md:items-center justify-between gap-2 text-sm">
+                                        <div class="font-medium text-slate-200">${t.name} <span class="text-xs text-slate-500">(${t.eventName})</span></div>
+                                        <div class="flex items-center gap-4 text-xs">
+                                            <span class="font-bold ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">${t.placement}º / ${t.attendees}</span>
+                                            <span class="text-slate-400 font-mono">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
+                                            <span class="text-slate-500">${t.date}</span>
+                                        </div>
+                                    </div>
+                                `).join('') || '<div class="text-slate-500 text-sm py-2">Nenhum evento registrado.</div>'}
                             </div>
+                        </div>
+
+                        <!-- BOTÕES DE REDES SOCIAIS & LINKS EXTERNOS -->
+                        <div class="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-800">
+                            <a href="https://start.gg/user/${playerId}" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-red-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                                [ START.GG ]
+                            </a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                                [ DISCORD ]
+                            </a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-purple-600 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                                [ TWITCH ]
+                            </a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition">
+                                [ X ]
+                            </a>
                         </div>
                     </div>
                 `;
@@ -143,16 +247,6 @@
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
                     conteudo.innerHTML = '';
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
-
-                    document.querySelectorAll('.tab-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                            this.classList.add('active');
-                            const target = this.dataset.tab;
-                            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                            document.getElementById('tab-' + target).style.display = 'block';
-                        });
-                    });
                 } catch (e) {
                     console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
