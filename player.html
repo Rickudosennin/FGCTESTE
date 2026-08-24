@@ -58,10 +58,18 @@
             }
 
             function getFlagHTML(countryName) {
-                if (!countryName) return '';
-                const code = COUNTRY_MAP[countryName];
+                if (!countryName || typeof countryName !== 'string') return '';
+                const cleanCountry = countryName.trim();
+                let code = COUNTRY_MAP[cleanCountry];
+                if (!code) {
+                    const keyMatch = Object.keys(COUNTRY_MAP).find(k => k.toLowerCase() === cleanCountry.toLowerCase());
+                    if (keyMatch) code = COUNTRY_MAP[keyMatch];
+                }
+                if (!code && cleanCountry.length === 2) {
+                    code = cleanCountry;
+                }
                 if (!code) return '';
-                return `<img src="https://flagcdn.com/w40/${code.toLowerCase()}.png" class="flag-img" style="width: 24px; height: auto; border-radius: 2px; display: inline-block; vertical-align: middle;" alt="${countryName}">`;
+                return `<img src="https://flagcdn.com/w40/${code.toLowerCase()}.png" class="flag-img" style="width: 24px; height: auto; border-radius: 2px; display: inline-block; vertical-align: middle;" alt="${cleanCountry}">`;
             }
 
             function montarHtmlPerfil(dados, fonte) {
@@ -75,7 +83,7 @@
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
                 
-                const countryName = dados.country || dados.location?.country || dados.countryFlag || '';
+                const countryName = dados.country || dados.location?.country || dados.countryFlag || dados.user?.location?.country || dados.participants?.[0]?.user?.location?.country || '';
                 const flagHtml = getFlagHTML(countryName);
                 const totalSets = totalWins + totalLosses;
 
