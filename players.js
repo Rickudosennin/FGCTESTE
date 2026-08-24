@@ -2,13 +2,6 @@
 const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
 const CACHE_MAX_IDADE_HORAS = 24;
 
-const COUNTRY_MAP = {
-    "Brazil": "BR", "United States": "US", "Argentina": "AR", "Chile": "CL", "Colombia": "CO", 
-    "Mexico": "MX", "Peru": "PE", "Venezuela": "VE", "Ecuador": "EC", "Bolivia": "BO",
-    "Paraguay": "PY", "Uruguay": "UY", "Portugal": "PT", "Spain": "ES", "France": "FR", 
-    "Germany": "DE", "Italy": "IT", "Japan": "JP", "South Korea": "KR", "Canada": "CA"
-};
-
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
 const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
@@ -143,9 +136,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
             user {
-                location {
-                    country
-                }
                 images {
                     id
                     type
@@ -174,13 +164,9 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     }`;
     const json1 = await callStartGG(query1, { id: playerId });
     const standings = json1.data?.player?.recentStandings || [];
-    const userObj = json1.data?.player?.user;
-    const images = userObj?.images || [];
+    const images = json1.data?.player?.user?.images || [];
     const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
-
-    const countryRaw = userObj?.location?.country || '';
-    const countryCode = COUNTRY_MAP[countryRaw] || (countryRaw.length === 2 ? countryRaw.toUpperCase() : countryRaw);
 
     const setsPorEvento = {};
     for (const standing of standings) {
@@ -193,7 +179,6 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
-    dados.countryCode = countryCode;
     return dados;
 }
 
