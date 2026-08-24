@@ -30,6 +30,14 @@
             }
             window._playerLoaded = true;
 
+            const COUNTRY_MAP = {
+                "Brazil":"BR","United States":"US","Argentina":"AR","Chile":"CL","Colombia":"CO",
+                "Mexico":"MX","Peru":"PE","Venezuela":"VE","Ecuador":"EC","Bolivia":"BO",
+                "Paraguay":"PY","Uruguay":"UY","Portugal":"PT","Spain":"ES","France":"FR",
+                "Germany":"DE","Italy":"IT","Japan":"JP","South Korea":"KR","Canada":"CA",
+                "United Kingdom":"GB","Australia":"AU","Netherlands":"NL","Sweden":"SE"
+            };
+
             const params = new URLSearchParams(window.location.search);
             const playerId = params.get('id');
             const gamerTag = params.get('tag') || 'Player';
@@ -50,6 +58,18 @@
                 return `${placement}º`;
             }
 
+            function getFlagEmoji(countryInput) {
+                if (!countryInput || typeof countryInput !== 'string') return '';
+                let code = countryInput.trim();
+                if (COUNTRY_MAP[code]) {
+                    code = COUNTRY_MAP[code];
+                }
+                code = code.toUpperCase();
+                if (code.length !== 2) return code;
+                const codePoints = code.split('').map(char => 127397 + char.charCodeAt(0));
+                return String.fromCodePoint(...codePoints);
+            }
+
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime,
@@ -60,7 +80,9 @@
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
-                const flag = dados.countryFlag || '🇧🇷';
+                
+                const countryRaw = dados.countryFlag || dados.country || dados.location?.country || '';
+                const flag = getFlagEmoji(countryRaw);
                 const totalSets = totalWins + totalLosses;
 
                 return `
@@ -79,7 +101,7 @@
                                     <div class="space-y-1">
                                         <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-2">
                                             <span>${displayName}</span>
-                                            <span class="text-xl">${flag}</span>
+                                            ${flag ? `<span class="text-xl">${flag}</span>` : ''}
                                         </h1>
                                         ${realName ? `<p class="text-sm text-slate-400 font-medium">${realName}</p>` : ''}
                                         <div class="flex items-center gap-3 text-xs font-semibold pt-2 text-slate-300">
