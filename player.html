@@ -7,168 +7,792 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="buscar-style.css">
+
+    <style>
+        /* =========================================================
+           NOVO BLOCO: ESTATÍSTICAS DO PERFIL
+           Não altera o CSS original.
+           ========================================================= */
+
+        .fgchub-profile-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 18px 0 10px;
+        }
+
+        .fgchub-stat-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 13px 12px;
+            min-width: 0;
+        }
+
+        .fgchub-stat-label {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .fgchub-stat-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: #e2e8f0;
+            line-height: 1;
+        }
+
+        .fgchub-stat-sub {
+            margin-top: 5px;
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        .fgchub-profile-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            margin: 2px 0 16px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .fgchub-profile-summary strong {
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 900px) {
+            .fgchub-profile-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .fgchub-profile-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .fgchub-stat-value {
+                font-size: 16px;
+            }
+        }
+    </style>
 </head>
+
 <body class="p-4 md:p-10">
 
     <div class="max-w-5xl mx-auto">
-        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para a busca</a>
+
+        <a
+            href="buscar.html"
+            class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block"
+        >
+            &larr; Voltar para a busca
+        </a>
 
         <div id="perfil_conteudo">
-            <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
+
+            <div class="loading-attendees">
+                <div class="spinner"></div>
+
+                <p style="margin-top:15px;">
+                    Carregando perfil...
+                </p>
+            </div>
+
         </div>
+
     </div>
 
     <script src="script.js"></script>
     <script src="players.js"></script>
+
     <script>
         (function() {
+
             if (window._playerLoaded) {
                 console.log('Perfil já carregado.');
                 return;
             }
+
             window._playerLoaded = true;
 
-            const params = new URLSearchParams(window.location.search);
-            const playerId = params.get('id');
-            const gamerTag = params.get('tag') || 'Player';
-            const prefix = params.get('prefix') || '';
-            const conteudo = document.getElementById('perfil_conteudo');
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+            const playerId =
+                params.get('id');
+
+            const gamerTag =
+                params.get('tag') || 'Player';
+
+            const prefix =
+                params.get('prefix') || '';
+
+            const conteudo =
+                document.getElementById(
+                    'perfil_conteudo'
+                );
 
             function getDotClass(placement) {
-                if (placement === 1) return 'dot-1st';
-                if (placement <= 3) return 'dot-top3';
-                if (placement <= 8) return 'dot-top8';
+
+                if (placement === 1)
+                    return 'dot-1st';
+
+                if (placement <= 3)
+                    return 'dot-top3';
+
+                if (placement <= 8)
+                    return 'dot-top8';
+
                 return 'dot-other';
             }
 
             function formatDate(timestamp) {
-                if (!timestamp) return '—';
-                const d = new Date(timestamp * 1000);
-                return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                if (!timestamp)
+                    return '—';
+
+                const d =
+                    new Date(
+                        timestamp * 1000
+                    );
+
+                return d.toLocaleDateString(
+                    'pt-BR',
+                    {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }
+                );
             }
 
-            function montarHtmlPerfil(dados, fonte) {
-                const {
-                    gamerTag, totalWins, totalLosses, winrateAllTime, winrateLast6Months,
-                    wins6m, losses6m, recentForm, highlights, tournaments, avatarUrl, bannerUrl, playerPrefix
-                } = dados;
+            function escapeHtml(value) {
 
-                const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
+                return String(
+                    value ?? ''
+                )
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+            }
 
-                // Define o display name com prefixo se disponível
-                const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
+            function calcularEstatisticasExtras(
+                dados
+            ) {
 
-                const eventsHtml = tournaments.slice(0, 15).map(t => `
-                    <div class="event-row">
-                        <span class="event-name">${t.name}</span>
-                        <span class="event-placement ${t.winrate >= 60 ? 'text-green-500' : (t.winrate >= 40 ? 'text-yellow-500' : 'text-red-500')}">
-                            ${t.placement}º / ${t.attendees}
-                        </span>
-                        <span class="event-record">${t.wins}W - ${t.losses}L (${t.winrate}%)</span>
-                        <span class="event-date">${t.date}</span>
-                    </div>
-                `).join('') || '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+                const tournaments =
+                    Array.isArray(
+                        dados.tournaments
+                    )
+                        ? dados.tournaments
+                        : [];
 
-                const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
+                const totalTorneios =
+                    tournaments.length;
+
+                const placements =
+                    tournaments
+                        .map(
+                            t =>
+                                Number(
+                                    t.placement
+                                )
+                        )
+                        .filter(
+                            n =>
+                                Number.isFinite(n) &&
+                                n > 0
+                        );
+
+                const top8 =
+                    placements.filter(
+                        p =>
+                            p <= 8
+                    ).length;
+
+                const top3 =
+                    placements.filter(
+                        p =>
+                            p <= 3
+                    ).length;
+
+                const primeiros =
+                    placements.filter(
+                        p =>
+                            p === 1
+                    ).length;
+
+                const melhor =
+                    placements.length
+                        ? Math.min(
+                            ...placements
+                        )
+                        : null;
+
+                const totalSets =
+                    Number(
+                        dados.totalWins || 0
+                    ) +
+                    Number(
+                        dados.totalLosses || 0
+                    );
+
+                return {
+                    totalTorneios,
+                    top8,
+                    top3,
+                    primeiros,
+                    melhor,
+                    totalSets
+                };
+            }
+
+            function montarEstatisticas(
+                dados
+            ) {
+
+                const stats =
+                    calcularEstatisticasExtras(
+                        dados
+                    );
 
                 return `
-                    <div class="player-profile ${(avatarUrl || bannerUrl) ? 'has-banner' : ''}">
-                        <!-- BANNER + AVATAR -->
-                        <div class="profile-banner" ${bannerStyle}>
-                            <div class="profile-banner-overlay"></div>
-                            ${avatarUrl ? `<img src="${avatarUrl}" class="profile-avatar" alt="${gamerTag}">` : ''}
-                        </div>
+                    <div class="fgchub-profile-stats">
 
-                        <!-- HEADER -->
-                        <div class="profile-header">
-                            <h1 class="profile-gamertag">${displayName}</h1>
-                            <div class="winrate-badge ${wrClass}">${winrateAllTime}%</div>
-                            <div class="record-badge">${totalWins}W - ${totalLosses}L</div>
-                            <span class="text-xs text-slate-500 ml-auto">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
-                            <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
-                                <i class="fa-solid fa-rotate"></i> Atualizar dados
-                            </button>
-                        </div>
+                        <div class="fgchub-stat-card">
+                            <div class="fgchub-stat-label">
+                                Sets
+                            </div>
 
-                        <!-- RECENT FORM (bolinhas) -->
-                        <div class="recent-form">
-                            <h3>RECENT FORM</h3>
-                            <div class="form-dots">
-                                ${recentForm.map(r => `
-                                    <div class="form-entry">
-                                        ${r.icon ? `<img src="${r.icon}" class="form-icon" alt="">` : '<div class="form-icon form-icon-empty"></div>'}
-                                        <span class="form-dot ${getDotClass(r.placement)}">${r.placement}</span>
-                                    </div>
-                                `).join('')}
+                            <div class="fgchub-stat-value">
+                                ${stats.totalSets}
+                            </div>
+
+                            <div class="fgchub-stat-sub">
+                                ${dados.totalWins || 0}W -
+                                ${dados.totalLosses || 0}L
                             </div>
                         </div>
 
-                        <!-- HIGHLIGHTS -->
-                        <div class="highlights">
-                            <h3>HIGHLIGHTS</h3>
-                            ${highlights.length === 0 ? '<div class="text-slate-500 text-sm">Nenhum destaque encontrado.</div>' : ''}
-                            ${highlights.map(h => `
-                                <div class="highlight-item">
-                                    <span class="placement">${h.placement}</span>
-                                    <span class="event">${h.eventName}</span>
-                                    <span class="date">${h.date}</span>
-                                </div>
-                            `).join('')}
+                        <div class="fgchub-stat-card">
+                            <div class="fgchub-stat-label">
+                                Torneios
+                            </div>
+
+                            <div class="fgchub-stat-value">
+                                ${stats.totalTorneios}
+                            </div>
+
+                            <div class="fgchub-stat-sub">
+                                histórico carregado
+                            </div>
                         </div>
 
-                        <!-- ABAS -->
-                        <div class="profile-tabs">
-                            <div class="tab-header">
-                                <span class="tab-btn active" data-tab="events">EVENTS</span>
-                                <span class="tab-btn" data-tab="versus">VERSUS</span>
-                                <span class="tab-btn" data-tab="vods">VODS</span>
+                        <div class="fgchub-stat-card">
+                            <div class="fgchub-stat-label">
+                                Top 8
                             </div>
-                            <div class="tab-content" id="tab-events">
-                                ${eventsHtml}
+
+                            <div class="fgchub-stat-value">
+                                ${stats.top8}
                             </div>
-                            <div class="tab-content" id="tab-versus" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: confrontos diretos.</div>
-                            </div>
-                            <div class="tab-content" id="tab-vods" style="display:none;">
-                                <div class="text-slate-500 text-sm">Em breve: VODs.</div>
+
+                            <div class="fgchub-stat-sub">
+                                eventos
                             </div>
                         </div>
+
+                        <div class="fgchub-stat-card">
+                            <div class="fgchub-stat-label">
+                                Melhor posição
+                            </div>
+
+                            <div class="fgchub-stat-value">
+                                ${
+                                    stats.melhor !== null
+                                        ? `${stats.melhor}º`
+                                        : '—'
+                                }
+                            </div>
+
+                            <div class="fgchub-stat-sub">
+                                ${stats.primeiros} vitória(s) em evento
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="fgchub-profile-summary">
+
+                        <span>
+                            Top 3:
+                            <strong>
+                                ${stats.top3}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Winrate 6 meses:
+                            <strong>
+                                ${dados.winrateLast6Months || 0}%
+                            </strong>
+                        </span>
+
+                        <span>
+                            Últimos 6 meses:
+                            <strong>
+                                ${dados.wins6m || 0}W -
+                                ${dados.losses6m || 0}L
+                            </strong>
+                        </span>
+
                     </div>
                 `;
             }
 
-            async function carregarPerfil(forceRefresh = false) {
+            function montarHtmlPerfil(
+                dados,
+                fonte
+            ) {
+
+                const {
+                    gamerTag,
+                    totalWins,
+                    totalLosses,
+                    winrateAllTime,
+                    winrateLast6Months,
+                    wins6m,
+                    losses6m,
+                    recentForm,
+                    highlights,
+                    tournaments,
+                    avatarUrl,
+                    bannerUrl,
+                    playerPrefix
+                } = dados;
+
+                const wrClass =
+                    winrateAllTime >= 60
+                        ? 'text-green-500'
+                        : (
+                            winrateAllTime >= 40
+                                ? 'text-yellow-500'
+                                : 'text-red-500'
+                        );
+
+                const displayName =
+                    playerPrefix
+                        ? `${playerPrefix} | ${gamerTag}`
+                        : gamerTag;
+
+                const eventsHtml =
+                    tournaments
+                        .slice(0, 15)
+                        .map(t => `
+                            <div class="event-row">
+
+                                <span class="event-name">
+                                    ${escapeHtml(t.name)}
+                                </span>
+
+                                <span class="event-placement ${
+                                    t.winrate >= 60
+                                        ? 'text-green-500'
+                                        : (
+                                            t.winrate >= 40
+                                                ? 'text-yellow-500'
+                                                : 'text-red-500'
+                                        )
+                                }">
+                                    ${t.placement}º / ${t.attendees}
+                                </span>
+
+                                <span class="event-record">
+                                    ${t.wins}W -
+                                    ${t.losses}L
+                                    (${t.winrate}%)
+                                </span>
+
+                                <span class="event-date">
+                                    ${t.date}
+                                </span>
+
+                            </div>
+                        `)
+                        .join('')
+
+                    ||
+                    '<div class="text-slate-500 text-sm">Nenhum evento encontrado.</div>';
+
+                const bannerStyle =
+                    bannerUrl
+                        ? `style="background-image:url('${bannerUrl}')"`
+                        : '';
+
+                return `
+
+                    <div class="player-profile ${
+                        (avatarUrl || bannerUrl)
+                            ? 'has-banner'
+                            : ''
+                    }">
+
+                        <!-- BANNER + AVATAR -->
+
+                        <div
+                            class="profile-banner"
+                            ${bannerStyle}
+                        >
+
+                            <div class="profile-banner-overlay"></div>
+
+                            ${
+                                avatarUrl
+                                    ? `
+                                        <img
+                                            src="${avatarUrl}"
+                                            class="profile-avatar"
+                                            alt="${escapeHtml(gamerTag)}"
+                                        >
+                                    `
+                                    : ''
+                            }
+
+                        </div>
+
+
+                        <!-- HEADER -->
+
+                        <div class="profile-header">
+
+                            <h1 class="profile-gamertag">
+                                ${escapeHtml(displayName)}
+                            </h1>
+
+                            <div
+                                class="winrate-badge ${wrClass}"
+                            >
+                                ${winrateAllTime}%
+                            </div>
+
+                            <div class="record-badge">
+                                ${totalWins}W -
+                                ${totalLosses}L
+                            </div>
+
+                            <span class="text-xs text-slate-500 ml-auto">
+                                ${
+                                    fonte === 'cache'
+                                        ? '⚡ em cache'
+                                        : '🔴 ao vivo'
+                                }
+                            </span>
+
+                            <button
+                                onclick="atualizarDados()"
+                                class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition"
+                            >
+                                <i class="fa-solid fa-rotate"></i>
+                                Atualizar dados
+                            </button>
+
+                        </div>
+
+
+                        <!-- NOVAS ESTATÍSTICAS
+                             Derivadas exclusivamente dos
+                             dados que o players.js original
+                             já fornece. -->
+
+                        ${montarEstatisticas(dados)}
+
+
+                        <!-- RECENT FORM -->
+
+                        <div class="recent-form">
+
+                            <h3>
+                                RECENT FORM
+                            </h3>
+
+                            <div class="form-dots">
+
+                                ${recentForm.map(r => `
+
+                                    <div class="form-entry">
+
+                                        ${
+                                            r.icon
+                                                ? `
+                                                    <img
+                                                        src="${r.icon}"
+                                                        class="form-icon"
+                                                        alt=""
+                                                    >
+                                                `
+                                                : `
+                                                    <div
+                                                        class="form-icon form-icon-empty"
+                                                    ></div>
+                                                `
+                                        }
+
+                                        <span
+                                            class="form-dot ${getDotClass(r.placement)}"
+                                        >
+                                            ${r.placement}
+                                        </span>
+
+                                    </div>
+
+                                `).join('')}
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- HIGHLIGHTS -->
+
+                        <div class="highlights">
+
+                            <h3>
+                                HIGHLIGHTS
+                            </h3>
+
+                            ${
+                                highlights.length === 0
+                                    ? `
+                                        <div class="text-slate-500 text-sm">
+                                            Nenhum destaque encontrado.
+                                        </div>
+                                    `
+                                    : ''
+                            }
+
+                            ${highlights.map(h => `
+
+                                <div class="highlight-item">
+
+                                    <span class="placement">
+                                        ${h.placement}
+                                    </span>
+
+                                    <span class="event">
+                                        ${escapeHtml(h.eventName)}
+                                    </span>
+
+                                    <span class="date">
+                                        ${h.date}
+                                    </span>
+
+                                </div>
+
+                            `).join('')}
+
+                        </div>
+
+
+                        <!-- ABAS -->
+
+                        <div class="profile-tabs">
+
+                            <div class="tab-header">
+
+                                <span
+                                    class="tab-btn active"
+                                    data-tab="events"
+                                >
+                                    EVENTS
+                                </span>
+
+                                <span
+                                    class="tab-btn"
+                                    data-tab="versus"
+                                >
+                                    VERSUS
+                                </span>
+
+                                <span
+                                    class="tab-btn"
+                                    data-tab="vods"
+                                >
+                                    VODS
+                                </span>
+
+                            </div>
+
+
+                            <div
+                                class="tab-content"
+                                id="tab-events"
+                            >
+                                ${eventsHtml}
+                            </div>
+
+
+                            <div
+                                class="tab-content"
+                                id="tab-versus"
+                                style="display:none;"
+                            >
+
+                                <div class="text-slate-500 text-sm">
+                                    Em breve: confrontos diretos.
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                class="tab-content"
+                                id="tab-vods"
+                                style="display:none;"
+                            >
+
+                                <div class="text-slate-500 text-sm">
+                                    Em breve: VODs.
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                `;
+            }
+
+            async function carregarPerfil(
+                forceRefresh = false
+            ) {
+
                 if (!playerId) {
-                    conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
+
+                    conteudo.innerHTML =
+                        `
+                            <div class="history-empty">
+                                Player não especificado na URL.
+                            </div>
+                        `;
+
                     return;
                 }
-                try {
-                    conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
-                    const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
-                    conteudo.innerHTML = '';
-                    conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
 
-                    document.querySelectorAll('.tab-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                            this.classList.add('active');
-                            const target = this.dataset.tab;
-                            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                            document.getElementById('tab-' + target).style.display = 'block';
+                try {
+
+                    conteudo.innerHTML =
+                        `
+                            <div class="loading-attendees">
+
+                                <div class="spinner"></div>
+
+                                <p style="margin-top:15px;">
+                                    Carregando perfil...
+                                </p>
+
+                            </div>
+                        `;
+
+                    const {
+                        dados,
+                        fonte
+                    } =
+                        await obterDadosPlayer(
+                            playerId,
+                            gamerTag,
+                            forceRefresh,
+                            prefix
+                        );
+
+                    conteudo.innerHTML = '';
+
+                    conteudo.innerHTML =
+                        montarHtmlPerfil(
+                            dados,
+                            fonte
+                        );
+
+                    document
+                        .querySelectorAll('.tab-btn')
+                        .forEach(btn => {
+
+                            btn.addEventListener(
+                                'click',
+                                function() {
+
+                                    document
+                                        .querySelectorAll('.tab-btn')
+                                        .forEach(
+                                            b =>
+                                                b.classList.remove(
+                                                    'active'
+                                                )
+                                        );
+
+                                    this.classList.add(
+                                        'active'
+                                    );
+
+                                    const target =
+                                        this.dataset.tab;
+
+                                    document
+                                        .querySelectorAll(
+                                            '.tab-content'
+                                        )
+                                        .forEach(
+                                            c =>
+                                                c.style.display =
+                                                    'none'
+                                        );
+
+                                    const targetTab =
+                                        document.getElementById(
+                                            'tab-' + target
+                                        );
+
+                                    if (targetTab) {
+                                        targetTab.style.display =
+                                            'block';
+                                    }
+
+                                }
+                            );
+
                         });
-                    });
+
                 } catch (e) {
+
                     console.error(e);
-                    conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';
+
+                    conteudo.innerHTML =
+                        `
+                            <div class="history-empty">
+                                ❌ Erro ao carregar perfil do player.
+                            </div>
+                        `;
                 }
             }
 
-            window.atualizarDados = function() {
-                carregarPerfil(true);
-            };
+            window.atualizarDados =
+                function() {
+                    carregarPerfil(true);
+                };
 
             carregarPerfil(false);
+
         })();
     </script>
+
 </body>
 </html>
