@@ -31,11 +31,10 @@
             window._playerLoaded = true;
 
             const COUNTRY_MAP = {
-                "Brazil":"BR","United States":"US","Argentina":"AR","Chile":"CL","Colombia":"CO",
-                "Mexico":"MX","Peru":"PE","Venezuela":"VE","Ecuador":"EC","Bolivia":"BO",
-                "Paraguay":"PY","Uruguay":"UY","Portugal":"PT","Spain":"ES","France":"FR",
-                "Germany":"DE","Italy":"IT","Japan":"JP","South Korea":"KR","Canada":"CA",
-                "United Kingdom":"GB","Australia":"AU","Netherlands":"NL","Sweden":"SE"
+                "Brazil": "BR", "United States": "US", "Argentina": "AR", "Chile": "CL", "Colombia": "CO", 
+                "Mexico": "MX", "Peru": "PE", "Venezuela": "VE", "Ecuador": "EC", "Bolivia": "BO",
+                "Paraguay": "PY", "Uruguay": "UY", "Portugal": "PT", "Spain": "ES", "France": "FR", 
+                "Germany": "DE", "Italy": "IT", "Japan": "JP", "South Korea": "KR", "Canada": "CA"
             };
 
             const params = new URLSearchParams(window.location.search);
@@ -58,16 +57,11 @@
                 return `${placement}º`;
             }
 
-            function getFlagEmoji(countryInput) {
-                if (!countryInput || typeof countryInput !== 'string') return '';
-                let code = countryInput.trim();
-                if (COUNTRY_MAP[code]) {
-                    code = COUNTRY_MAP[code];
-                }
-                code = code.toUpperCase();
-                if (code.length !== 2) return code;
-                const codePoints = code.split('').map(char => 127397 + char.charCodeAt(0));
-                return String.fromCodePoint(...codePoints);
+            function getFlagHTML(countryName) {
+                if (!countryName) return '';
+                const code = COUNTRY_MAP[countryName];
+                if (!code) return '';
+                return `<img src="https://flagcdn.com/w40/${code.toLowerCase()}.png" class="flag-img" style="width: 24px; height: auto; border-radius: 2px; display: inline-block; vertical-align: middle;" alt="${countryName}">`;
             }
 
             function montarHtmlPerfil(dados, fonte) {
@@ -81,8 +75,8 @@
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
                 const bannerStyle = bannerUrl ? `style="background-image:url('${bannerUrl}')"` : '';
                 
-                const countryRaw = dados.countryFlag || dados.country || dados.location?.country || '';
-                const flag = getFlagEmoji(countryRaw);
+                const countryName = dados.country || dados.location?.country || dados.countryFlag || '';
+                const flagHtml = getFlagHTML(countryName);
                 const totalSets = totalWins + totalLosses;
 
                 return `
@@ -99,9 +93,9 @@
                                         ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
                                     </div>
                                     <div class="space-y-1">
-                                        <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-2">
+                                        <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-2.5">
                                             <span>${displayName}</span>
-                                            ${flag ? `<span class="text-xl">${flag}</span>` : ''}
+                                            ${flagHtml}
                                         </h1>
                                         ${realName ? `<p class="text-sm text-slate-400 font-medium">${realName}</p>` : ''}
                                         <div class="flex items-center gap-3 text-xs font-semibold pt-2 text-slate-300">
