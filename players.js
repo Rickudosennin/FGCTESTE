@@ -121,7 +121,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const headToHead = Object.values(h2h)
         .map(r => {
             const total = r.wins + r.losses;
-            const matches = [...(r.matches || [])].sort((a, b) => b.startAt - a.startAt).slice(0, 15);
+            // Sem corte artificial de quantidade de partidas: o limite real já é a janela
+            // padrão de 15 torneios (recentStandings limit), igual pra todos os players.
+            const matches = [...(r.matches || [])].sort((a, b) => b.startAt - a.startAt);
             return { ...r, total, winrate: total > 0 ? Math.round((r.wins / total) * 100) : 0, matches };
         })
         .sort((a, b) => b.total - a.total)
