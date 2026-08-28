@@ -20,6 +20,18 @@
         </div>
     </div>
 
+    <div class="overlay" id="h2h_overlay" onclick="fecharHeadToHead()"></div>
+    <div class="sidebar-base h2h-sidebar" id="h2h_sidebar" role="dialog" aria-modal="true" aria-label="Confrontos diretos">
+        <div class="sidebar-header">
+            <div class="header-left">
+                <h2>⚔️ CONFRONTOS</h2>
+                <span class="count" id="h2h_subtitle"></span>
+            </div>
+            <button class="btn-close" onclick="fecharHeadToHead()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button>
+        </div>
+        <div class="sidebar-content" id="h2h_content"></div>
+    </div>
+
     <script src="script.js"></script>
     <script src="players.js"></script>
     <script>
@@ -35,6 +47,7 @@
             const gamerTag = params.get('tag') || 'Player';
             const prefix = params.get('prefix') || '';
             const conteudo = document.getElementById('perfil_conteudo');
+            let _headToHeadAtual = [];
 
             function getDotClass(placement) {
                 if (placement === 1) return 'dot-1st';
@@ -210,22 +223,22 @@
                         <!-- HEAD TO HEAD -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Head to Head</h3>
-                            <p class="text-[11px] text-slate-500 -mt-1">Calculado a partir dos sets dos últimos ${tournaments.length} torneios registrados no Start.gg para este player. Torneios mais antigos que isso não entram na conta.</p>
+                            <p class="text-[11px] text-slate-500 -mt-1">Calculado a partir dos sets dos últimos ${tournaments.length} torneios registrados no Start.gg para este player. Torneios mais antigos que isso não entram na conta. Clique em um rival para ver os confrontos.</p>
                             ${(!headToHead || headToHead.length === 0) ? `
                                 <div class="text-slate-500 text-sm py-6 text-center border border-dashed border-slate-800 rounded-lg">
                                     Nenhum confronto direto registrado via Start.gg.
                                 </div>
                             ` : `
                                 <div class="divide-y divide-slate-800">
-                                    ${headToHead.map(r => {
+                                    ${headToHead.map((r, idx) => {
                                         const wrClass = r.winrate >= 60 ? 'text-green-500' : (r.winrate >= 40 ? 'text-yellow-500' : 'text-red-500');
-                                        const oppUrl = `player.html?id=${encodeURIComponent(r.opponentId)}&tag=${encodeURIComponent(r.opponentTag)}`;
                                         return `
-                                            <div class="py-3 flex items-center justify-between text-sm gap-2 min-w-0">
-                                                <a href="${oppUrl}" class="font-semibold text-slate-200 truncate hover:text-red-500 transition min-w-0">${r.opponentTag}</a>
+                                            <div class="py-3 flex items-center justify-between text-sm gap-2 min-w-0 cursor-pointer hover:bg-slate-800/50 rounded-lg px-2 -mx-2 transition" onclick="abrirHeadToHead(${idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirHeadToHead(${idx});}">
+                                                <span class="font-semibold text-slate-200 truncate hover:text-red-500 transition min-w-0">${r.opponentTag}</span>
                                                 <div class="flex items-center gap-2 sm:gap-3 text-xs flex-shrink-0">
                                                     <span class="text-slate-400 font-mono">${r.wins}W - ${r.losses}L</span>
                                                     <span class="font-bold ${wrClass}">${r.winrate}%</span>
+                                                    <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]" aria-hidden="true"></i>
                                                 </div>
                                             </div>
                                         `;
@@ -307,6 +320,7 @@
                 try {
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
+                    _headToHeadAtual = dados.headToHead || [];
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     renderizarGraficoEvolucao(dados.tournaments || []);
                 } catch (e) {
@@ -317,6 +331,60 @@
 
             window.atualizarDados = function() {
                 carregarPerfil(true);
+            };
+
+            function escapeHtml(str) {
+                return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            }
+
+            window.abrirHeadToHead = function(idx) {
+                const rival = _headToHeadAtual[idx];
+                if (!rival) return;
+
+                document.getElementById('h2h_subtitle').textContent =
+                    `vs ${rival.opponentTag} • ${rival.wins}W - ${rival.losses}L (${rival.winrate}%)`;
+
+                const content = document.getElementById('h2h_content');
+                const matches = rival.matches || [];
+
+                if (matches.length === 0) {
+                    content.innerHTML = `
+                        <div class="text-slate-500 text-sm py-6 text-center border border-dashed border-slate-800 rounded-lg" style="color:#64748b;border:1px dashed #1e293b;border-radius:8px;padding:24px;text-align:center;font-size:13px;">
+                            Detalhes das partidas ainda não disponíveis para este confronto.<br>Clique em "Atualizar" no topo do perfil para recalcular.
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = matches.map(m => {
+                        const temScore = m.myScore !== null && m.oppScore !== null;
+                        const scoreText = temScore ? `${m.myScore} - ${m.oppScore}` : (m.venceu ? 'VITÓRIA' : 'DERROTA');
+                        const corResultado = m.venceu ? '#22c55e' : '#ef4444';
+                        return `
+                            <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                                <div style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;border:2px solid ${corResultado};color:${corResultado};font-weight:900;font-size:12px;">
+                                    ${m.venceu ? 'V' : 'D'}
+                                </div>
+                                <div style="min-width:0;flex:1;">
+                                    <div style="color:#e2e8f0;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.tournamentName)}</div>
+                                    <div style="color:#64748b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.eventName)}${m.round ? ' • ' + escapeHtml(m.round) : ''}</div>
+                                </div>
+                                <div style="text-align:right;flex-shrink:0;">
+                                    <div style="font-family:monospace;font-weight:700;font-size:13px;color:${corResultado};">${scoreText}</div>
+                                    <div style="color:#64748b;font-size:11px;">${escapeHtml(m.date)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('h2h_sidebar').classList.add('open');
+                document.getElementById('h2h_overlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            };
+
+            window.fecharHeadToHead = function() {
+                document.getElementById('h2h_sidebar').classList.remove('open');
+                document.getElementById('h2h_overlay').classList.remove('active');
+                document.body.style.overflow = '';
             };
 
             carregarPerfil(false);

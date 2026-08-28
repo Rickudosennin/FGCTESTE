@@ -71,9 +71,19 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         (resultado.sets || []).forEach(set => {
             if (!set.opponentId) return;
             const key = String(set.opponentId);
-            if (!h2h[key]) h2h[key] = { opponentId: set.opponentId, opponentTag: set.opponentTag || 'Desconhecido', wins: 0, losses: 0 };
+            if (!h2h[key]) h2h[key] = { opponentId: set.opponentId, opponentTag: set.opponentTag || 'Desconhecido', wins: 0, losses: 0, matches: [] };
             if (set.venceu) h2h[key].wins++; else h2h[key].losses++;
             if (set.opponentTag) h2h[key].opponentTag = set.opponentTag;
+            h2h[key].matches.push({
+                venceu: set.venceu,
+                round: set.round || '',
+                myScore: (typeof set.myScore === 'number') ? set.myScore : null,
+                oppScore: (typeof set.oppScore === 'number') ? set.oppScore : null,
+                tournamentName: s.container?.tournament?.name || '—',
+                eventName: s.container?.name || '—',
+                date: startAt ? new Date(startAt * 1000).toLocaleDateString('pt-BR') : '—',
+                startAt: startAt || 0
+            });
         });
 
         const isRecent = startAt && (startAt * 1000) > seisMesesAtras;
@@ -111,7 +121,8 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const headToHead = Object.values(h2h)
         .map(r => {
             const total = r.wins + r.losses;
-            return { ...r, total, winrate: total > 0 ? Math.round((r.wins / total) * 100) : 0 };
+            const matches = [...(r.matches || [])].sort((a, b) => b.startAt - a.startAt).slice(0, 15);
+            return { ...r, total, winrate: total > 0 ? Math.round((r.wins / total) * 100) : 0, matches };
         })
         .sort((a, b) => b.total - a.total)
         .slice(0, 10);
