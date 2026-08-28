@@ -240,25 +240,41 @@ function fecharAttendees() { document.getElementById('attendees_sidebar').classL
 
 // ==================== HISTORICO ====================
 async function buscarSetsDoEvento(eventId, playerId) {
+    const PER_PAGE = 100;
+    const MAX_PAGINAS = 8; // trava de segurança: cobre até 800 sets do evento, evita loop infinito em eventos absurdamente grandes
     try {
-        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId fullRoundText slots { entrant { id name participants { player { id gamerTag } } } standing { stats { score { value } } } } } } } }`;
-        const json = await callStartGG(query, { eventId }); const sets = json.data?.event?.sets?.nodes || []; let wins = 0, losses = 0; const setsDetalhados = [];
-        sets.forEach(set => {
-            const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId));
-            if (!playerSlot || !playerSlot.entrant) return;
-            const myEntrantId = playerSlot.entrant.id;
-            const oppSlot = set.slots?.find(slot => slot.entrant && String(slot.entrant.id) !== String(myEntrantId));
-            const oppEntrant = oppSlot?.entrant || null;
-            const opponentId = oppEntrant?.participants?.[0]?.player?.id || null;
-            const opponentTag = oppEntrant?.name || oppEntrant?.participants?.[0]?.player?.gamerTag || null;
-            const myScore = playerSlot.standing?.stats?.score?.value ?? null;
-            const oppScore = oppSlot?.standing?.stats?.score?.value ?? null;
-            if (set.winnerId) {
-                const venceu = String(set.winnerId) === String(myEntrantId);
-                if (venceu) wins++; else losses++;
-                setsDetalhados.push({ setId: set.id, venceu, opponentId, opponentTag, round: set.fullRoundText || '', myScore, oppScore });
-            }
-        });
+        const query = `query EventSets($eventId: ID!, $page: Int!, $perPage: Int!) { event(id: $eventId) { sets(page: $page, perPage: $perPage, filters: {hideEmpty: true}) { pageInfo { totalPages } nodes { id winnerId fullRoundText slots { entrant { id name participants { player { id gamerTag } } } standing { stats { score { value } } } } } } } }`;
+
+        let wins = 0, losses = 0;
+        const setsDetalhados = [];
+        let page = 1, totalPages = 1;
+
+        do {
+            const json = await callStartGG(query, { eventId, page, perPage: PER_PAGE });
+            const setsNode = json.data?.event?.sets;
+            totalPages = setsNode?.pageInfo?.totalPages || 1;
+            const sets = setsNode?.nodes || [];
+
+            sets.forEach(set => {
+                const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId));
+                if (!playerSlot || !playerSlot.entrant) return;
+                const myEntrantId = playerSlot.entrant.id;
+                const oppSlot = set.slots?.find(slot => slot.entrant && String(slot.entrant.id) !== String(myEntrantId));
+                const oppEntrant = oppSlot?.entrant || null;
+                const opponentId = oppEntrant?.participants?.[0]?.player?.id || null;
+                const opponentTag = oppEntrant?.name || oppEntrant?.participants?.[0]?.player?.gamerTag || null;
+                const myScore = playerSlot.standing?.stats?.score?.value ?? null;
+                const oppScore = oppSlot?.standing?.stats?.score?.value ?? null;
+                if (set.winnerId) {
+                    const venceu = String(set.winnerId) === String(myEntrantId);
+                    if (venceu) wins++; else losses++;
+                    setsDetalhados.push({ setId: set.id, venceu, opponentId, opponentTag, round: set.fullRoundText || '', myScore, oppScore });
+                }
+            });
+
+            page++;
+        } while (page <= totalPages && page <= MAX_PAGINAS);
+
         return { wins, losses, total: wins + losses, sets: setsDetalhados };
     } catch (e) { return { wins: 0, losses: 0, total: 0, error: true, sets: [] }; }
 }
