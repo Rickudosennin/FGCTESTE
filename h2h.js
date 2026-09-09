@@ -69,31 +69,32 @@ async function resolverInputPlayer(valorBruto) {
 // ---------- Busca de até 10 confrontos reais via API ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
-    const query = `query HeadToHead($p1: ID!, $p2: ID!, $page: Int!, $perPage: Int!) {
+    // A API documenta recentSets(opponentId) especificamente para histórico
+    // H2H. O campo evita depender do filtro genérico de sets, que pode trazer
+    // somente parte do histórico quando usado com playerIds.
+    const query = `query HeadToHead($p1: ID!, $p2: ID!) {
         player(id: $p1) {
-            sets(perPage: $perPage, page: $page, filters: { playerIds: [$p2] }) {
-                nodes {
-                    id
-                    startAt
-                    fullRoundText
-                    winnerId
-                    displayScore
-                    event {
+            recentSets(opponentId: $p2) {
+                id
+                startAt
+                fullRoundText
+                winnerId
+                displayScore
+                event {
+                    name
+                    tournament { name }
+                }
+                slots {
+                    entrant {
                         name
-                        tournament { name }
+                        participants {
+                            gamerTag
+                            user { id }
+                            player { id gamerTag }
+                        }
                     }
-                    slots {
-                        entrant {
-                            name
-                            participants {
-                                gamerTag
-                                user { id }
-                                player { id gamerTag }
-                            }
-                        }
-                        standing {
-                            stats { score { value } }
-                        }
+                    standing {
+                        stats { score { value } }
                     }
                 }
             }
@@ -102,42 +103,24 @@ async function buscarHeadToHead(player1Id, player2Id) {
 
     const mapaSets = new Map();
     const erros = [];
-    const paginasMaximas = 5;
-    // O start.gg aplica limite de complexidade por requisição. Dez sets por
-    // consulta mantém a operação abaixo do limite mesmo com os participantes.
-    const itensPorPagina = 10;
 
-    // Consulta os dois sentidos porque a API pode ordenar/retornar resultados
-    // diferentes dependendo do player usado como raiz da consulta.
-    for (let page = 1; page <= paginasMaximas && mapaSets.size < 10; page++) {
-        const resultados = await Promise.all([
-            callStartGG(query, {
-                p1: String(player1Id),
-                p2: String(player2Id),
-                page,
-                perPage: itensPorPagina
-            }).catch(error => ({ errors: [{ message: error?.message || 'Falha na consulta.' }] })),
-            callStartGG(query, {
-                p1: String(player2Id),
-                p2: String(player1Id),
-                page,
-                perPage: itensPorPagina
-            }).catch(error => ({ errors: [{ message: error?.message || 'Falha na consulta.' }] }))
-        ]);
+    // Consulta nos dois sentidos para preservar todos os registros retornados
+    // pela API, sem duplicar sets.
+    const resultados = await Promise.all([
+        callStartGG(query, { p1: String(player1Id), p2: String(player2Id) })
+            .catch(error => ({ errors: [{ message: error?.message || 'Falha na consulta.' }] })),
+        callStartGG(query, { p1: String(player2Id), p2: String(player1Id) })
+            .catch(error => ({ errors: [{ message: error?.message || 'Falha na consulta.' }] }))
+    ]);
 
-        resultados.forEach(res => {
-            if (res.errors?.length) erros.push(...res.errors);
+    resultados.forEach(res => {
+        if (res.errors?.length) erros.push(...res.errors);
 
-            const nodes = res.data?.player?.sets?.nodes || [];
-            nodes.forEach(set => {
-                if (set?.id) mapaSets.set(String(set.id), set);
-            });
+        const sets = res.data?.player?.recentSets || [];
+        sets.forEach(set => {
+            if (set?.id) mapaSets.set(String(set.id), set);
         });
-
-        // Se nenhuma consulta trouxe itens, não há motivo para continuar paginando.
-        const trouxeItens = resultados.some(res => (res.data?.player?.sets?.nodes || []).length > 0);
-        if (!trouxeItens) break;
-    }
+    });
 
     return {
         data: {
