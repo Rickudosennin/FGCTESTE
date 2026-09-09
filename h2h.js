@@ -66,7 +66,7 @@ async function resolverInputPlayer(valorBruto) {
     return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico do player.` };
 }
 
-// ---------- Busca avançada dos sets entre os dois players ----------
+// ---------- Busca dos sets entre os dois players ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
     const queryComFiltro = `query HeadToHeadFiltered($p1: ID!, $p2: ID!) {
@@ -103,9 +103,9 @@ async function buscarHeadToHead(player1Id, player2Id) {
         }
     }`;
 
-    const querySemFiltro = `query PlayerRecentSets($p: ID!) {
+    const queryRecentesP1 = `query PlayerRecentSets($p: ID!) {
         player(id: $p) {
-            sets(perPage: 25, page: 1) {
+            sets(perPage: 30, page: 1) {
                 nodes {
                     id
                     startAt
@@ -137,18 +137,17 @@ async function buscarHeadToHead(player1Id, player2Id) {
         }
     }`;
 
-    // Busca combinada em paralelo para cobrir inconsistências na API do start.gg
-    const [f1, f2, r1, r2] = await Promise.all([
+    // Busca pelas duas frentes para garantir cobertura total sem omitir jogos
+    const [f1, f2, r1] = await Promise.all([
         callStartGG(queryComFiltro, { p1: String(player1Id), p2: String(player2Id) }).catch(() => ({})),
         callStartGG(queryComFiltro, { p1: String(player2Id), p2: String(player1Id) }).catch(() => ({})),
-        callStartGG(querySemFiltro, { p: String(player1Id) }).catch(() => ({})),
-        callStartGG(querySemFiltro, { p: String(player2Id) }).catch(() => ({}))
+        callStartGG(queryRecentesP1, { p: String(player1Id) }).catch(() => ({}))
     ]);
 
     const mapaSets = new Map();
     const extrairNodes = (res) => res?.data?.player?.sets?.nodes || [];
 
-    [...extrairNodes(f1), ...extrairNodes(f2), ...extrairNodes(r1), ...extrairNodes(r2)].forEach(s => {
+    [...extrairNodes(f1), ...extrairNodes(f2), ...extrairNodes(r1)].forEach(s => {
         if (s && s.id) mapaSets.set(s.id, s);
     });
 
@@ -164,35 +163,28 @@ async function buscarHeadToHead(player1Id, player2Id) {
     };
 }
 
-function normalizarTexto(str) {
-    if (!str) return '';
-    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function slotPertenceAPlayer(slot, pInfo) {
+function pertenceAoPlayer(slot, pInfo) {
     if (!slot || !slot.entrant || !pInfo) return false;
 
-    // 1. Validação por ID de Player ou User
+    // 1. Checagem exata por IDs de Player/User
     const participantes = slot.entrant.participants || [];
     for (const part of participantes) {
         if (pInfo.playerId && part.player?.id && String(part.player.id) === String(pInfo.playerId)) return true;
         if (pInfo.userId && part.user?.id && String(part.user.id) === String(pInfo.userId)) return true;
     }
 
-    // 2. Validação resiliente por Gamertag (remove símbolos como . e -)
-    const tagTarget = normalizarTexto(pInfo.gamerTag);
-    if (!tagTarget) return false;
+    // 2. Checagem por GamerTag exata ou sufixo da tag (ignorando maiúsculas/minúsculas)
+    const targetTag = (pInfo.gamerTag || '').trim().toLowerCase();
+    if (targetTag) {
+        for (const part of participantes) {
+            const partTag = (part.gamerTag || part.player?.gamerTag || '').trim().toLowerCase();
+            if (partTag && partTag === targetTag) return true;
+        }
 
-    for (const part of participantes) {
-        const tagPart = normalizarTexto(part.gamerTag || part.player?.gamerTag);
-        if (tagPart && (tagPart === tagTarget || (tagTarget.length >= 3 && tagPart.includes(tagTarget)) || (tagPart.length >= 3 && tagTarget.includes(tagPart)))) {
+        const entrantName = (slot.entrant.name || '').trim().toLowerCase();
+        if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.endsWith(`| ${targetTag}`)) {
             return true;
         }
-    }
-
-    const entrantNorm = normalizarTexto(slot.entrant.name);
-    if (entrantNorm && (entrantNorm === tagTarget || (tagTarget.length >= 3 && entrantNorm.includes(tagTarget)))) {
-        return true;
     }
 
     return false;
@@ -205,40 +197,27 @@ function montarLinhaSet(set, p1Info, p2Info) {
     let slot1 = null;
     let slot2 = null;
 
-    const isP1_slot0 = slotPertenceAPlayer(slots[0], p1Info);
-    const isP1_slot1 = slotPertenceAPlayer(slots[1], p1Info);
-    const isP2_slot0 = slotPertenceAPlayer(slots[0], p2Info);
-    const isP2_slot1 = slotPertenceAPlayer(slots[1], p2Info);
+    const isSlot0_P1 = pertenceAoPlayer(slots[0], p1Info);
+    const isSlot1_P1 = pertenceAoPlayer(slots[1], p1Info);
+    const isSlot0_P2 = pertenceAoPlayer(slots[0], p2Info);
+    const isSlot1_P2 = pertenceAoPlayer(slots[1], p2Info);
 
-    if (isP1_slot0 && isP2_slot1) {
+    // VALIDAÇÃO ESTRITA: Garante que P1 está de um lado E P2 obrigatoriamente do outro
+    if (isSlot0_P1 && isSlot1_P2) {
         slot1 = slots[0];
         slot2 = slots[1];
-    } else if (isP1_slot1 && isP2_slot0) {
+    } else if (isSlot1_P1 && isSlot0_P2) {
         slot1 = slots[1];
         slot2 = slots[0];
-    } else if (isP1_slot0 && !isP1_slot1) {
-        slot1 = slots[0];
-        slot2 = slots[1];
-    } else if (isP1_slot1 && !isP1_slot0) {
-        slot1 = slots[1];
-        slot2 = slots[0];
-    } else if (isP2_slot0 && !isP2_slot1) {
-        slot1 = slots[1];
-        slot2 = slots[0];
-    } else if (isP2_slot1 && !isP2_slot0) {
-        slot1 = slots[0];
-        slot2 = slots[1];
     } else {
-        // Fallback para garantir que o set retornado não seja descartado
-        slot1 = slots[0];
-        slot2 = slots[1];
+        // Se ambos não estiverem no mesmo confronto, descarta o set completamente
+        return null;
     }
-
-    if (!slot1 || !slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
 
+    // Desconsidera partidas com W.O. / Desqualificação
     if (score1 === -1 || score2 === -1 || (set.displayScore && set.displayScore.toUpperCase().includes('DQ'))) {
         return null;
     }
@@ -276,7 +255,7 @@ function montarLinhaSet(set, p1Info, p2Info) {
 
 function montarHtmlH2H(linhas, gamerTag1, gamerTag2) {
     if (linhas.length === 0) {
-        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players.</div>';
+        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto direto encontrado entre esses dois players.</div>';
     }
 
     const winsP1 = linhas.filter(l => l.venceuP1).length;
