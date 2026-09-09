@@ -147,6 +147,12 @@ function montarLinhaSet(set, p1Id, p2Id) {
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
+
+    // Ignora partidas com desqualificação (DQ / score -1)
+    if (score1 === -1 || score2 === -1 || (set.displayScore && set.displayScore.toUpperCase().includes('DQ'))) {
+        return null;
+    }
+
     const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant?.id);
     const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant?.id);
 
