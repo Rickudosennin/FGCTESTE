@@ -79,16 +79,13 @@ async function buscarHeadToHead(player1Id, player2Id) {
                     winnerId
                     displayScore
                     event {
-                        id
                         name
-                        tournament { id name }
+                        tournament { name }
                     }
                     slots {
                         entrant {
-                            id
                             name
                             participants {
-                                id
                                 gamerTag
                                 user { id }
                                 player { id gamerTag }
@@ -106,7 +103,9 @@ async function buscarHeadToHead(player1Id, player2Id) {
     const mapaSets = new Map();
     const erros = [];
     const paginasMaximas = 5;
-    const itensPorPagina = 50;
+    // O start.gg aplica limite de complexidade por requisição. Dez sets por
+    // consulta mantém a operação abaixo do limite mesmo com os participantes.
+    const itensPorPagina = 10;
 
     // Consulta os dois sentidos porque a API pode ordenar/retornar resultados
     // diferentes dependendo do player usado como raiz da consulta.
