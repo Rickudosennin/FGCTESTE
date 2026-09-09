@@ -134,15 +134,10 @@ function encontrarSlot(set, playerId) {
 }
 
 function montarLinhaSet(set, p1Id, p2Id) {
-    let slot1 = encontrarSlot(set, p1Id);
-    let slot2 = encontrarSlot(set, p2Id);
+    const slot1 = encontrarSlot(set, p1Id);
+    const slot2 = encontrarSlot(set, p2Id);
 
-    // Se o player.id não veio preenchido no participante do set antigo, deduce pelo slot restante
-    if (set.slots && set.slots.length === 2) {
-        if (slot1 && !slot2) slot2 = set.slots.find(s => s !== slot1);
-        if (slot2 && !slot1) slot1 = set.slots.find(s => s !== slot2);
-    }
-
+    // Validação estrita: descarta se ambos os jogadores não estiverem no mesmo set
     if (!slot1 || !slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
