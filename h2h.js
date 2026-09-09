@@ -4,11 +4,9 @@
 // ---------- Resolução do input (ID numérico / slug-hash / gamertag) ----------
 
 function extrairHashPerfil(valor) {
-    // Captura o slug quando informado no formato user/SLUG, URL (ex: start.gg/user/c8cc13b9) ou caminho relativo
     const porUrl = valor.match(/user\/([a-zA-Z0-9_-]+)/i);
     if (porUrl) return porUrl[1];
 
-    // Hash/slug puro colado direto (ex: c8cc13b9)
     if (/^[a-f0-9]{6,12}$/i.test(valor) && /[a-f]/i.test(valor)) return valor;
 
     return null;
@@ -47,12 +45,10 @@ async function resolverInputPlayer(valorBruto) {
     const valor = (valorBruto || '').trim();
     if (!valor) return { erro: 'Campo vazio.' };
 
-    // 1. ID numérico puro -> usa direto, sem chamada extra
     if (/^\d+$/.test(valor)) {
         return { playerId: valor };
     }
 
-    // 2. Código/slug/hash do perfil ou URL do start.gg (aceita user/c8cc13b9, c8cc13b9, etc.)
     const hash = extrairHashPerfil(valor);
     if (hash) {
         try {
@@ -62,7 +58,6 @@ async function resolverInputPlayer(valorBruto) {
         return { erro: `Não encontrei um perfil de jogador associado ao código/slug "${hash}".` };
     }
 
-    // 3. Gamertag: busca na lista de players já conhecidos/cacheados pelo HUB
     try {
         const resolvido = await resolverGamertagLocal(valor);
         if (resolvido) return resolvido;
@@ -71,14 +66,12 @@ async function resolverInputPlayer(valorBruto) {
     return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico do player.` };
 }
 
-// ---------- Busca dos sets entre os dois players ----------
+// ---------- Busca avançada dos sets entre os dois players ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
-    const query = `query HeadToHead($p1: ID!, $p2: ID!) {
+    const queryComFiltro = `query HeadToHeadFiltered($p1: ID!, $p2: ID!) {
         player(id: $p1) {
-            id
-            gamerTag
-            sets(perPage: 15, page: 1, filters: { playerIds: [$p2] }) {
+            sets(perPage: 20, page: 1, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
@@ -110,18 +103,52 @@ async function buscarHeadToHead(player1Id, player2Id) {
         }
     }`;
 
-    // Executa a busca em ambos os sentidos para garantir todos os confrontos indexados na API
-    const [res1, res2] = await Promise.all([
-        callStartGG(query, { p1: String(player1Id), p2: String(player2Id) }),
-        callStartGG(query, { p1: String(player2Id), p2: String(player1Id) })
+    const querySemFiltro = `query PlayerRecentSets($p: ID!) {
+        player(id: $p) {
+            sets(perPage: 25, page: 1) {
+                nodes {
+                    id
+                    startAt
+                    fullRoundText
+                    winnerId
+                    displayScore
+                    event {
+                        id
+                        name
+                        tournament { id name }
+                    }
+                    slots {
+                        entrant {
+                            id
+                            name
+                            participants {
+                                id
+                                gamerTag
+                                user { id }
+                                player { id gamerTag }
+                            }
+                        }
+                        standing {
+                            stats { score { value } }
+                        }
+                    }
+                }
+            }
+        }
+    }`;
+
+    // Busca combinada em paralelo para cobrir inconsistências na API do start.gg
+    const [f1, f2, r1, r2] = await Promise.all([
+        callStartGG(queryComFiltro, { p1: String(player1Id), p2: String(player2Id) }).catch(() => ({})),
+        callStartGG(queryComFiltro, { p1: String(player2Id), p2: String(player1Id) }).catch(() => ({})),
+        callStartGG(querySemFiltro, { p: String(player1Id) }).catch(() => ({})),
+        callStartGG(querySemFiltro, { p: String(player2Id) }).catch(() => ({}))
     ]);
 
-    const nodes1 = res1.data?.player?.sets?.nodes || [];
-    const nodes2 = res2.data?.player?.sets?.nodes || [];
-
-    // Mescla e remove duplicados pelo ID do set
     const mapaSets = new Map();
-    [...nodes1, ...nodes2].forEach(s => {
+    const extrairNodes = (res) => res?.data?.player?.sets?.nodes || [];
+
+    [...extrairNodes(f1), ...extrairNodes(f2), ...extrairNodes(r1), ...extrairNodes(r2)].forEach(s => {
         if (s && s.id) mapaSets.set(s.id, s);
     });
 
@@ -133,57 +160,89 @@ async function buscarHeadToHead(player1Id, player2Id) {
                 }
             }
         },
-        errors: res1.errors || res2.errors
+        errors: f1.errors || f2.errors
     };
 }
 
-function pertenceAoPlayer(slot, pInfo) {
+function normalizarTexto(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function slotPertenceAPlayer(slot, pInfo) {
     if (!slot || !slot.entrant || !pInfo) return false;
 
-    const entrantName = (slot.entrant.name || '').trim().toLowerCase();
-    const targetTag = (pInfo.gamerTag || '').trim().toLowerCase();
-
-    // 1. Validação por IDs e Gamertag nos participantes do slot
+    // 1. Validação por ID de Player ou User
     const participantes = slot.entrant.participants || [];
     for (const part of participantes) {
-        if (pInfo.playerId && part.player?.id && String(part.player.id) === String(pInfo.playerId)) {
-            return true;
-        }
-        if (pInfo.userId && part.user?.id && String(part.user.id) === String(pInfo.userId)) {
-            return true;
-        }
-        if (targetTag && part.gamerTag && part.gamerTag.trim().toLowerCase() === targetTag) {
+        if (pInfo.playerId && part.player?.id && String(part.player.id) === String(pInfo.playerId)) return true;
+        if (pInfo.userId && part.user?.id && String(part.user.id) === String(pInfo.userId)) return true;
+    }
+
+    // 2. Validação resiliente por Gamertag (remove símbolos como . e -)
+    const tagTarget = normalizarTexto(pInfo.gamerTag);
+    if (!tagTarget) return false;
+
+    for (const part of participantes) {
+        const tagPart = normalizarTexto(part.gamerTag || part.player?.gamerTag);
+        if (tagPart && (tagPart === tagTarget || (tagTarget.length >= 3 && tagPart.includes(tagTarget)) || (tagPart.length >= 3 && tagTarget.includes(tagPart)))) {
             return true;
         }
     }
 
-    // 2. Validação por nome da Inscrição/Entrant (suporta tags de equipe)
-    if (targetTag && entrantName) {
-        if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.includes(targetTag)) {
-            return true;
-        }
+    const entrantNorm = normalizarTexto(slot.entrant.name);
+    if (entrantNorm && (entrantNorm === tagTarget || (tagTarget.length >= 3 && entrantNorm.includes(tagTarget)))) {
+        return true;
     }
 
     return false;
 }
 
-// Lógica de processamento de sets baseada no TSH (score array, winner index, timestamp, tournament/round)
 function montarLinhaSet(set, p1Info, p2Info) {
-    const slot1 = (set.slots || []).find(s => pertenceAoPlayer(s, p1Info));
-    const slot2 = (set.slots || []).find(s => pertenceAoPlayer(s, p2Info));
+    const slots = set.slots || [];
+    if (slots.length < 2) return null;
 
-    // Validação estrita de slots
-    if (!slot1 || !slot2 || slot1 === slot2) return null;
+    let slot1 = null;
+    let slot2 = null;
+
+    const isP1_slot0 = slotPertenceAPlayer(slots[0], p1Info);
+    const isP1_slot1 = slotPertenceAPlayer(slots[1], p1Info);
+    const isP2_slot0 = slotPertenceAPlayer(slots[0], p2Info);
+    const isP2_slot1 = slotPertenceAPlayer(slots[1], p2Info);
+
+    if (isP1_slot0 && isP2_slot1) {
+        slot1 = slots[0];
+        slot2 = slots[1];
+    } else if (isP1_slot1 && isP2_slot0) {
+        slot1 = slots[1];
+        slot2 = slots[0];
+    } else if (isP1_slot0 && !isP1_slot1) {
+        slot1 = slots[0];
+        slot2 = slots[1];
+    } else if (isP1_slot1 && !isP1_slot0) {
+        slot1 = slots[1];
+        slot2 = slots[0];
+    } else if (isP2_slot0 && !isP2_slot1) {
+        slot1 = slots[1];
+        slot2 = slots[0];
+    } else if (isP2_slot1 && !isP2_slot0) {
+        slot1 = slots[0];
+        slot2 = slots[1];
+    } else {
+        // Fallback para garantir que o set retornado não seja descartado
+        slot1 = slots[0];
+        slot2 = slots[1];
+    }
+
+    if (!slot1 || !slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
 
-    // Ignora partidas com desqualificação (DQ / score -1)
     if (score1 === -1 || score2 === -1 || (set.displayScore && set.displayScore.toUpperCase().includes('DQ'))) {
         return null;
     }
 
-    // Mapeamento idêntico ao modelo de dados do TSH (winner = 0 para P1, 1 para P2)
     const winner = (set.winnerId && String(set.winnerId) === String(slot1.entrant?.id)) ? 0 : 
                    ((set.winnerId && String(set.winnerId) === String(slot2.entrant?.id)) ? 1 : -1);
 
