@@ -4,17 +4,20 @@
 // ---------- Resolução do input (ID numérico / slug-hash / gamertag) ----------
 
 function extrairHashPerfil(valor) {
-    // URL completa ou parcial contendo /user/HASH (ex: start.gg/user/9ca08de2)
-    const porUrl = valor.match(/user\/([a-f0-9]{6,12})/i);
+    // Captura o slug quando informado no formato user/SLUG, URL (ex: start.gg/user/c8cc13b9) ou caminho relativo
+    const porUrl = valor.match(/user\/([a-zA-Z0-9_-]+)/i);
     if (porUrl) return porUrl[1];
-    // Hash puro colado direto (precisa ter ao menos 1 letra a-f pra não confundir com ID numérico)
+
+    // Hash/slug puro colado direto (ex: c8cc13b9)
     if (/^[a-f0-9]{6,12}$/i.test(valor) && /[a-f]/i.test(valor)) return valor;
+
     return null;
 }
 
 async function resolverSlugParaPlayerId(hash) {
+    const slugFormatado = hash.startsWith('user/') ? hash : `user/${hash}`;
     const query = `query UserBySlug($slug: String) { user(slug: $slug) { player { id gamerTag } } }`;
-    const json = await callStartGG(query, { slug: `user/${hash}` });
+    const json = await callStartGG(query, { slug: slugFormatado });
     const player = json.data?.user?.player;
     return player?.id ? { playerId: player.id, gamerTag: player.gamerTag } : null;
 }
@@ -38,14 +41,14 @@ async function resolverInputPlayer(valorBruto) {
         return { playerId: valor };
     }
 
-    // 2. Código/hash do perfil (ou URL do start.gg contendo /user/HASH)
+    // 2. Código/slug/hash do perfil ou URL do start.gg (aceita user/c8cc13b9, c8cc13b9, etc.)
     const hash = extrairHashPerfil(valor);
     if (hash) {
         try {
             const resolvido = await resolverSlugParaPlayerId(hash);
             if (resolvido) return resolvido;
         } catch (e) { /* cai pro próximo método */ }
-        return { erro: `Não encontrei nenhum perfil com o código "${hash}".` };
+        return { erro: `Não encontrei nenhum perfil com o código/slug "${hash}".` };
     }
 
     // 3. Gamertag: busca na lista de players já conhecidos/cacheados pelo HUB
@@ -54,7 +57,7 @@ async function resolverInputPlayer(valorBruto) {
         if (resolvido) return resolvido;
     } catch (e) { /* segue pro erro abaixo */ }
 
-    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico ou o código do perfil.` };
+    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico ou o código/slug do perfil.` };
 }
 
 // ---------- Busca dos sets entre os dois players ----------
