@@ -157,7 +157,7 @@ function pertenceAoPlayer(slot, pInfo) {
         }
     }
 
-    // 2. Validação por nome da Inscrição/Entrant (suporta tags de equipe como "ABC | DEB")
+    // 2. Validação por nome da Inscrição/Entrant (suporta tags de equipe)
     if (targetTag && entrantName) {
         if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.includes(targetTag)) {
             return true;
@@ -167,11 +167,12 @@ function pertenceAoPlayer(slot, pInfo) {
     return false;
 }
 
+// Lógica de processamento de sets baseada no TSH (score array, winner index, timestamp, tournament/round)
 function montarLinhaSet(set, p1Info, p2Info) {
     const slot1 = (set.slots || []).find(s => pertenceAoPlayer(s, p1Info));
     const slot2 = (set.slots || []).find(s => pertenceAoPlayer(s, p2Info));
 
-    // Garante que ambos os jogadores estão presentes no mesmo set e ocupam slots distintos
+    // Validação estrita de slots
     if (!slot1 || !slot2 || slot1 === slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
@@ -182,23 +183,34 @@ function montarLinhaSet(set, p1Info, p2Info) {
         return null;
     }
 
-    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant?.id);
-    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant?.id);
+    // Mapeamento idêntico ao modelo de dados do TSH (winner = 0 para P1, 1 para P2)
+    const winner = (set.winnerId && String(set.winnerId) === String(slot1.entrant?.id)) ? 0 : 
+                   ((set.winnerId && String(set.winnerId) === String(slot2.entrant?.id)) ? 1 : -1);
 
-    const data = set.startAt ? new Date(set.startAt * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const venceuP1 = winner === 0;
+    const venceuP2 = winner === 1;
+
+    const timestamp = set.startAt || 0;
+    const data = timestamp ? new Date(timestamp * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     const torneio = set.event?.tournament?.name || 'Torneio';
     const evento = set.event?.name || '';
     const fase = set.fullRoundText || '';
 
     return {
         setId: set.id,
-        startAt: set.startAt || 0,
-        data, torneio, evento, fase,
+        startAt: timestamp,
+        data,
+        torneio,
+        evento,
+        fase,
         nome1: slot1.entrant?.name || p1Info.gamerTag || '?',
         nome2: slot2.entrant?.name || p2Info.gamerTag || '?',
         score1: score1 ?? (set.displayScore || '-'),
         score2: score2 ?? '',
-        venceuP1, venceuP2,
+        venceuP1,
+        venceuP2,
+        winner,
+        score: [score1, score2],
         usaDisplayScoreCru: (score1 === null || score1 === undefined) && (score2 === null || score2 === undefined)
     };
 }
