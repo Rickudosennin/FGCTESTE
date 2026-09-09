@@ -69,11 +69,12 @@ async function resolverInputPlayer(valorBruto) {
 // ---------- Busca dos sets entre os dois players ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
+    // Reduzido perPage de 60 para 25 para respeitar o limite de complexidade (1000 objetos) da API do start.gg
     const query = `query HeadToHead($p1: ID!, $p2: ID!) {
         player(id: $p1) {
             id
             gamerTag
-            sets(perPage: 60, page: 1, filters: { playerIds: [$p2] }) {
+            sets(perPage: 25, page: 1, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
