@@ -66,14 +66,15 @@ async function resolverInputPlayer(valorBruto) {
     return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico do player.` };
 }
 
-// ---------- Busca H2H usando opponentId nativo da API start.gg ----------
+// ---------- Busca de até 10 confrontos reais via API ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
-    const queryH2H = `query HeadToHead($p1: ID!, $p2: ID!) {
+    // sets é o campo atual documentado pelo start.gg; recentSets é deprecated.
+    // A paginação é necessária porque uma única página pode trazer só parte
+    // do histórico entre os dois players.
+    const query = `query HeadToHead($p1: ID!, $p2: ID!, $page: Int!, $perPage: Int!) {
         player(id: $p1) {
-            id
-            gamerTag
-            sets(perPage: 10, page: 1, filters: { opponentId: $p2 }) {
+            sets(page: $page, perPage: $perPage, filters: { playerIds: [$p2], hideEmpty: true }) {
                 nodes {
                     id
                     startAt
@@ -81,16 +82,13 @@ async function buscarHeadToHead(player1Id, player2Id) {
                     winnerId
                     displayScore
                     event {
-                        id
                         name
-                        tournament { id name }
+                        tournament { name }
                     }
                     slots {
                         entrant {
-                            id
                             name
                             participants {
-                                id
                                 gamerTag
                                 user { id }
                                 player { id gamerTag }
@@ -99,18 +97,54 @@ async function buscarHeadToHead(player1Id, player2Id) {
                         standing {
                             stats { score { value } }
                         }
-                    }
                 }
             }
         }
     }`;
 
-    // Executa a consulta oficial filtrando diretamente pelo opponentId
-    const res = await callStartGG(queryH2H, { p1: String(player1Id), p2: String(player2Id) });
+    const mapaSets = new Map();
+    const erros = [];
+    const paginasMaximas = 20;
+    const itensPorPagina = 10;
+
+    // Consulta nos dois sentidos e percorre as páginas. Não interrompemos
+    // apenas porque já há 10 registros brutos: alguns podem ser descartados
+    // depois por DQ, bye, data ausente ou identificação dos participantes.
+    for (let page = 1; page <= paginasMaximas; page++) {
+        const resultados = await Promise.all([
+            callStartGG(query, {
+                p1: String(player1Id), p2: String(player2Id), page, perPage: itensPorPagina
+            }).catch(error => ({ errors: [{ message: error?.message || 'Falha na consulta.' }] })),
+            callStartGG(query, {
+                p1: String(player2Id), p2: String(player1Id), page, perPage: itensPorPagina
+            }).catch(error => ({ errors: [{ message: error?.message || 'Falha na consulta.' }] }))
+        ]);
+
+        let houveResultado = false;
+        resultados.forEach(res => {
+            if (res.errors?.length) erros.push(...res.errors);
+
+            const nodes = res.data?.player?.sets?.nodes || [];
+            if (nodes.length > 0) houveResultado = true;
+            nodes.forEach(set => {
+                if (set?.id) mapaSets.set(String(set.id), set);
+            });
+        });
+
+        if (!houveResultado) break;
+    }
 
     return {
-        data: res.data,
-        errors: res.errors
+        data: {
+            player: {
+                sets: {
+                    nodes: Array.from(mapaSets.values())
+                }
+            }
+        },
+        // Só retorna erro quando nenhuma partida foi recuperada. Erros parciais
+        // não descartam resultados válidos obtidos no outro sentido da consulta.
+        errors: mapaSets.size === 0 && erros.length > 0 ? erros : undefined
     };
 }
 
@@ -143,12 +177,13 @@ function montarLinhaSet(set, p1Info, p2Info) {
     const slots = set.slots || [];
     if (slots.length < 2) return null;
 
-    let slot1 = slots.find(s => pertenceAoPlayer(s, p1Info));
-    let slot2 = slots.find(s => pertenceAoPlayer(s, p2Info));
+    // Um set sem data não é um confronto histórico confirmado (pode ser um
+    // set agendado ou ainda não processado).
+    if (!set.startAt || Number(set.startAt) <= 0) return null;
 
-    // Fallback de posicionamento de slots caso p2Info precise de ajuste de índice
-    if (!slot1) slot1 = slots[0];
-    if (!slot2) slot2 = slots[1] !== slot1 ? slots[1] : slots[0];
+    // Identificação estrita dos dois slots para evitar exibir partidas contra terceiros
+    const slot1 = slots.find(s => pertenceAoPlayer(s, p1Info));
+    const slot2 = slots.find(s => pertenceAoPlayer(s, p2Info));
 
     if (!slot1 || !slot2 || slot1 === slot2) return null;
 
@@ -159,8 +194,15 @@ function montarLinhaSet(set, p1Info, p2Info) {
         return null;
     }
 
-    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant?.id);
-    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant?.id);
+    const venceuP1 = Boolean(set.winnerId && String(set.winnerId) === String(slot1.entrant?.id));
+    const venceuP2 = Boolean(set.winnerId && String(set.winnerId) === String(slot2.entrant?.id));
+
+    // Sem vencedor e sem placar, o registro ainda não comprova uma partida
+    // disputada; portanto ele não entra nos 10 confrontos exibidos.
+    const possuiPlacar = (score1 !== null && score1 !== undefined)
+        || (score2 !== null && score2 !== undefined)
+        || Boolean(set.displayScore);
+    if (!venceuP1 && !venceuP2 && !possuiPlacar) return null;
 
     const timestamp = set.startAt || 0;
     const data = timestamp ? new Date(timestamp * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
