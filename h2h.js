@@ -66,12 +66,12 @@ async function resolverInputPlayer(valorBruto) {
     return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico do player.` };
 }
 
-// ---------- Busca dos sets entre os dois players ----------
+// ---------- Busca simples e direta de confrontos reais via API ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
-    const queryComFiltro = `query HeadToHeadFiltered($p1: ID!, $p2: ID!) {
+    const query = `query HeadToHead($p1: ID!, $p2: ID!) {
         player(id: $p1) {
-            sets(perPage: 20, page: 1, filters: { playerIds: [$p2] }) {
+            sets(perPage: 15, page: 1, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
@@ -103,51 +103,17 @@ async function buscarHeadToHead(player1Id, player2Id) {
         }
     }`;
 
-    const queryRecentesP1 = `query PlayerRecentSets($p: ID!) {
-        player(id: $p) {
-            sets(perPage: 30, page: 1) {
-                nodes {
-                    id
-                    startAt
-                    fullRoundText
-                    winnerId
-                    displayScore
-                    event {
-                        id
-                        name
-                        tournament { id name }
-                    }
-                    slots {
-                        entrant {
-                            id
-                            name
-                            participants {
-                                id
-                                gamerTag
-                                user { id }
-                                player { id gamerTag }
-                            }
-                        }
-                        standing {
-                            stats { score { value } }
-                        }
-                    }
-                }
-            }
-        }
-    }`;
-
-    // Busca pelas duas frentes para garantir cobertura total sem omitir jogos
-    const [f1, f2, r1] = await Promise.all([
-        callStartGG(queryComFiltro, { p1: String(player1Id), p2: String(player2Id) }).catch(() => ({})),
-        callStartGG(queryComFiltro, { p1: String(player2Id), p2: String(player1Id) }).catch(() => ({})),
-        callStartGG(queryRecentesP1, { p: String(player1Id) }).catch(() => ({}))
+    // Busca filtrada nos dois sentidos para garantir todos os confrontos cruzados
+    const [res1, res2] = await Promise.all([
+        callStartGG(query, { p1: String(player1Id), p2: String(player2Id) }).catch(() => ({})),
+        callStartGG(query, { p1: String(player2Id), p2: String(player1Id) }).catch(() => ({}))
     ]);
 
     const mapaSets = new Map();
-    const extrairNodes = (res) => res?.data?.player?.sets?.nodes || [];
+    const nodes1 = res1.data?.player?.sets?.nodes || [];
+    const nodes2 = res2.data?.player?.sets?.nodes || [];
 
-    [...extrairNodes(f1), ...extrairNodes(f2), ...extrairNodes(r1)].forEach(s => {
+    [...nodes1, ...nodes2].forEach(s => {
         if (s && s.id) mapaSets.set(s.id, s);
     });
 
@@ -159,21 +125,19 @@ async function buscarHeadToHead(player1Id, player2Id) {
                 }
             }
         },
-        errors: f1.errors || f2.errors
+        errors: res1.errors || res2.errors
     };
 }
 
 function pertenceAoPlayer(slot, pInfo) {
     if (!slot || !slot.entrant || !pInfo) return false;
 
-    // 1. Checagem exata por IDs de Player/User
     const participantes = slot.entrant.participants || [];
     for (const part of participantes) {
         if (pInfo.playerId && part.player?.id && String(part.player.id) === String(pInfo.playerId)) return true;
         if (pInfo.userId && part.user?.id && String(part.user.id) === String(pInfo.userId)) return true;
     }
 
-    // 2. Checagem por GamerTag exata ou sufixo da tag (ignorando maiúsculas/minúsculas)
     const targetTag = (pInfo.gamerTag || '').trim().toLowerCase();
     if (targetTag) {
         for (const part of participantes) {
@@ -182,7 +146,7 @@ function pertenceAoPlayer(slot, pInfo) {
         }
 
         const entrantName = (slot.entrant.name || '').trim().toLowerCase();
-        if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.endsWith(`| ${targetTag}`)) {
+        if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.includes(targetTag)) {
             return true;
         }
     }
@@ -194,39 +158,21 @@ function montarLinhaSet(set, p1Info, p2Info) {
     const slots = set.slots || [];
     if (slots.length < 2) return null;
 
-    let slot1 = null;
-    let slot2 = null;
+    // Identificação estrita dos dois slots para evitar exibir partidas contra terceiros
+    const slot1 = slots.find(s => pertenceAoPlayer(s, p1Info));
+    const slot2 = slots.find(s => pertenceAoPlayer(s, p2Info));
 
-    const isSlot0_P1 = pertenceAoPlayer(slots[0], p1Info);
-    const isSlot1_P1 = pertenceAoPlayer(slots[1], p1Info);
-    const isSlot0_P2 = pertenceAoPlayer(slots[0], p2Info);
-    const isSlot1_P2 = pertenceAoPlayer(slots[1], p2Info);
-
-    // VALIDAÇÃO ESTRITA: Garante que P1 está de um lado E P2 obrigatoriamente do outro
-    if (isSlot0_P1 && isSlot1_P2) {
-        slot1 = slots[0];
-        slot2 = slots[1];
-    } else if (isSlot1_P1 && isSlot0_P2) {
-        slot1 = slots[1];
-        slot2 = slots[0];
-    } else {
-        // Se ambos não estiverem no mesmo confronto, descarta o set completamente
-        return null;
-    }
+    if (!slot1 || !slot2 || slot1 === slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
 
-    // Desconsidera partidas com W.O. / Desqualificação
     if (score1 === -1 || score2 === -1 || (set.displayScore && set.displayScore.toUpperCase().includes('DQ'))) {
         return null;
     }
 
-    const winner = (set.winnerId && String(set.winnerId) === String(slot1.entrant?.id)) ? 0 : 
-                   ((set.winnerId && String(set.winnerId) === String(slot2.entrant?.id)) ? 1 : -1);
-
-    const venceuP1 = winner === 0;
-    const venceuP2 = winner === 1;
+    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant?.id);
+    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant?.id);
 
     const timestamp = set.startAt || 0;
     const data = timestamp ? new Date(timestamp * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
@@ -247,8 +193,6 @@ function montarLinhaSet(set, p1Info, p2Info) {
         score2: score2 ?? '',
         venceuP1,
         venceuP2,
-        winner,
-        score: [score1, score2],
         usaDisplayScoreCru: (score1 === null || score1 === undefined) && (score2 === null || score2 === undefined)
     };
 }
