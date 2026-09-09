@@ -173,15 +173,15 @@ function montarLinhaSet(set, p1Id, p2Id) {
     };
 }
 
-function montarHtmlH2H(linhas) {
+function montarHtmlH2H(linhas, gamerTag1, gamerTag2) {
     if (linhas.length === 0) {
         return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players.</div>';
     }
 
     const winsP1 = linhas.filter(l => l.venceuP1).length;
     const winsP2 = linhas.filter(l => l.venceuP2).length;
-    const nome1 = linhas[0].nome1;
-    const nome2 = linhas[0].nome2;
+    const nome1 = gamerTag1 || linhas[0].nome1;
+    const nome2 = gamerTag2 || linhas[0].nome2;
 
     let html = `
         <div class="glass-card p-6 rounded-xl mb-6 h2h-summary">
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .sort((a, b) => b.startAt - a.startAt)
                 .slice(0, 20);
 
-            resultadoDiv.innerHTML = montarHtmlH2H(linhas);
+            resultadoDiv.innerHTML = montarHtmlH2H(linhas, res1.gamerTag, res2.gamerTag);
         } catch (e) {
             resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Erro de conexão ao buscar confrontos. Tente novamente.</div>';
         }
