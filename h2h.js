@@ -24,8 +24,13 @@ async function resolverSlugParaPlayerId(hash) {
         return null;
     }
 
-    const player = json.data?.user?.player;
-    return player?.id ? { playerId: String(player.id), gamerTag: player.gamerTag } : null;
+    const user = json.data?.user;
+    const player = user?.player;
+    return {
+        playerId: player?.id ? String(player.id) : null,
+        userId: user?.id ? String(user.id) : null,
+        gamerTag: player?.gamerTag || null
+    };
 }
 
 async function resolverGamertagLocal(termo) {
@@ -89,7 +94,12 @@ async function buscarHeadToHead(player1Id, player2Id) {
                         entrant {
                             id
                             name
-                            participants { player { id gamerTag } }
+                            participants {
+                                id
+                                gamerTag
+                                user { id }
+                                player { id gamerTag }
+                            }
                         }
                         standing {
                             stats { score { value } }
@@ -127,18 +137,42 @@ async function buscarHeadToHead(player1Id, player2Id) {
     };
 }
 
-function encontrarSlot(set, playerId) {
-    return (set.slots || []).find(slot =>
-        slot.entrant?.participants?.some(p => String(p.player?.id) === String(playerId))
-    );
+function pertenceAoPlayer(slot, pInfo) {
+    if (!slot || !slot.entrant || !pInfo) return false;
+
+    const entrantName = (slot.entrant.name || '').trim().toLowerCase();
+    const targetTag = (pInfo.gamerTag || '').trim().toLowerCase();
+
+    // 1. Validação por IDs e Gamertag nos participantes do slot
+    const participantes = slot.entrant.participants || [];
+    for (const part of participantes) {
+        if (pInfo.playerId && part.player?.id && String(part.player.id) === String(pInfo.playerId)) {
+            return true;
+        }
+        if (pInfo.userId && part.user?.id && String(part.user.id) === String(pInfo.userId)) {
+            return true;
+        }
+        if (targetTag && part.gamerTag && part.gamerTag.trim().toLowerCase() === targetTag) {
+            return true;
+        }
+    }
+
+    // 2. Validação por nome da Inscrição/Entrant (suporta tags de equipe como "ABC | DEB")
+    if (targetTag && entrantName) {
+        if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.includes(targetTag)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
-function montarLinhaSet(set, p1Id, p2Id) {
-    const slot1 = encontrarSlot(set, p1Id);
-    const slot2 = encontrarSlot(set, p2Id);
+function montarLinhaSet(set, p1Info, p2Info) {
+    const slot1 = (set.slots || []).find(s => pertenceAoPlayer(s, p1Info));
+    const slot2 = (set.slots || []).find(s => pertenceAoPlayer(s, p2Info));
 
-    // Validação estrita: descarta se ambos os jogadores não estiverem no mesmo set
-    if (!slot1 || !slot2) return null;
+    // Garante que ambos os jogadores estão presentes no mesmo set e ocupam slots distintos
+    if (!slot1 || !slot2 || slot1 === slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
@@ -160,8 +194,8 @@ function montarLinhaSet(set, p1Id, p2Id) {
         setId: set.id,
         startAt: set.startAt || 0,
         data, torneio, evento, fase,
-        nome1: slot1.entrant?.name || '?',
-        nome2: slot2.entrant?.name || '?',
+        nome1: slot1.entrant?.name || p1Info.gamerTag || '?',
+        nome2: slot2.entrant?.name || p2Info.gamerTag || '?',
         score1: score1 ?? (set.displayScore || '-'),
         score2: score2 ?? '',
         venceuP1, venceuP2,
@@ -237,10 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res1.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 1: ${res1.erro}</div>`; return; }
         if (res2.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 2: ${res2.erro}</div>`; return; }
 
-        const p1Id = res1.playerId;
-        const p2Id = res2.playerId;
-
-        if (String(p1Id) === String(p2Id)) {
+        if (String(res1.playerId) === String(res2.playerId)) {
             resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Os dois players resolveram pro mesmo ID. Confira os dados digitados.</div>';
             return;
         }
@@ -248,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Buscando confrontos...</p></div>';
 
         try {
-            const json = await buscarHeadToHead(p1Id, p2Id);
+            const json = await buscarHeadToHead(res1.playerId, res2.playerId);
 
             if (json.errors && json.errors.length > 0) {
                 const det = json.errors[0]?.message || 'Erro desconhecido na API.';
@@ -259,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const nodes = json.data?.player?.sets?.nodes || [];
 
             const linhas = nodes
-                .map(set => montarLinhaSet(set, p1Id, p2Id))
+                .map(set => montarLinhaSet(set, res1, res2))
                 .filter(Boolean)
                 .sort((a, b) => (b.startAt - a.startAt) || String(b.setId).localeCompare(String(a.setId)));
 
