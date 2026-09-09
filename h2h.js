@@ -16,10 +16,16 @@ function extrairHashPerfil(valor) {
 
 async function resolverSlugParaPlayerId(hash) {
     const slugFormatado = hash.startsWith('user/') ? hash : `user/${hash}`;
-    const query = `query UserBySlug($slug: String) { user(slug: $slug) { player { id gamerTag } } }`;
+    const query = `query UserBySlug($slug: String) { user(slug: $slug) { id player { id gamerTag } } }`;
     const json = await callStartGG(query, { slug: slugFormatado });
+
+    if (json.errors && json.errors.length > 0) {
+        console.error('Erro na API start.gg (UserBySlug):', json.errors);
+        return null;
+    }
+
     const player = json.data?.user?.player;
-    return player?.id ? { playerId: player.id, gamerTag: player.gamerTag } : null;
+    return player?.id ? { playerId: String(player.id), gamerTag: player.gamerTag } : null;
 }
 
 async function resolverGamertagLocal(termo) {
@@ -29,7 +35,7 @@ async function resolverGamertagLocal(termo) {
     if (!encontrados || encontrados.length === 0) return null;
     const exato = encontrados.find(p => p.gamerTag.toLowerCase() === termo.toLowerCase());
     const escolhido = exato || encontrados[0];
-    return { playerId: escolhido.playerId, gamerTag: escolhido.gamerTag };
+    return { playerId: String(escolhido.playerId), gamerTag: escolhido.gamerTag };
 }
 
 async function resolverInputPlayer(valorBruto) {
@@ -48,7 +54,7 @@ async function resolverInputPlayer(valorBruto) {
             const resolvido = await resolverSlugParaPlayerId(hash);
             if (resolvido) return resolvido;
         } catch (e) { /* cai pro próximo método */ }
-        return { erro: `Não encontrei nenhum perfil com o código/slug "${hash}".` };
+        return { erro: `Não encontrei um perfil de jogador associado ao código/slug "${hash}".` };
     }
 
     // 3. Gamertag: busca na lista de players já conhecidos/cacheados pelo HUB
@@ -57,7 +63,7 @@ async function resolverInputPlayer(valorBruto) {
         if (resolvido) return resolvido;
     } catch (e) { /* segue pro erro abaixo */ }
 
-    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico ou o código/slug do perfil.` };
+    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico do player.` };
 }
 
 // ---------- Busca dos sets entre os dois players ----------
@@ -93,7 +99,7 @@ async function buscarHeadToHead(player1Id, player2Id) {
             }
         }
     }`;
-    return await callStartGG(query, { p1: player1Id, p2: player2Id });
+    return await callStartGG(query, { p1: String(player1Id), p2: String(player2Id) });
 }
 
 function encontrarSlot(set, playerId) {
@@ -209,12 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const json = await buscarHeadToHead(p1Id, p2Id);
-            const nodes = json.data?.player?.sets?.nodes || [];
 
-            if (json.errors) {
-                resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">ID de player inválido ou não encontrado.</div>';
+            if (json.errors && json.errors.length > 0) {
+                const det = json.errors[0]?.message || 'Erro desconhecido na API.';
+                resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: ${det}</div>`;
                 return;
             }
+
+            const nodes = json.data?.player?.sets?.nodes || [];
 
             const linhas = nodes
                 .map(set => montarLinhaSet(set, p1Id, p2Id))
@@ -224,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resultadoDiv.innerHTML = montarHtmlH2H(linhas);
         } catch (e) {
-            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos. Tente novamente.</div>';
+            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Erro de conexão ao buscar confrontos. Tente novamente.</div>';
         }
     });
 });
