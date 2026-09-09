@@ -1,6 +1,64 @@
 // ==================== HEAD TO HEAD ====================
 // Reaproveita callStartGG() e STARTGG_KEY já definidos em script.js
 
+// ---------- Resolução do input (ID numérico / slug-hash / gamertag) ----------
+
+function extrairHashPerfil(valor) {
+    // URL completa ou parcial contendo /user/HASH (ex: start.gg/user/9ca08de2)
+    const porUrl = valor.match(/user\/([a-f0-9]{6,12})/i);
+    if (porUrl) return porUrl[1];
+    // Hash puro colado direto (precisa ter ao menos 1 letra a-f pra não confundir com ID numérico)
+    if (/^[a-f0-9]{6,12}$/i.test(valor) && /[a-f]/i.test(valor)) return valor;
+    return null;
+}
+
+async function resolverSlugParaPlayerId(hash) {
+    const query = `query UserBySlug($slug: String) { user(slug: $slug) { player { id gamerTag } } }`;
+    const json = await callStartGG(query, { slug: `user/${hash}` });
+    const player = json.data?.user?.player;
+    return player?.id ? { playerId: player.id, gamerTag: player.gamerTag } : null;
+}
+
+async function resolverGamertagLocal(termo) {
+    if (typeof carregarPlayersConhecidos !== 'function' || typeof filtrarPlayers !== 'function') return null;
+    const lista = await carregarPlayersConhecidos();
+    const encontrados = filtrarPlayers(lista, termo);
+    if (!encontrados || encontrados.length === 0) return null;
+    const exato = encontrados.find(p => p.gamerTag.toLowerCase() === termo.toLowerCase());
+    const escolhido = exato || encontrados[0];
+    return { playerId: escolhido.playerId, gamerTag: escolhido.gamerTag };
+}
+
+async function resolverInputPlayer(valorBruto) {
+    const valor = (valorBruto || '').trim();
+    if (!valor) return { erro: 'Campo vazio.' };
+
+    // 1. ID numérico puro -> usa direto, sem chamada extra
+    if (/^\d+$/.test(valor)) {
+        return { playerId: valor };
+    }
+
+    // 2. Código/hash do perfil (ou URL do start.gg contendo /user/HASH)
+    const hash = extrairHashPerfil(valor);
+    if (hash) {
+        try {
+            const resolvido = await resolverSlugParaPlayerId(hash);
+            if (resolvido) return resolvido;
+        } catch (e) { /* cai pro próximo método */ }
+        return { erro: `Não encontrei nenhum perfil com o código "${hash}".` };
+    }
+
+    // 3. Gamertag: busca na lista de players já conhecidos/cacheados pelo HUB
+    try {
+        const resolvido = await resolverGamertagLocal(valor);
+        if (resolvido) return resolvido;
+    } catch (e) { /* segue pro erro abaixo */ }
+
+    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico ou o código do perfil.` };
+}
+
+// ---------- Busca dos sets entre os dois players ----------
+
 async function buscarHeadToHead(player1Id, player2Id) {
     const query = `query HeadToHead($p1: ID!, $p2: ID!) {
         player(id: $p1) {
@@ -68,7 +126,7 @@ function montarLinhaSet(set, p1Id, p2Id) {
     };
 }
 
-function montarHtmlH2H(linhas, p1Id, p2Id) {
+function montarHtmlH2H(linhas) {
     if (linhas.length === 0) {
         return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players.</div>';
     }
@@ -121,15 +179,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultadoDiv = document.getElementById('h2h_resultado');
 
     btn.addEventListener('click', async () => {
-        const p1Id = inputP1.value.trim();
-        const p2Id = inputP2.value.trim();
+        const bruto1 = inputP1.value.trim();
+        const bruto2 = inputP2.value.trim();
 
-        if (!p1Id || !p2Id) {
-            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Preencha os dois IDs.</div>';
+        if (!bruto1 || !bruto2) {
+            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Preencha os dois players.</div>';
             return;
         }
-        if (p1Id === p2Id) {
-            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Os dois IDs precisam ser diferentes.</div>';
+
+        resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Identificando players...</p></div>';
+
+        const [res1, res2] = await Promise.all([resolverInputPlayer(bruto1), resolverInputPlayer(bruto2)]);
+
+        if (res1.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 1: ${res1.erro}</div>`; return; }
+        if (res2.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 2: ${res2.erro}</div>`; return; }
+
+        const p1Id = res1.playerId;
+        const p2Id = res2.playerId;
+
+        if (String(p1Id) === String(p2Id)) {
+            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Os dois players resolveram pro mesmo ID. Confira os dados digitados.</div>';
             return;
         }
 
@@ -150,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .sort((a, b) => b.startAt - a.startAt)
                 .slice(0, 20);
 
-            resultadoDiv.innerHTML = montarHtmlH2H(linhas, p1Id, p2Id);
+            resultadoDiv.innerHTML = montarHtmlH2H(linhas);
         } catch (e) {
             resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos. Tente novamente.</div>';
         }

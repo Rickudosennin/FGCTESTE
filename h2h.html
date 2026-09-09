@@ -16,36 +16,40 @@
 
         <div class="text-center mb-10">
             <h1 class="h2h-title">HEAD <span class="text-red-600">TO</span> HEAD</h1>
-            <p class="text-slate-400 text-sm mt-2">Confronto direto entre dois players pelo ID do start.gg.</p>
+            <p class="text-slate-400 text-sm mt-2">Confronto direto entre dois players do start.gg.</p>
         </div>
 
         <div class="glass-card p-6 rounded-xl mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                 <div>
-                    <label for="input_p1" class="block text-xs font-bold uppercase text-red-500 mb-2">ID Player 1</label>
-                    <input id="input_p1" type="text" inputmode="numeric" placeholder="Ex: 1234567"
+                    <label for="input_p1" class="block text-xs font-bold uppercase text-red-500 mb-2">Player 1</label>
+                    <input id="input_p1" type="text" placeholder="ID, código do perfil ou gamertag"
                            class="w-full p-3 rounded-lg border border-slate-700 bg-transparent text-white outline-none focus:border-red-500" />
                 </div>
                 <div>
-                    <label for="input_p2" class="block text-xs font-bold uppercase text-red-500 mb-2">ID Player 2</label>
-                    <input id="input_p2" type="text" inputmode="numeric" placeholder="Ex: 7654321"
+                    <label for="input_p2" class="block text-xs font-bold uppercase text-red-500 mb-2">Player 2</label>
+                    <input id="input_p2" type="text" placeholder="ID, código do perfil ou gamertag"
                            class="w-full p-3 rounded-lg border border-slate-700 bg-transparent text-white outline-none focus:border-red-500" />
                 </div>
             </div>
+            <p class="text-slate-500 text-[11px] mb-4">
+                Aceita qualquer um dos três: <strong class="text-slate-400">ID numérico</strong> (ex: 1234567),
+                <strong class="text-slate-400">código do perfil</strong> (ex: 9ca08de2 ou a URL start.gg/user/9ca08de2)
+                ou <strong class="text-slate-400">gamertag</strong> (busca nos players já conhecidos pelo HUB — mesma base da
+                <a href="buscar.html" class="text-red-500 hover:underline">Busca de Player</a>).
+            </p>
             <button id="btn_buscar_h2h" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">
                 BUSCAR CONFRONTOS
             </button>
-            <p class="text-slate-500 text-[11px] mt-3">
-                Não sabe o ID? Use a <a href="buscar.html" class="text-red-500 hover:underline">Busca de Player</a> e confira o número no link do perfil (<code>player.html?id=...</code>).
-            </p>
         </div>
 
         <div id="h2h_resultado">
-            <div class="text-slate-500 text-sm text-center py-8">Informe os dois IDs e clique em buscar.</div>
+            <div class="text-slate-500 text-sm text-center py-8">Informe os dois players e clique em buscar.</div>
         </div>
     </div>
 
     <script src="script.js"></script>
+    <script src="players.js"></script>
     <script src="h2h.js"></script>
 </body>
 </html>
