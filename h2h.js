@@ -69,7 +69,6 @@ async function resolverInputPlayer(valorBruto) {
 // ---------- Busca dos sets entre os dois players ----------
 
 async function buscarHeadToHead(player1Id, player2Id) {
-    // Reduzido perPage de 60 para 25 para respeitar o limite de complexidade (1000 objetos) da API do start.gg
     const query = `query HeadToHead($p1: ID!, $p2: ID!) {
         player(id: $p1) {
             id
@@ -100,7 +99,32 @@ async function buscarHeadToHead(player1Id, player2Id) {
             }
         }
     }`;
-    return await callStartGG(query, { p1: String(player1Id), p2: String(player2Id) });
+
+    // Executa a busca em ambos os sentidos para garantir todos os confrontos indexados na API
+    const [res1, res2] = await Promise.all([
+        callStartGG(query, { p1: String(player1Id), p2: String(player2Id) }),
+        callStartGG(query, { p1: String(player2Id), p2: String(player1Id) })
+    ]);
+
+    const nodes1 = res1.data?.player?.sets?.nodes || [];
+    const nodes2 = res2.data?.player?.sets?.nodes || [];
+
+    // Mescla e remove duplicados pelo ID do set
+    const mapaSets = new Map();
+    [...nodes1, ...nodes2].forEach(s => {
+        if (s && s.id) mapaSets.set(s.id, s);
+    });
+
+    return {
+        data: {
+            player: {
+                sets: {
+                    nodes: Array.from(mapaSets.values())
+                }
+            }
+        },
+        errors: res1.errors || res2.errors
+    };
 }
 
 function encontrarSlot(set, playerId) {
@@ -110,14 +134,21 @@ function encontrarSlot(set, playerId) {
 }
 
 function montarLinhaSet(set, p1Id, p2Id) {
-    const slot1 = encontrarSlot(set, p1Id);
-    const slot2 = encontrarSlot(set, p2Id);
-    if (!slot1 || !slot2 || (set.slots || []).length !== 2) return null;
+    let slot1 = encontrarSlot(set, p1Id);
+    let slot2 = encontrarSlot(set, p2Id);
+
+    // Se o player.id não veio preenchido no participante do set antigo, deduce pelo slot restante
+    if (set.slots && set.slots.length === 2) {
+        if (slot1 && !slot2) slot2 = set.slots.find(s => s !== slot1);
+        if (slot2 && !slot1) slot1 = set.slots.find(s => s !== slot2);
+    }
+
+    if (!slot1 || !slot2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
-    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant.id);
-    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant.id);
+    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant?.id);
+    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant?.id);
 
     const data = set.startAt ? new Date(set.startAt * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     const torneio = set.event?.tournament?.name || 'Torneio';
