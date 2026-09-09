@@ -73,7 +73,7 @@ async function buscarHeadToHead(player1Id, player2Id) {
         player(id: $p1) {
             id
             gamerTag
-            sets(perPage: 25, page: 1, filters: { playerIds: [$p2] }) {
+            sets(perPage: 40, page: 1, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
@@ -162,6 +162,7 @@ function montarLinhaSet(set, p1Id, p2Id) {
     const fase = set.fullRoundText || '';
 
     return {
+        setId: set.id,
         startAt: set.startAt || 0,
         data, torneio, evento, fase,
         nome1: slot1.entrant?.name || '?',
@@ -265,8 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const linhas = nodes
                 .map(set => montarLinhaSet(set, p1Id, p2Id))
                 .filter(Boolean)
-                .sort((a, b) => b.startAt - a.startAt)
-                .slice(0, 20);
+                .sort((a, b) => (b.startAt - a.startAt) || String(b.setId).localeCompare(String(a.setId)));
 
             resultadoDiv.innerHTML = montarHtmlH2H(linhas, res1.gamerTag, res2.gamerTag);
         } catch (e) {
