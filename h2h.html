@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Head to Head | FGC HUB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="h2h-style.css">
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-3xl mx-auto">
+        <a href="index.html" class="text-slate-400 hover:text-red-500 text-sm mb-6 inline-block">&larr; Voltar para o FGC HUB</a>
+
+        <div class="text-center mb-10">
+            <h1 class="h2h-title">HEAD <span class="text-red-600">TO</span> HEAD</h1>
+            <p class="text-slate-400 text-sm mt-2">Confronto direto entre dois players pelo ID do start.gg.</p>
+        </div>
+
+        <div class="glass-card p-6 rounded-xl mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="input_p1" class="block text-xs font-bold uppercase text-red-500 mb-2">ID Player 1</label>
+                    <input id="input_p1" type="text" inputmode="numeric" placeholder="Ex: 1234567"
+                           class="w-full p-3 rounded-lg border border-slate-700 bg-transparent text-white outline-none focus:border-red-500" />
+                </div>
+                <div>
+                    <label for="input_p2" class="block text-xs font-bold uppercase text-red-500 mb-2">ID Player 2</label>
+                    <input id="input_p2" type="text" inputmode="numeric" placeholder="Ex: 7654321"
+                           class="w-full p-3 rounded-lg border border-slate-700 bg-transparent text-white outline-none focus:border-red-500" />
+                </div>
+            </div>
+            <button id="btn_buscar_h2h" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">
+                BUSCAR CONFRONTOS
+            </button>
+            <p class="text-slate-500 text-[11px] mt-3">
+                Não sabe o ID? Use a <a href="buscar.html" class="text-red-500 hover:underline">Busca de Player</a> e confira o número no link do perfil (<code>player.html?id=...</code>).
+            </p>
+        </div>
+
+        <div id="h2h_resultado">
+            <div class="text-slate-500 text-sm text-center py-8">Informe os dois IDs e clique em buscar.</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="h2h.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+/* =========================================================
+   HEAD TO HEAD — tipografia e paleta trazidas do overlay TSH
+   (mesmas variáveis de cor/fonte do "Recent Sets" do TSH)
+   ========================================================= */
+
+:root {
+    --kz-red: #b30000;
+    --kz-red-bright: #e31b16;
+    --kz-red-hot: #ff2a1f;
+    --kz-green: #8fcf42;
+    --kz-muted: #9b9b9b;
+    --h2h-font: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
+}
+
+.h2h-title {
+    font-family: var(--h2h-font);
+    font-weight: 800;
+    font-size: 34px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(227, 27, 22, .25), 0 2px 8px rgba(0, 0, 0, .9);
+}
+
+/* ---------- Resumo do confronto (placar geral) ---------- */
+
+.h2h-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-family: var(--h2h-font);
+}
+
+.h2h-summary-player {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.h2h-summary-player-right {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.h2h-name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.h2h-score {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 46px;
+    text-align: center;
+}
+
+.h2h-score-lead {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(143, 207, 66, .5), 0 2px 4px rgba(0, 0, 0, .8);
+}
+
+.h2h-score-behind {
+    color: var(--kz-muted);
+}
+
+.h2h-summary-vs {
+    flex: 0 0 auto;
+    font-family: var(--h2h-font);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--kz-red-bright);
+    text-shadow: 0 0 8px rgba(227, 27, 22, .35);
+}
+
+/* ---------- Lista dos últimos confrontos ---------- */
+
+.h2h-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.h2h-set-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    border: 1px solid rgba(180, 0, 0, .24);
+    border-left: 4px solid rgba(227, 27, 22, .72);
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(9, 9, 9, .82), rgba(23, 23, 23, .62) 50%, rgba(9, 9, 9, .82));
+    font-family: var(--h2h-font);
+}
+
+.h2h-set-row:nth-child(even) {
+    border-left-color: rgba(130, 0, 0, .58);
+}
+
+.h2h-set-score {
+    flex: 0 0 44px;
+    width: 44px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: #d6d6d6;
+}
+
+.h2h-set-score.h2h-winner {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(143, 207, 66, .45);
+}
+
+.h2h-set-score.h2h-winner::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #6ea82f, #8fcf42, #6ea82f);
+}
+
+.h2h-set-score.h2h-loser::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #8a1512, #e31b16, #8a1512);
+}
+
+.h2h-set-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+}
+
+.h2h-set-torneio {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: #ededed;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.h2h-set-sub {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    color: var(--kz-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+    .h2h-title { font-size: 24px; letter-spacing: 3px; }
+    .h2h-name { font-size: 15px; }
+    .h2h-score { font-size: 28px; }
+}
