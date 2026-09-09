@@ -78,7 +78,7 @@ async function buscarHeadToHead(player1Id, player2Id) {
         player(id: $p1) {
             id
             gamerTag
-            sets(perPage: 40, page: 1, filters: { playerIds: [$p2] }) {
+            sets(perPage: 15, page: 1, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
@@ -292,7 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const linhas = nodes
                 .map(set => montarLinhaSet(set, res1, res2))
                 .filter(Boolean)
-                .sort((a, b) => (b.startAt - a.startAt) || String(b.setId).localeCompare(String(a.setId)));
+                .sort((a, b) => (b.startAt - a.startAt) || String(b.setId).localeCompare(String(a.setId)))
+                .slice(0, 10);
 
             resultadoDiv.innerHTML = montarHtmlH2H(linhas, res1.gamerTag, res2.gamerTag);
         } catch (e) {
