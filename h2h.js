@@ -55,13 +55,22 @@ async function resolverInputPlayer(valorBruto) {
     return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico ou o código do perfil.` };
 }
 
-// ---------- Busca dos sets entre os dois players ----------
+// ---------- Busca dos sets ----------
+// IMPORTANTE: o filtro "filters: { playerIds: [...] }" no campo player.sets
+// não restringe de fato pelo adversário na API pública do start.gg (retorna
+// o histórico inteiro do player, ignorando o filtro). Por isso a estratégia
+// aqui é varrer o histórico de sets de UM dos players, página por página, e
+// filtrar no navegador quem realmente jogou contra o outro — igual ao que
+// o resto do HUB já faz pro histórico por torneio.
 
-async function buscarHeadToHead(player1Id, player2Id, perPage, page) {
-    const query = `query HeadToHead($p1: ID!, $p2: ID!, $perPage: Int!, $page: Int!) {
-        player(id: $p1) {
+const H2H_PERPAGE = 15;
+const H2H_MAX_PAGINAS = 15; // até 225 sets revisados
+
+async function buscarPaginaDeSets(playerId, perPage, page) {
+    const query = `query PlayerSets($p: ID!, $perPage: Int!, $page: Int!) {
+        player(id: $p) {
             id
-            sets(perPage: $perPage, page: $page, filters: { playerIds: [$p2] }) {
+            sets(perPage: $perPage, page: $page) {
                 pageInfo { total }
                 nodes {
                     id
@@ -85,48 +94,54 @@ async function buscarHeadToHead(player1Id, player2Id, perPage, page) {
             }
         }
     }`;
-    return await callStartGG(query, { p1: player1Id, p2: player2Id, perPage, page });
+    return await callStartGG(query, { p: playerId, perPage, page });
 }
 
-// Testa tamanhos de página decrescentes até a API aceitar a complexidade,
-// depois usa pageInfo.total (o total real de confrontos, segundo a própria API)
-// pra saber com certeza se precisa buscar mais páginas até chegar em 20.
 async function buscarTodosOsSets(p1Id, p2Id) {
-    const TENTATIVAS_PERPAGE = [15, 10, 6, 3];
-    let perPageOk = null;
-    let nodes = [];
-    let total = null;
-    let ultimoErro = null;
+    // Pega a 1ª página de cada um só pra saber quem tem menos sets no total
+    // (varrer o histórico do que joga menos garante cobertura completa com menos requisições)
+    const [primeiraP1, primeiraP2] = await Promise.all([
+        buscarPaginaDeSets(p1Id, H2H_PERPAGE, 1),
+        buscarPaginaDeSets(p2Id, H2H_PERPAGE, 1)
+    ]);
 
-    for (const tentativa of TENTATIVAS_PERPAGE) {
-        const json = await buscarHeadToHead(p1Id, p2Id, tentativa, 1);
-        if (json.errors) {
-            ultimoErro = json.errors[0]?.message || 'Erro desconhecido da API.';
-            continue;
+    if (primeiraP1.errors && primeiraP2.errors) {
+        return { erro: primeiraP1.errors[0]?.message || primeiraP2.errors[0]?.message || 'Erro desconhecido da API.' };
+    }
+
+    const totalP1 = primeiraP1.errors ? Infinity : (primeiraP1.data?.player?.sets?.pageInfo?.total ?? Infinity);
+    const totalP2 = primeiraP2.errors ? Infinity : (primeiraP2.data?.player?.sets?.pageInfo?.total ?? Infinity);
+
+    let baseId, jsonAtual;
+    if (totalP1 <= totalP2) { baseId = p1Id; jsonAtual = primeiraP1; }
+    else { baseId = p2Id; jsonAtual = primeiraP2; }
+
+    let matches = [];
+    let pagina = 1;
+
+    while (pagina <= H2H_MAX_PAGINAS) {
+        if (jsonAtual.errors) {
+            return { erro: jsonAtual.errors[0]?.message || 'Erro desconhecido da API.', matches };
         }
-        perPageOk = tentativa;
-        const setsConn = json.data?.player?.sets;
-        nodes = setsConn?.nodes || [];
-        total = setsConn?.pageInfo?.total ?? nodes.length;
-        break;
+
+        const nodes = jsonAtual.data?.player?.sets?.nodes || [];
+        nodes.forEach(set => {
+            const linha = montarLinhaSet(set, p1Id, p2Id);
+            if (linha) matches.push(linha);
+        });
+
+        if (nodes.length < H2H_PERPAGE) break; // acabou o histórico desse player
+        if (matches.length >= 20) break;
+
+        pagina++;
+        jsonAtual = await buscarPaginaDeSets(baseId, H2H_PERPAGE, pagina);
     }
 
-    if (perPageOk === null) {
-        return { erro: ultimoErro || 'Não foi possível consultar a API.' };
-    }
-
-    const alvo = Math.min(total, 20);
-    let page = 2;
-    while (nodes.length < alvo && page <= 8) {
-        const json = await buscarHeadToHead(p1Id, p2Id, perPageOk, page);
-        if (json.errors) break;
-        const novos = json.data?.player?.sets?.nodes || [];
-        if (novos.length === 0) break;
-        nodes = nodes.concat(novos);
-        page++;
-    }
-
-    return { nodes, total };
+    return {
+        matches,
+        setsRevisados: pagina * H2H_PERPAGE,
+        esgotouLimite: pagina > H2H_MAX_PAGINAS
+    };
 }
 
 function encontrarSlot(set, playerId) {
@@ -163,17 +178,17 @@ function montarLinhaSet(set, p1Id, p2Id) {
     };
 }
 
-function montarHtmlH2H(linhas, totalReportadoPelaApi) {
+function montarHtmlH2H(linhas, esgotouLimite) {
     if (linhas.length === 0) {
-        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players.</div>';
+        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players (revisei o histórico recente de ambos).</div>';
     }
 
     const winsP1 = linhas.filter(l => l.venceuP1).length;
     const winsP2 = linhas.filter(l => l.venceuP2).length;
     const nome1 = linhas[0].nome1;
     const nome2 = linhas[0].nome2;
-    const avisoTotal = totalReportadoPelaApi > linhas.length
-        ? `<p class="text-slate-500 text-[11px] text-center mb-4">Mostrando os ${linhas.length} mais recentes de ${totalReportadoPelaApi} confrontos no total.</p>`
+    const aviso = esgotouLimite
+        ? `<p class="text-slate-500 text-[11px] text-center mb-4">Revisei os sets mais recentes de ambos — pode haver confrontos mais antigos que não foram checados.</p>`
         : '';
 
     let html = `
@@ -188,7 +203,7 @@ function montarHtmlH2H(linhas, totalReportadoPelaApi) {
                 <span class="h2h-name">${nome2}</span>
             </div>
         </div>
-        ${avisoTotal}
+        ${aviso}
         <div class="h2h-list">
     `;
 
@@ -243,23 +258,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Buscando confrontos...</p></div>';
+        resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Revisando o histórico dos players...</p></div>';
 
         try {
             const resultado = await buscarTodosOsSets(p1Id, p2Id);
 
-            if (resultado.erro) {
+            if (resultado.erro && (!resultado.matches || resultado.matches.length === 0)) {
                 resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: ${resultado.erro}</div>`;
                 return;
             }
 
-            const linhas = resultado.nodes
-                .map(set => montarLinhaSet(set, p1Id, p2Id))
-                .filter(Boolean)
+            const linhas = (resultado.matches || [])
                 .sort((a, b) => b.startAt - a.startAt)
                 .slice(0, 20);
 
-            resultadoDiv.innerHTML = montarHtmlH2H(linhas, resultado.total);
+            resultadoDiv.innerHTML = montarHtmlH2H(linhas, resultado.esgotouLimite);
         } catch (e) {
             resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos: ${e.message}</div>`;
         }
