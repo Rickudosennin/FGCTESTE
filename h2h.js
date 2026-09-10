@@ -63,8 +63,8 @@ async function resolverInputPlayer(valorBruto) {
 // filtrar no navegador quem realmente jogou contra o outro — igual ao que
 // o resto do HUB já faz pro histórico por torneio.
 
-const H2H_PERPAGE = 15;
-const H2H_MAX_PAGINAS = 15; // até 225 sets revisados
+const H2H_PERPAGE = 20;
+const H2H_MAX_PAGINAS = 30; // até 600 sets revisados
 
 async function buscarPaginaDeSets(playerId, perPage, page) {
     const query = `query PlayerSets($p: ID!, $perPage: Int!, $page: Int!) {
@@ -97,7 +97,7 @@ async function buscarPaginaDeSets(playerId, perPage, page) {
     return await callStartGG(query, { p: playerId, perPage, page });
 }
 
-async function buscarTodosOsSets(p1Id, p2Id) {
+async function buscarTodosOsSets(p1Id, p2Id, onProgress) {
     // Pega a 1ª página de cada um só pra saber quem tem menos sets no total
     // (varrer o histórico do que joga menos garante cobertura completa com menos requisições)
     const [primeiraP1, primeiraP2] = await Promise.all([
@@ -129,6 +129,8 @@ async function buscarTodosOsSets(p1Id, p2Id) {
             const linha = montarLinhaSet(set, p1Id, p2Id);
             if (linha) matches.push(linha);
         });
+
+        if (onProgress) onProgress(pagina, matches.length);
 
         if (nodes.length < H2H_PERPAGE) break; // acabou o histórico desse player
         if (matches.length >= 20) break;
@@ -261,7 +263,9 @@ document.addEventListener('DOMContentLoaded', () => {
         resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Revisando o histórico dos players...</p></div>';
 
         try {
-            const resultado = await buscarTodosOsSets(p1Id, p2Id);
+            const resultado = await buscarTodosOsSets(p1Id, p2Id, (pagina, encontrados) => {
+                resultadoDiv.innerHTML = `<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Revisando histórico (página ${pagina}) — ${encontrados} confronto(s) encontrado(s)...</p></div>`;
+            });
 
             if (resultado.erro && (!resultado.matches || resultado.matches.length === 0)) {
                 resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: ${resultado.erro}</div>`;
