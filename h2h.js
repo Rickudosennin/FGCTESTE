@@ -4,10 +4,8 @@
 // ---------- Resolução do input (ID numérico / slug-hash / gamertag) ----------
 
 function extrairHashPerfil(valor) {
-    // URL completa ou parcial contendo /user/HASH (ex: start.gg/user/9ca08de2)
     const porUrl = valor.match(/user\/([a-f0-9]{6,12})/i);
     if (porUrl) return porUrl[1];
-    // Hash puro colado direto (precisa ter ao menos 1 letra a-f pra não confundir com ID numérico)
     if (/^[a-f0-9]{6,12}$/i.test(valor) && /[a-f]/i.test(valor)) return valor;
     return null;
 }
@@ -34,12 +32,10 @@ async function resolverInputPlayer(valorBruto) {
     const valor = (valorBruto || '').trim();
     if (!valor) return { erro: 'Campo vazio.' };
 
-    // 1. ID numérico puro -> usa direto, sem chamada extra
     if (/^\d+$/.test(valor)) {
         return { playerId: valor };
     }
 
-    // 2. Código/hash do perfil (ou URL do start.gg contendo /user/HASH)
     const hash = extrairHashPerfil(valor);
     if (hash) {
         try {
@@ -51,7 +47,6 @@ async function resolverInputPlayer(valorBruto) {
         }
     }
 
-    // 3. Gamertag: busca na lista de players já conhecidos/cacheados pelo HUB
     try {
         const resolvido = await resolverGamertagLocal(valor);
         if (resolvido) return resolvido;
@@ -61,15 +56,13 @@ async function resolverInputPlayer(valorBruto) {
 }
 
 // ---------- Busca dos sets entre os dois players ----------
-// Query enxuta: só os campos realmente usados na renderização, pra caber
-// dentro do limite de complexidade (máx. 1000 "objetos" por request) da API
-// pública do start.gg.
 
 async function buscarHeadToHead(player1Id, player2Id, perPage, page) {
     const query = `query HeadToHead($p1: ID!, $p2: ID!, $perPage: Int!, $page: Int!) {
         player(id: $p1) {
             id
             sets(perPage: $perPage, page: $page, filters: { playerIds: [$p2] }) {
+                pageInfo { total }
                 nodes {
                     id
                     startAt
@@ -96,11 +89,13 @@ async function buscarHeadToHead(player1Id, player2Id, perPage, page) {
 }
 
 // Testa tamanhos de página decrescentes até a API aceitar a complexidade,
-// e busca páginas extras só se realmente precisar completar os 20 confrontos.
+// depois usa pageInfo.total (o total real de confrontos, segundo a própria API)
+// pra saber com certeza se precisa buscar mais páginas até chegar em 20.
 async function buscarTodosOsSets(p1Id, p2Id) {
     const TENTATIVAS_PERPAGE = [15, 10, 6, 3];
     let perPageOk = null;
     let nodes = [];
+    let total = null;
     let ultimoErro = null;
 
     for (const tentativa of TENTATIVAS_PERPAGE) {
@@ -110,7 +105,9 @@ async function buscarTodosOsSets(p1Id, p2Id) {
             continue;
         }
         perPageOk = tentativa;
-        nodes = json.data?.player?.sets?.nodes || [];
+        const setsConn = json.data?.player?.sets;
+        nodes = setsConn?.nodes || [];
+        total = setsConn?.pageInfo?.total ?? nodes.length;
         break;
     }
 
@@ -118,19 +115,18 @@ async function buscarTodosOsSets(p1Id, p2Id) {
         return { erro: ultimoErro || 'Não foi possível consultar a API.' };
     }
 
-    // Se a primeira página veio cheia, pode haver mais confrontos: busca mais páginas
+    const alvo = Math.min(total, 20);
     let page = 2;
-    while (nodes.length > 0 && nodes.length % perPageOk === 0 && nodes.length < 20 && page <= 4) {
+    while (nodes.length < alvo && page <= 8) {
         const json = await buscarHeadToHead(p1Id, p2Id, perPageOk, page);
         if (json.errors) break;
         const novos = json.data?.player?.sets?.nodes || [];
         if (novos.length === 0) break;
         nodes = nodes.concat(novos);
-        if (novos.length < perPageOk) break;
         page++;
     }
 
-    return { nodes };
+    return { nodes, total };
 }
 
 function encontrarSlot(set, playerId) {
@@ -151,7 +147,8 @@ function montarLinhaSet(set, p1Id, p2Id) {
 
     const data = set.startAt ? new Date(set.startAt * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     const torneio = set.event?.tournament?.name || 'Torneio';
-    const evento = set.event?.name || '';
+    const nomeEvento = set.event?.name || '';
+    const evento = (nomeEvento && nomeEvento !== torneio) ? nomeEvento : '';
     const fase = set.fullRoundText || '';
 
     return {
@@ -166,7 +163,7 @@ function montarLinhaSet(set, p1Id, p2Id) {
     };
 }
 
-function montarHtmlH2H(linhas) {
+function montarHtmlH2H(linhas, totalReportadoPelaApi) {
     if (linhas.length === 0) {
         return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players.</div>';
     }
@@ -175,9 +172,12 @@ function montarHtmlH2H(linhas) {
     const winsP2 = linhas.filter(l => l.venceuP2).length;
     const nome1 = linhas[0].nome1;
     const nome2 = linhas[0].nome2;
+    const avisoTotal = totalReportadoPelaApi > linhas.length
+        ? `<p class="text-slate-500 text-[11px] text-center mb-4">Mostrando os ${linhas.length} mais recentes de ${totalReportadoPelaApi} confrontos no total.</p>`
+        : '';
 
     let html = `
-        <div class="glass-card p-6 rounded-xl mb-6 h2h-summary">
+        <div class="glass-card p-6 rounded-xl mb-2 h2h-summary">
             <div class="h2h-summary-player">
                 <span class="h2h-name">${nome1}</span>
                 <span class="h2h-score h2h-score-${winsP1 >= winsP2 ? 'lead' : 'behind'}">${winsP1}</span>
@@ -188,6 +188,7 @@ function montarHtmlH2H(linhas) {
                 <span class="h2h-name">${nome2}</span>
             </div>
         </div>
+        ${avisoTotal}
         <div class="h2h-list">
     `;
 
@@ -258,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .sort((a, b) => b.startAt - a.startAt)
                 .slice(0, 20);
 
-            resultadoDiv.innerHTML = montarHtmlH2H(linhas);
+            resultadoDiv.innerHTML = montarHtmlH2H(linhas, resultado.total);
         } catch (e) {
             resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos: ${e.message}</div>`;
         }
