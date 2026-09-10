@@ -61,15 +61,15 @@ async function resolverInputPlayer(valorBruto) {
 }
 
 // ---------- Busca dos sets entre os dois players ----------
-// perPage baixo de propósito: a API pública do start.gg tem limite de
-// complexidade por query, e como já filtramos por playerIds no servidor,
-// não precisamos pedir muito mais que os 20 que vamos exibir.
+// Query enxuta: só os campos realmente usados na renderização, pra caber
+// dentro do limite de complexidade (máx. 1000 "objetos" por request) da API
+// pública do start.gg.
 
-async function buscarHeadToHead(player1Id, player2Id, perPage) {
-    const query = `query HeadToHead($p1: ID!, $p2: ID!, $perPage: Int!) {
+async function buscarHeadToHead(player1Id, player2Id, perPage, page) {
+    const query = `query HeadToHead($p1: ID!, $p2: ID!, $perPage: Int!, $page: Int!) {
         player(id: $p1) {
             id
-            sets(perPage: $perPage, page: 1, filters: { playerIds: [$p2] }) {
+            sets(perPage: $perPage, page: $page, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
@@ -77,9 +77,8 @@ async function buscarHeadToHead(player1Id, player2Id, perPage) {
                     winnerId
                     displayScore
                     event {
-                        id
                         name
-                        tournament { id name }
+                        tournament { name }
                     }
                     slots {
                         entrant {
@@ -87,25 +86,51 @@ async function buscarHeadToHead(player1Id, player2Id, perPage) {
                             name
                             participants { player { id } }
                         }
-                        standing {
-                            stats { score { value } }
-                        }
+                        standing { stats { score { value } } }
                     }
                 }
             }
         }
     }`;
-    return await callStartGG(query, { p1: player1Id, p2: player2Id, perPage });
+    return await callStartGG(query, { p1: player1Id, p2: player2Id, perPage, page });
 }
 
-// Tenta com perPage maior primeiro; se a API recusar por complexidade,
-// tenta de novo com uma janela menor antes de desistir.
-async function buscarHeadToHeadComFallback(player1Id, player2Id) {
-    let json = await buscarHeadToHead(player1Id, player2Id, 25);
-    if (json.errors) {
-        json = await buscarHeadToHead(player1Id, player2Id, 12);
+// Testa tamanhos de página decrescentes até a API aceitar a complexidade,
+// e busca páginas extras só se realmente precisar completar os 20 confrontos.
+async function buscarTodosOsSets(p1Id, p2Id) {
+    const TENTATIVAS_PERPAGE = [15, 10, 6, 3];
+    let perPageOk = null;
+    let nodes = [];
+    let ultimoErro = null;
+
+    for (const tentativa of TENTATIVAS_PERPAGE) {
+        const json = await buscarHeadToHead(p1Id, p2Id, tentativa, 1);
+        if (json.errors) {
+            ultimoErro = json.errors[0]?.message || 'Erro desconhecido da API.';
+            continue;
+        }
+        perPageOk = tentativa;
+        nodes = json.data?.player?.sets?.nodes || [];
+        break;
     }
-    return json;
+
+    if (perPageOk === null) {
+        return { erro: ultimoErro || 'Não foi possível consultar a API.' };
+    }
+
+    // Se a primeira página veio cheia, pode haver mais confrontos: busca mais páginas
+    let page = 2;
+    while (nodes.length > 0 && nodes.length % perPageOk === 0 && nodes.length < 20 && page <= 4) {
+        const json = await buscarHeadToHead(p1Id, p2Id, perPageOk, page);
+        if (json.errors) break;
+        const novos = json.data?.player?.sets?.nodes || [];
+        if (novos.length === 0) break;
+        nodes = nodes.concat(novos);
+        if (novos.length < perPageOk) break;
+        page++;
+    }
+
+    return { nodes };
 }
 
 function encontrarSlot(set, playerId) {
@@ -220,16 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Buscando confrontos...</p></div>';
 
         try {
-            const json = await buscarHeadToHeadComFallback(p1Id, p2Id);
+            const resultado = await buscarTodosOsSets(p1Id, p2Id);
 
-            if (json.errors) {
-                const msg = json.errors[0]?.message || 'Erro desconhecido da API.';
-                resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na busca: ${msg}</div>`;
+            if (resultado.erro) {
+                resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: ${resultado.erro}</div>`;
                 return;
             }
 
-            const nodes = json.data?.player?.sets?.nodes || [];
-            const linhas = nodes
+            const linhas = resultado.nodes
                 .map(set => montarLinhaSet(set, p1Id, p2Id))
                 .filter(Boolean)
                 .sort((a, b) => b.startAt - a.startAt)
