@@ -80,6 +80,7 @@ async function buscarPaginaDeSets(playerId, perPage, page) {
                     displayScore
                     event {
                         name
+                        startAt
                         tournament { name }
                     }
                     slots {
@@ -157,19 +158,27 @@ function montarLinhaSet(set, p1Id, p2Id) {
     const slot2 = encontrarSlot(set, p2Id);
     if (!slot1 || !slot2 || (set.slots || []).length !== 2) return null;
 
+    // Ignora sets de equipe (ex: crew battles, squad strikes 5x5) onde cada
+    // "lado" é um time inteiro em vez de 1 jogador — não é um confronto real
+    // entre os dois players buscados, mesmo que ambos estejam nos times.
+    const p1SozinhoNoLado = (slot1.entrant?.participants || []).length === 1;
+    const p2SozinhoNoLado = (slot2.entrant?.participants || []).length === 1;
+    if (!p1SozinhoNoLado || !p2SozinhoNoLado) return null;
+
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
     const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant.id);
     const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant.id);
 
-    const data = set.startAt ? new Date(set.startAt * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const startAtReal = set.startAt || set.event?.startAt || 0;
+    const data = startAtReal ? new Date(startAtReal * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     const torneio = set.event?.tournament?.name || 'Torneio';
     const nomeEvento = set.event?.name || '';
     const evento = (nomeEvento && nomeEvento !== torneio) ? nomeEvento : '';
     const fase = set.fullRoundText || '';
 
     return {
-        startAt: set.startAt || 0,
+        startAt: startAtReal,
         data, torneio, evento, fase,
         nome1: slot1.entrant?.name || '?',
         nome2: slot2.entrant?.name || '?',
@@ -182,7 +191,7 @@ function montarLinhaSet(set, p1Id, p2Id) {
 
 function montarHtmlH2H(linhas, esgotouLimite) {
     if (linhas.length === 0) {
-        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players (revisei o histórico recente de ambos).</div>';
+        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players (revisei o histórico completo de ambos).</div>';
     }
 
     const winsP1 = linhas.filter(l => l.venceuP1).length;
@@ -191,7 +200,7 @@ function montarHtmlH2H(linhas, esgotouLimite) {
     const nome2 = linhas[0].nome2;
     const aviso = esgotouLimite
         ? `<p class="text-slate-500 text-[11px] text-center mb-4">Revisei os sets mais recentes de ambos — pode haver confrontos mais antigos que não foram checados.</p>`
-        : '';
+        : `<p class="text-slate-500 text-[11px] text-center mb-4">Histórico completo revisado — esses são todos os confrontos registrados entre os dois no start.gg.</p>`;
 
     let html = `
         <div class="glass-card p-6 rounded-xl mb-2 h2h-summary">
