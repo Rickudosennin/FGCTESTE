@@ -4,31 +4,20 @@
 // ---------- Resolução do input (ID numérico / slug-hash / gamertag) ----------
 
 function extrairHashPerfil(valor) {
-    const porUrl = valor.match(/user\/([a-zA-Z0-9_-]+)/i);
+    // URL completa ou parcial contendo /user/HASH (ex: start.gg/user/9ca08de2)
+    const porUrl = valor.match(/user\/([a-f0-9]{6,12})/i);
     if (porUrl) return porUrl[1];
-
+    // Hash puro colado direto (precisa ter ao menos 1 letra a-f pra não confundir com ID numérico)
     if (/^[a-f0-9]{6,12}$/i.test(valor) && /[a-f]/i.test(valor)) return valor;
-
     return null;
 }
 
 async function resolverSlugParaPlayerId(hash) {
-    const slugFormatado = hash.startsWith('user/') ? hash : `user/${hash}`;
-    const query = `query UserBySlug($slug: String) { user(slug: $slug) { id player { id gamerTag } } }`;
-    const json = await callStartGG(query, { slug: slugFormatado });
-
-    if (json.errors && json.errors.length > 0) {
-        console.error('Erro na API start.gg (UserBySlug):', json.errors);
-        return null;
-    }
-
-    const user = json.data?.user;
-    const player = user?.player;
-    return {
-        playerId: player?.id ? String(player.id) : null,
-        userId: user?.id ? String(user.id) : null,
-        gamerTag: player?.gamerTag || null
-    };
+    const query = `query UserBySlug($slug: String) { user(slug: $slug) { player { id gamerTag } } }`;
+    const json = await callStartGG(query, { slug: `user/${hash}` });
+    if (json.errors) throw new Error(json.errors[0]?.message || 'erro ao resolver perfil');
+    const player = json.data?.user?.player;
+    return player?.id ? { playerId: player.id, gamerTag: player.gamerTag } : null;
 }
 
 async function resolverGamertagLocal(termo) {
@@ -38,42 +27,49 @@ async function resolverGamertagLocal(termo) {
     if (!encontrados || encontrados.length === 0) return null;
     const exato = encontrados.find(p => p.gamerTag.toLowerCase() === termo.toLowerCase());
     const escolhido = exato || encontrados[0];
-    return { playerId: String(escolhido.playerId), gamerTag: escolhido.gamerTag };
+    return { playerId: escolhido.playerId, gamerTag: escolhido.gamerTag };
 }
 
 async function resolverInputPlayer(valorBruto) {
     const valor = (valorBruto || '').trim();
     if (!valor) return { erro: 'Campo vazio.' };
 
+    // 1. ID numérico puro -> usa direto, sem chamada extra
     if (/^\d+$/.test(valor)) {
         return { playerId: valor };
     }
 
+    // 2. Código/hash do perfil (ou URL do start.gg contendo /user/HASH)
     const hash = extrairHashPerfil(valor);
     if (hash) {
         try {
             const resolvido = await resolverSlugParaPlayerId(hash);
             if (resolvido) return resolvido;
-        } catch (e) { /* cai pro próximo método */ }
-        return { erro: `Não encontrei um perfil de jogador associado ao código/slug "${hash}".` };
+            return { erro: `O perfil "${hash}" existe, mas não tem um Player vinculado no start.gg (nunca competiu em torneios com check-in por Player).` };
+        } catch (e) {
+            return { erro: `Falha ao resolver o código "${hash}": ${e.message}` };
+        }
     }
 
+    // 3. Gamertag: busca na lista de players já conhecidos/cacheados pelo HUB
     try {
         const resolvido = await resolverGamertagLocal(valor);
         if (resolvido) return resolvido;
     } catch (e) { /* segue pro erro abaixo */ }
 
-    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico do player.` };
+    return { erro: `Não encontrei "${valor}" nos players conhecidos. Tente o ID numérico ou o código do perfil.` };
 }
 
-// ---------- Busca robusta de Sets Recentes de ambos os jogadores ----------
+// ---------- Busca dos sets entre os dois players ----------
+// perPage baixo de propósito: a API pública do start.gg tem limite de
+// complexidade por query, e como já filtramos por playerIds no servidor,
+// não precisamos pedir muito mais que os 20 que vamos exibir.
 
-async function buscarHeadToHead(player1Id, player2Id) {
-    const querySets = `query PlayerRecentSets($pId: ID!) {
-        player(id: $pId) {
+async function buscarHeadToHead(player1Id, player2Id, perPage) {
+    const query = `query HeadToHead($p1: ID!, $p2: ID!, $perPage: Int!) {
+        player(id: $p1) {
             id
-            gamerTag
-            sets(perPage: 40, page: 1) {
+            sets(perPage: $perPage, page: 1, filters: { playerIds: [$p2] }) {
                 nodes {
                     id
                     startAt
@@ -89,12 +85,7 @@ async function buscarHeadToHead(player1Id, player2Id) {
                         entrant {
                             id
                             name
-                            participants {
-                                id
-                                gamerTag
-                                user { id }
-                                player { id gamerTag }
-                            }
+                            participants { player { id } }
                         }
                         standing {
                             stats { score { value } }
@@ -104,110 +95,61 @@ async function buscarHeadToHead(player1Id, player2Id) {
             }
         }
     }`;
-
-    const [res1, res2] = await Promise.all([
-        callStartGG(querySets, { pId: String(player1Id) }).catch(() => ({})),
-        callStartGG(querySets, { pId: String(player2Id) }).catch(() => ({}))
-    ]);
-
-    const mapaSets = new Map();
-    const nodes1 = res1.data?.player?.sets?.nodes || [];
-    const nodes2 = res2.data?.player?.sets?.nodes || [];
-
-    [...nodes1, ...nodes2].forEach(s => {
-        if (s && s.id) mapaSets.set(s.id, s);
-    });
-
-    return {
-        data: {
-            player: {
-                sets: {
-                    nodes: Array.from(mapaSets.values())
-                }
-            }
-        },
-        errors: res1.errors || res2.errors
-    };
+    return await callStartGG(query, { p1: player1Id, p2: player2Id, perPage });
 }
 
-function pertenceAoPlayer(slot, pInfo) {
-    if (!slot || !slot.entrant || !pInfo) return false;
-
-    const participantes = slot.entrant.participants || [];
-    for (const part of participantes) {
-        if (pInfo.playerId && part.player?.id && String(part.player.id) === String(pInfo.playerId)) return true;
-        if (pInfo.userId && part.user?.id && String(part.user.id) === String(pInfo.userId)) return true;
+// Tenta com perPage maior primeiro; se a API recusar por complexidade,
+// tenta de novo com uma janela menor antes de desistir.
+async function buscarHeadToHeadComFallback(player1Id, player2Id) {
+    let json = await buscarHeadToHead(player1Id, player2Id, 25);
+    if (json.errors) {
+        json = await buscarHeadToHead(player1Id, player2Id, 12);
     }
-
-    const targetTag = (pInfo.gamerTag || '').trim().toLowerCase();
-    if (targetTag) {
-        for (const part of participantes) {
-            const partTag = (part.gamerTag || part.player?.gamerTag || '').trim().toLowerCase();
-            if (partTag && partTag === targetTag) return true;
-        }
-
-        const entrantName = (slot.entrant.name || '').trim().toLowerCase();
-        if (entrantName === targetTag || entrantName.endsWith(targetTag) || entrantName.includes(targetTag)) {
-            return true;
-        }
-    }
-
-    return false;
+    return json;
 }
 
-function montarLinhaSet(set, p1Info, p2Info) {
-    const slots = set.slots || [];
-    if (slots.length < 2) return null;
+function encontrarSlot(set, playerId) {
+    return (set.slots || []).find(slot =>
+        slot.entrant?.participants?.some(p => String(p.player?.id) === String(playerId))
+    );
+}
 
-    // Garante que o Slot 1 é estritamente o P1 e o Slot 2 é o P2
-    const slot1 = slots.find(s => pertenceAoPlayer(s, p1Info));
-    const slot2 = slots.find(s => pertenceAoPlayer(s, p2Info));
-
-    // Se a partida não contiver AMBOS os jogadores selecionados, ignora
-    if (!slot1 || !slot2 || slot1 === slot2) return null;
+function montarLinhaSet(set, p1Id, p2Id) {
+    const slot1 = encontrarSlot(set, p1Id);
+    const slot2 = encontrarSlot(set, p2Id);
+    if (!slot1 || !slot2 || (set.slots || []).length !== 2) return null;
 
     const score1 = slot1.standing?.stats?.score?.value;
     const score2 = slot2.standing?.stats?.score?.value;
+    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant.id);
+    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant.id);
 
-    if (score1 === -1 || score2 === -1 || (set.displayScore && set.displayScore.toUpperCase().includes('DQ'))) {
-        return null;
-    }
-
-    const venceuP1 = set.winnerId && String(set.winnerId) === String(slot1.entrant?.id);
-    const venceuP2 = set.winnerId && String(set.winnerId) === String(slot2.entrant?.id);
-
-    const timestamp = set.startAt || 0;
-    const data = timestamp ? new Date(timestamp * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const data = set.startAt ? new Date(set.startAt * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     const torneio = set.event?.tournament?.name || 'Torneio';
     const evento = set.event?.name || '';
     const fase = set.fullRoundText || '';
 
     return {
-        setId: set.id,
-        startAt: timestamp,
-        data,
-        torneio,
-        evento,
-        fase,
-        nome1: slot1.entrant?.name || p1Info.gamerTag || '?',
-        nome2: slot2.entrant?.name || p2Info.gamerTag || '?',
+        startAt: set.startAt || 0,
+        data, torneio, evento, fase,
+        nome1: slot1.entrant?.name || '?',
+        nome2: slot2.entrant?.name || '?',
         score1: score1 ?? (set.displayScore || '-'),
         score2: score2 ?? '',
-        venceuP1,
-        venceuP2,
+        venceuP1, venceuP2,
         usaDisplayScoreCru: (score1 === null || score1 === undefined) && (score2 === null || score2 === undefined)
     };
 }
 
-function montarHtmlH2H(linhas, gamerTag1, gamerTag2) {
+function montarHtmlH2H(linhas) {
     if (linhas.length === 0) {
-        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto direto encontrado entre esses dois players.</div>';
+        return '<div class="text-slate-500 text-sm text-center py-8">Nenhum confronto encontrado entre esses dois players.</div>';
     }
 
     const winsP1 = linhas.filter(l => l.venceuP1).length;
     const winsP2 = linhas.filter(l => l.venceuP2).length;
-    const nome1 = gamerTag1 || linhas[0].nome1;
-    const nome2 = gamerTag2 || linhas[0].nome2;
+    const nome1 = linhas[0].nome1;
+    const nome2 = linhas[0].nome2;
 
     let html = `
         <div class="glass-card p-6 rounded-xl mb-6 h2h-summary">
@@ -267,7 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res1.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 1: ${res1.erro}</div>`; return; }
         if (res2.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 2: ${res2.erro}</div>`; return; }
 
-        if (String(res1.playerId) === String(res2.playerId)) {
+        const p1Id = res1.playerId;
+        const p2Id = res2.playerId;
+
+        if (String(p1Id) === String(p2Id)) {
             resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Os dois players resolveram pro mesmo ID. Confira os dados digitados.</div>';
             return;
         }
@@ -275,25 +220,24 @@ document.addEventListener('DOMContentLoaded', () => {
         resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Buscando confrontos...</p></div>';
 
         try {
-            const json = await buscarHeadToHead(res1.playerId, res2.playerId);
+            const json = await buscarHeadToHeadComFallback(p1Id, p2Id);
 
-            if (json.errors && json.errors.length > 0) {
-                const det = json.errors[0]?.message || 'Erro desconhecido na API.';
-                resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: ${det}</div>`;
+            if (json.errors) {
+                const msg = json.errors[0]?.message || 'Erro desconhecido da API.';
+                resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na busca: ${msg}</div>`;
                 return;
             }
 
             const nodes = json.data?.player?.sets?.nodes || [];
-
             const linhas = nodes
-                .map(set => montarLinhaSet(set, res1, res2))
+                .map(set => montarLinhaSet(set, p1Id, p2Id))
                 .filter(Boolean)
-                .sort((a, b) => (b.startAt - a.startAt) || String(b.setId).localeCompare(String(a.setId)))
-                .slice(0, 10);
+                .sort((a, b) => b.startAt - a.startAt)
+                .slice(0, 20);
 
-            resultadoDiv.innerHTML = montarHtmlH2H(linhas, res1.gamerTag, res2.gamerTag);
+            resultadoDiv.innerHTML = montarHtmlH2H(linhas);
         } catch (e) {
-            resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Erro de conexão ao buscar confrontos. Tente novamente.</div>';
+            resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos: ${e.message}</div>`;
         }
     });
 });
