@@ -2,7 +2,7 @@
 // Token fine-grained do GitHub, com permissão APENAS "Issues: Read and write"
 // restrita a este repositório. Fica exposto no client — é um risco aceito
 // (alguém pode spammar issues), mas não dá acesso a mais nada do repo.
-const GITHUB_ISSUES_TOKEN = ''; // preencher com o token fine-grained
+const GITHUB_ISSUES_TOKEN = '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'; // preencher com o token fine-grained
 const GITHUB_REPO = 'Rickudosennin/fgchub';
 const CACHE_JSON_PATH = 'players-cache.json'; // servido estático, mesmo domínio
 
