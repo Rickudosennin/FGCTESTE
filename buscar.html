@@ -29,13 +29,10 @@
             <button id="btn_mostrar_salvos" class="text-xs text-slate-500 hover:text-red-400 transition">
                 <i class="fa-solid fa-database"></i> Mostrar players salvos (<span id="contador_salvos">0</span>)
             </button>
-            <button id="btn_limpar_salvos" class="text-xs text-red-600 hover:text-red-400 transition">
-                <i class="fa-solid fa-trash"></i> Limpar cache
-            </button>
         </div>
 
         <div id="lista_salvos" class="hidden glass-card p-4 rounded-xl mb-4 max-h-60 overflow-y-auto">
-            <p class="text-xs text-slate-400 mb-2">Players salvos localmente:</p>
+            <p class="text-xs text-slate-400 mb-2">Players salvos (cache compartilhado):</p>
             <div id="conteudo_salvos" class="text-sm text-white space-y-1"></div>
         </div>
 
@@ -53,23 +50,20 @@
         const listaSalvosDiv = document.getElementById('lista_salvos');
         const conteudoSalvos = document.getElementById('conteudo_salvos');
         const btnMostrar = document.getElementById('btn_mostrar_salvos');
-        const btnLimpar = document.getElementById('btn_limpar_salvos');
         let listaCompleta = [];
 
         function atualizarContador() {
-            try {
-                const lista = JSON.parse(localStorage.getItem('fgchub_local_players') || '[]');
-                contadorSalvos.textContent = lista.length;
-                if (!listaSalvosDiv.classList.contains('hidden')) {
-                    if (lista.length === 0) {
-                        conteudoSalvos.innerHTML = '<span class="text-slate-500">Nenhum player salvo.</span>';
-                    } else {
-                        conteudoSalvos.innerHTML = lista.map(p => 
-                            `<span class="block text-xs">${p.prefix ? p.prefix + ' | ' : ''}${p.gamerTag} (${p.playerId})</span>`
-                        ).join('');
-                    }
+            const lista = listaCompleta || [];
+            contadorSalvos.textContent = lista.length;
+            if (!listaSalvosDiv.classList.contains('hidden')) {
+                if (lista.length === 0) {
+                    conteudoSalvos.innerHTML = '<span class="text-slate-500">Nenhum player salvo.</span>';
+                } else {
+                    conteudoSalvos.innerHTML = lista.map(p =>
+                        `<span class="block text-xs">${p.prefix ? p.prefix + ' | ' : ''}${p.gamerTag} (${p.playerId})</span>`
+                    ).join('');
                 }
-            } catch (e) {}
+            }
         }
 
         function renderizarLista(lista) {
@@ -123,14 +117,6 @@
             listaSalvosDiv.classList.toggle('hidden');
             if (!listaSalvosDiv.classList.contains('hidden')) {
                 atualizarContador();
-            }
-        });
-
-        btnLimpar.addEventListener('click', () => {
-            if (confirm('Limpar a lista de players salvos localmente neste navegador?')) {
-                localStorage.removeItem('fgchub_local_players');
-                atualizarContador();
-                carregarDados();
             }
         });
 

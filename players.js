@@ -57,21 +57,9 @@ async function _salvarPerfilCacheCompartilhado(playerId, dados) {
 }
 
 function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
-    try {
-        const lista = JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
-        if (!lista.some(p => p.playerId === playerId)) {
-            lista.push({ playerId, gamerTag, prefix });
-            localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(lista));
-            const contador = document.getElementById('contador_salvos');
-            if (contador) contador.textContent = lista.length;
-        }
-    } catch (e) {}
-}
-
-function _carregarPlayersLocal() {
-    try {
-        return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
-    } catch (e) { return []; }
+    // Não faz mais nada: a lista de players conhecidos agora vem do
+    // players-cache.json compartilhado (ver carregarPlayersConhecidos).
+    // Mantida como no-op só pra não quebrar chamadas existentes.
 }
 
 // ==================== PROCESSAMENTO ====================
@@ -246,24 +234,26 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (apenas localStorage) ====================
+// ==================== BUSCA DE PLAYERS (cache compartilhado via Git) ====================
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
 
-    const locais = _carregarPlayersLocal();
+    const cache = await _carregarCacheCompartilhado();
     const mapa = new Map();
-    locais.forEach(p => {
-        const id = String(p.playerId);
+
+    Object.entries(cache.players || {}).forEach(([id, dados]) => {
+        if (!dados || !dados.gamerTag) return;
         if (!mapa.has(id)) {
-            mapa.set(id, { 
-                playerId: id, 
-                gamerTag: p.gamerTag, 
-                prefix: p.prefix || '',
-                placement: null 
+            mapa.set(id, {
+                playerId: id,
+                gamerTag: dados.gamerTag,
+                prefix: dados.playerPrefix || '',
+                placement: null
             });
         }
     });
+
     _listaPlayersConhecidos = Array.from(mapa.values());
     return _listaPlayersConhecidos;
 }
