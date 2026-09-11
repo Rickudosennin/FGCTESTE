@@ -127,14 +127,8 @@
         });
 
         btnLimpar.addEventListener('click', () => {
-            if (confirm('Limpar todos os players salvos localmente?')) {
+            if (confirm('Limpar a lista de players salvos localmente neste navegador?')) {
                 localStorage.removeItem('fgchub_local_players');
-                const keys = Object.keys(localStorage);
-                keys.forEach(key => {
-                    if (key.startsWith('fgchub_profile_')) {
-                        localStorage.removeItem(key);
-                    }
-                });
                 atualizarContador();
                 carregarDados();
             }

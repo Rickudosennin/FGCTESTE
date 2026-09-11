@@ -1,10 +1,60 @@
 // ==================== CONFIG ====================
-const GITHUB_ISSUES_TOKEN = ''; // Deixe vazio
-const CACHE_MAX_IDADE_HORAS = 24;
+// Token fine-grained do GitHub, com permissão APENAS "Issues: Read and write"
+// restrita a este repositório. Fica exposto no client — é um risco aceito
+// (alguém pode spammar issues), mas não dá acesso a mais nada do repo.
+const GITHUB_ISSUES_TOKEN = ''; // preencher com o token fine-grained
+const GITHUB_REPO = 'Rickudosennin/fgchub';
+const CACHE_JSON_PATH = 'players-cache.json'; // servido estático, mesmo domínio
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
+// Continua local apenas para a lista de "players conhecidos" da busca por
+// gamertag (buscar.html) — não guarda mais os dados do perfil em si.
 const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
-const PROFILE_CACHE_PREFIX = 'fgchub_profile_';
+
+// ==================== CACHE COMPARTILHADO (players-cache.json via Git) ====================
+let _cacheCompartilhadoPromise = null;
+
+function _carregarCacheCompartilhado() {
+    if (!_cacheCompartilhadoPromise) {
+        _cacheCompartilhadoPromise = fetch(CACHE_JSON_PATH, { cache: 'no-store' })
+            .then(r => r.ok ? r.json() : { players: {} })
+            .then(json => json && json.players ? json : { players: {} })
+            .catch(() => ({ players: {} }));
+    }
+    return _cacheCompartilhadoPromise;
+}
+
+async function _lerPerfilCacheCompartilhado(playerId) {
+    const cache = await _carregarCacheCompartilhado();
+    return cache.players[String(playerId)] || null;
+}
+
+// Atualiza o cache em memória na hora (pra quem está navegando não esperar
+// a Action rodar) e dispara a Issue que vai gerar o commit de verdade.
+async function _salvarPerfilCacheCompartilhado(playerId, dados) {
+    const cache = await _carregarCacheCompartilhado();
+    cache.players[String(playerId)] = dados;
+
+    if (!GITHUB_ISSUES_TOKEN) return; // sem token configurado, só fica em memória
+
+    try {
+        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`,
+                'Accept': 'application/vnd.github+json'
+            },
+            body: JSON.stringify({
+                title: `[cache] atualizar player ${playerId}`,
+                labels: ['player-cache-update'],
+                body: '```json\n' + JSON.stringify({ playerId: String(playerId), dados }, null, 2) + '\n```'
+            })
+        });
+    } catch (e) {
+        // Falhou em abrir a issue (rate limit, offline, etc.) — não trava a
+        // navegação, o dado só não fica persistido pra outros visitantes ainda.
+    }
+}
 
 function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
     try {
@@ -22,32 +72,6 @@ function _carregarPlayersLocal() {
     try {
         return JSON.parse(localStorage.getItem(LOCAL_PLAYERS_KEY) || '[]');
     } catch (e) { return []; }
-}
-
-// ==================== CACHE DE PERFIL NO LOCALSTORAGE ====================
-function _salvarPerfilCache(playerId, dados) {
-    try {
-        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
-        const cacheData = {
-            dados: dados,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-    } catch (e) {}
-}
-
-function _lerPerfilCache(playerId) {
-    try {
-        const cacheKey = PROFILE_CACHE_PREFIX + playerId;
-        const raw = localStorage.getItem(cacheKey);
-        if (!raw) return null;
-        const cacheData = JSON.parse(raw);
-        const idade = (Date.now() - cacheData.timestamp) / 3600000;
-        if (idade < CACHE_MAX_IDADE_HORAS) {
-            return cacheData.dados;
-        }
-        return null;
-    } catch (e) { return null; }
 }
 
 // ==================== PROCESSAMENTO ====================
@@ -207,16 +231,17 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '') {
     if (!forceRefresh) {
-        const cacheData = _lerPerfilCache(playerId);
+        const cacheData = await _lerPerfilCacheCompartilhado(playerId);
         if (cacheData) {
             if (prefix && !cacheData.playerPrefix) {
                 cacheData.playerPrefix = prefix;
             }
+            _salvarPlayerLocal(playerId, gamerTag, prefix);
             return { dados: cacheData, fonte: 'cache' };
         }
     }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
-    _salvarPerfilCache(playerId, dados);
+    await _salvarPerfilCacheCompartilhado(playerId, dados);
     _salvarPlayerLocal(playerId, gamerTag, prefix);
     return { dados, fonte: 'live' };
 }
