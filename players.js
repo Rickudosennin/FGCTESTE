@@ -3,7 +3,7 @@
 // restrita a este repositório. Fica exposto no client — é um risco aceito
 // (alguém pode spammar issues), mas não dá acesso a mais nada do repo.
 const GITHUB_ISSUES_TOKEN = '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'; // preencher com o token fine-grained
-const GITHUB_REPO = 'Rickudosennin/fgchub';
+const GITHUB_REPO = 'Rickudosennin/FGCTESTE'; // trocar pra 'Rickudosennin/fgchub' quando for pra produção
 const CACHE_JSON_PATH = 'players-cache.json'; // servido estático, mesmo domínio
 
 // ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
