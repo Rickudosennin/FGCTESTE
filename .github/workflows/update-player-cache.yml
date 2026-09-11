@@ -1,1 +1,77 @@
+name: Atualizar Cache de Players
 
+# Dispara toda vez que uma Issue é aberta com a label "player-cache-update".
+# O players.js abre essa Issue automaticamente quando busca um player que
+# ainda não está no cache compartilhado (players-cache.json).
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  atualizar-cache:
+    if: contains(github.event.issue.labels.*.name, 'player-cache-update')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ler o JSON da issue e atualizar players-cache.json
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body || '';
+
+            const match = body.match(/```json\s*([\s\S]*?)\s*```/);
+            if (!match) {
+              core.setFailed('Não encontrei um bloco ```json``` no corpo da issue.');
+              return;
+            }
+
+            let payload;
+            try {
+              payload = JSON.parse(match[1]);
+            } catch (e) {
+              core.setFailed('JSON inválido no corpo da issue: ' + e.message);
+              return;
+            }
+
+            if (!payload.playerId || !payload.dados) {
+              core.setFailed('Faltando playerId ou dados no payload da issue.');
+              return;
+            }
+
+            const path = 'players-cache.json';
+            let cache = { players: {} };
+            if (fs.existsSync(path)) {
+              cache = JSON.parse(fs.readFileSync(path, 'utf8'));
+            }
+            if (!cache.players) cache.players = {};
+
+            cache.players[String(payload.playerId)] = payload.dados;
+
+            fs.writeFileSync(path, JSON.stringify(cache, null, 2) + '\n');
+            core.exportVariable('PLAYER_ID', String(payload.playerId));
+
+      - name: Commit e push
+        run: |
+          git config user.name "fgchub-bot"
+          git config user.email "actions@github.com"
+          git add players-cache.json
+          git diff --cached --quiet || git commit -m "cache: atualiza player ${PLAYER_ID}"
+          git push
+
+      - name: Fechar a issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed'
+            });
