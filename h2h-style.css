@@ -12,6 +12,11 @@
     --h2h-font: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
 }
 
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 .h2h-title {
     font-family: var(--h2h-font);
     font-weight: 800;
@@ -26,9 +31,11 @@
 
 .h2h-summary {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    justify-content: center;
+    row-gap: 10px;
+    column-gap: 16px;
     font-family: var(--h2h-font);
 }
 
@@ -37,6 +44,9 @@
     align-items: center;
     gap: 14px;
     min-width: 0;
+    max-width: 100%;
+    flex: 1 1 auto;
+    justify-content: center;
 }
 
 .h2h-summary-player-right {
@@ -53,6 +63,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 38vw;
 }
 
 .h2h-score {
@@ -167,6 +178,14 @@
 
 @media (max-width: 640px) {
     .h2h-title { font-size: 24px; letter-spacing: 3px; }
-    .h2h-name { font-size: 15px; }
-    .h2h-score { font-size: 28px; }
+    .h2h-name { font-size: 15px; max-width: 30vw; }
+    .h2h-score { font-size: 28px; min-width: 32px; }
+    .h2h-set-row { gap: 10px; padding: 12px; }
+    .h2h-set-score { flex-basis: 32px; width: 32px; font-size: 20px; }
+    .h2h-set-torneio {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        font-size: 13px;
+    }
 }
