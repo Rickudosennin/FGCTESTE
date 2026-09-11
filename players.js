@@ -2,7 +2,7 @@
 // Token fine-grained do GitHub, com permissão APENAS "Issues: Read and write"
 // restrita a este repositório. Fica exposto no client — é um risco aceito
 // (alguém pode spammar issues), mas não dá acesso a mais nada do repo.
-const GITHUB_ISSUES_TOKEN = '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'; // preencher com o token fine-grained
+const GITHUB_ISSUES_TOKEN = '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'; // preencher com o token fine-grained
 const GITHUB_REPO = 'Rickudosennin/FGCTESTE'; // trocar pra 'Rickudosennin/fgchub' quando for pra produção
 const CACHE_JSON_PATH = 'players-cache.json'; // servido estático, mesmo domínio
 
@@ -35,10 +35,13 @@ async function _salvarPerfilCacheCompartilhado(playerId, dados) {
     const cache = await _carregarCacheCompartilhado();
     cache.players[String(playerId)] = dados;
 
-    if (!GITHUB_ISSUES_TOKEN) return; // sem token configurado, só fica em memória
+    if (!GITHUB_ISSUES_TOKEN) {
+        alert('[DEBUG] GITHUB_ISSUES_TOKEN está vazio — a issue não vai ser criada.');
+        return;
+    }
 
     try {
-        await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
+        const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`,
@@ -50,7 +53,14 @@ async function _salvarPerfilCacheCompartilhado(playerId, dados) {
                 body: '```json\n' + JSON.stringify({ playerId: String(playerId), dados }, null, 2) + '\n```'
             })
         });
+        if (!resp.ok) {
+            const texto = await resp.text();
+            alert('[DEBUG] Falha ao criar issue. Status ' + resp.status + ': ' + texto.slice(0, 300));
+        } else {
+            alert('[DEBUG] Issue criada com sucesso pro player ' + playerId + '!');
+        }
     } catch (e) {
+        alert('[DEBUG] Erro de rede ao tentar criar a issue: ' + e.message);
         // Falhou em abrir a issue (rate limit, offline, etc.) — não trava a
         // navegação, o dado só não fica persistido pra outros visitantes ainda.
     }
