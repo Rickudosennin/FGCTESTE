@@ -582,7 +582,7 @@ async function carregarBracketPool(phaseGroupId, container) {
                         id fullRoundText round state 
                         stream { id } 
                         slots { 
-                            entrant { name id participants { user { location { country } } } } 
+                            entrant { name id participants { prefix user { location { country } } } } 
                             standing { stats { score { value } } } 
                         } 
                     } 
@@ -623,8 +623,12 @@ async function carregarBracketPool(phaseGroupId, container) {
             rData.sets.sort((a,b) => a.id - b.id);
             rData.sets.forEach(set => {
                 const p1=set.slots[0], p2=set.slots[1], s1=p1?.standing?.stats?.score?.value??0, s2=p2?.standing?.stats?.score?.value??0, done=set.state===3, onStream=set.state===2 && set.stream!==null;
-                const card = document.createElement('div'); card.id=`set-${set.id}`; card.className=`brk-match-card ${onStream?'on-stream':''}`;
+                const prefix1 = (p1?.entrant?.participants?.[0]?.prefix || '').trim().toLowerCase();
+                const prefix2 = (p2?.entrant?.participants?.[0]?.prefix || '').trim().toLowerCase();
+                const mesmaEquipe = rData.round === 1 && prefix1 && p1?.entrant && p2?.entrant && prefix1 === prefix2;
+                const card = document.createElement('div'); card.id=`set-${set.id}`; card.className=`brk-match-card ${onStream?'on-stream':''} ${mesmaEquipe?'brk-same-team':''}`;
                 card.innerHTML = `
+                    ${mesmaEquipe ? `<div class="brk-same-team-tag"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Mesma equipe/prefixo</div>` : ''}
                     <div class="brk-player ${done&&s1>s2?'brk-winner':(done&&s2>s1?'brk-loser':'')}"><div class="brk-name-container">${getFlagHTMLBracket(p1?.entrant)}<div class="brk-name">${p1?.entrant?.name||'TBD'}</div></div><div class="brk-score">${done?(s1<0?'DQ':s1):'-'}</div></div>
                     <div class="brk-player ${done&&s2>s1?'brk-winner':(done&&s1>s2?'brk-loser':'')}"><div class="brk-name-container">${getFlagHTMLBracket(p2?.entrant)}<div class="brk-name">${p2?.entrant?.name||'TBD'}</div></div><div class="brk-score">${done?(s2<0?'DQ':s2):'-'}</div></div>
                 `;
