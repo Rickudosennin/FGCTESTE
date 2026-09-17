@@ -779,6 +779,7 @@ async function pesquisar() {
             let encHTML = dEnc ? `<div class="mt-1"><p class="text-[10px] text-slate-400 font-bold uppercase italic">Inscrições encerram em: ${dEnc.toLocaleDateString('pt-BR')} às ${dEnc.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</p><p id="${timerId}" class="text-[10px] timer-red uppercase italic">Calculando...</p></div>` : "";
             card.innerHTML = `<div style="position:relative;height:130px;overflow:hidden;background:#111;">${banner?`<img src="${banner}" alt="Banner do torneio ${t.name.replace(/"/g,'&quot;')}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'">`:''}<div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(20,20,24,0.9) 100%);"></div><div style="position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;"><span class="text-[10px] bg-red-900 text-red-100 px-2 py-1 rounded font-bold uppercase tracking-wider">${typeVal}</span><span class="text-xs text-white font-bold" style="text-shadow:0 1px 4px rgba(0,0,0,0.8)">${new Date(dataEventoProximo*1000).toLocaleDateString('pt-BR')}</span></div><button type="button" class="attendees-icon-left" onclick="event.stopPropagation();abrirAttendees('${t.url}')" aria-label="Ver inscritos deste torneio"><i class="fa-solid fa-users text-xs" aria-hidden="true"></i></button>${streamHTML}</div><div class="p-5 flex flex-col flex-1">${bracketBadgeHTML}${ligaBadgeHTML}<h3 class="font-bold text-lg text-white mb-2 leading-tight">${t.name}</h3><p class="text-[11px] font-black uppercase ${t.isRegistrationOpen?'text-green-500':'text-red-500'}">${t.isRegistrationOpen?'Inscrição Aberta':'Inscrição Fechada'}</p><div class="flex flex-col gap-1 mt-2"><p class="text-[11px] font-bold text-slate-400 uppercase"><i class="fas fa-users"></i> ${inscritos} inscrito${inscritos!==1?'s':''}</p><p class="text-[11px] font-bold text-slate-400 uppercase"><i class="fas fa-crown"></i> TO: ${toName}</p></div>${encHTML}${eventsListHTML}<p class="text-sm text-slate-400 mt-3 italic">${t.addrState?`<i class="fas fa-map-marker-alt"></i> ${t.addrState}`:`<i class="fas fa-globe"></i> ${t.owner?.location?.country||'Online'}`}</p><div class="mt-4 space-y-2">${rankingBtnHTML}<a href="https://start.gg${t.url}" target="_blank" class="block text-center bg-red-700 hover:bg-red-600 text-white font-black py-3 rounded-lg uppercase text-sm tracking-tighter transition shadow-sm">Página do Torneio</a><a href="${gerarLinkGoogleCalendar(t)}" target="_blank" class="block text-center btn-calendar text-slate-300 font-bold py-2 rounded-lg transition uppercase text-[10px] tracking-wider"><i class="fa-solid fa-calendar-plus mr-1"></i> Add ao Google Calendar</a><a href="javascript:void(0)" onclick="event.stopPropagation();abrirBracket('${t.url}')" class="btn-bracket"><i class="fa-solid fa-sitemap mr-1"></i> BRACKET</a></div></div>`;
             container.appendChild(card);
+            aplicarTiltCard(card);
             const checkInData = eventoAtual ? { checkInEnabled: eventoAtual.checkInEnabled, checkInDuration: eventoAtual.checkInDuration, checkInBuffer: eventoAtual.checkInBuffer } : null;
             const eventState = eventoAtual?.state || null;
             if (regCloseEfetivo || (checkInData && checkInData.checkInEnabled)) {
@@ -791,4 +792,23 @@ async function pesquisar() {
 document.getElementById('campo_tipo').addEventListener('change', function(e) { document.getElementById('campo_local').innerHTML = e.target.value === 'offline' ? `<option value="BR">Brasil</option><option value="US">Estados Unidos</option>` : `<option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option>`; });
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { fecharAttendees(); fecharRanking(); fecharBracket(); } });
+
+// ========== TILT 3D NOS CARDS DE TORNEIO ==========
+function aplicarTiltCard(card) {
+    const maxTilt = 7;
+    card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * maxTilt;
+        const rotateX = -((y - rect.height / 2) / (rect.height / 2)) * maxTilt;
+        card.style.transition = 'transform 0.05s linear';
+        card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-10px) scale(1.035)`;
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        card.style.transform = '';
+    });
+}
+
 carregarJogos(); carregarTorneiosDasLigas();
