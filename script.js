@@ -122,6 +122,10 @@ async function abrirAttendees(tournamentUrl) {
     const sidebar = document.getElementById('attendees_sidebar'), overlay = document.getElementById('attendees_overlay'), content = document.getElementById('attendees_content'), countEl = document.getElementById('attendees_count');
     sidebar.classList.add('open'); overlay.classList.add('active'); document.body.style.overflow = 'hidden';
     content.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando inscritos...</p></div>'; countEl.textContent = '';
+    const searchInput = document.getElementById('attendees_search_input');
+    if (searchInput) searchInput.value = '';
+    const hintEl = document.getElementById('attendees_search_global_hint');
+    if (hintEl) hintEl.style.display = 'none';
 
     _attendeesState = {
         slug: tournamentUrl.replace('/tournament/', '').split('/')[0],
@@ -191,7 +195,7 @@ async function _carregarPaginaAttendees() {
 
             // ========== LINK CORRIGIDO COM PREFIXO ==========
             html += `
-                <div class="attendee-item">
+                <div class="attendee-item" data-prefix="${prefix.toLowerCase().replace(/"/g, '&quot;')}" data-tag="${(p.gamerTag || '').toLowerCase().replace(/"/g, '&quot;')}">
                     <span class="attendee-number">#${idx + 1}</span>
                     ${flagHTML}
                     <a href="player.html?id=${playerId}&tag=${encodeURIComponent(p.gamerTag)}&prefix=${encodeURIComponent(prefix)}" class="attendee-name">
@@ -237,6 +241,112 @@ async function _proximaPaginaAttendees() {
 }
 
 function fecharAttendees() { document.getElementById('attendees_sidebar').classList.remove('open'); document.getElementById('attendees_overlay').classList.remove('active'); document.body.style.overflow = ''; }
+
+// ==================== BUSCA POR PREFIXO/NICK NOS INSCRITOS ====================
+let _attendeesSearchDebounce = null;
+let _attendeesSearchMode = false; // true quando exibindo resultado de busca global (fora da paginação normal)
+
+function _onAttendeesSearchInput(value) {
+    const term = value.trim().toLowerCase();
+    _filtrarAttendeesLocal(term);
+
+    clearTimeout(_attendeesSearchDebounce);
+    const hintEl = document.getElementById('attendees_search_global_hint');
+    if (!_attendeesState) return;
+
+    const haMaisNaoCarregados = _attendeesState.globalOffset < _attendeesState.totalCount;
+
+    if (!term) {
+        if (hintEl) hintEl.style.display = 'none';
+        if (_attendeesSearchMode) { _attendeesSearchMode = false; abrirAttendeesMantendoEstado(); }
+        return;
+    }
+
+    if (haMaisNaoCarregados && !_attendeesSearchMode) {
+        if (hintEl) {
+            hintEl.style.display = 'flex';
+            hintEl.innerHTML = `<span>Nem todos os inscritos foram carregados ainda.</span><button onclick="_buscarInscritosGlobal()">Buscar em todos</button>`;
+        }
+    }
+
+    // Debounce: se o termo tiver 3+ caracteres, dispara a busca completa via API automaticamente
+    if (term.length >= 3) {
+        _attendeesSearchDebounce = setTimeout(() => _buscarInscritosGlobal(), 400);
+    }
+}
+
+function _filtrarAttendeesLocal(term) {
+    const items = document.querySelectorAll('#attendees_content .attendee-item');
+    items.forEach(el => {
+        const prefix = el.dataset.prefix || '', tag = el.dataset.tag || '';
+        const match = !term || prefix.includes(term) || tag.includes(term);
+        el.classList.toggle('attendee-hidden', !match);
+        const historyEl = el.nextElementSibling;
+        if (historyEl && historyEl.id && historyEl.id.startsWith('history-')) {
+            historyEl.classList.toggle('attendee-hidden', !match);
+        }
+    });
+    const pagination = document.getElementById('_attendees_pagination');
+    if (pagination) pagination.classList.toggle('attendee-hidden', !!term);
+}
+
+function abrirAttendeesMantendoEstado() {
+    if (!_attendeesState) return;
+    _attendeesState.page = 1;
+    _attendeesState.globalOffset = 0;
+    document.getElementById('attendees_content').innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando inscritos...</p></div>';
+    _carregarPaginaAttendees();
+}
+
+async function _buscarInscritosGlobal() {
+    if (!_attendeesState) return;
+    const input = document.getElementById('attendees_search_input');
+    const term = (input?.value || '').trim();
+    if (!term) return;
+
+    const content = document.getElementById('attendees_content'), countEl = document.getElementById('attendees_count'), hintEl = document.getElementById('attendees_search_global_hint');
+    _attendeesSearchMode = true;
+    if (hintEl) hintEl.style.display = 'none';
+    content.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Buscando em todos os inscritos...</p></div>';
+
+    try {
+        const query = `query BuscarInscritos($slug:String!,$search:String!){tournament(slug:$slug){participants(query:{perPage:100,filter:{search:{fieldsToSearch:["prefix","gamerTag"],searchString:$search}}}){pageInfo{total}nodes{id,gamerTag,prefix,player{id},user{location{country}}}}}}`;
+        const json = await callStartGG(query, { slug: _attendeesState.slug, search: term });
+        const pData = json.data?.tournament?.participants || {};
+        const participants = pData.nodes || [];
+
+        countEl.textContent = `(${participants.length} encontrado${participants.length !== 1 ? 's' : ''} para "${term}")`;
+
+        if (participants.length === 0) {
+            content.innerHTML = `<div style="text-align:center;padding:40px;color:#aaa;">Nenhum inscrito encontrado com "${term}".</div>`;
+            return;
+        }
+
+        let html = '';
+        participants.forEach((p, idx) => {
+            const country = p.user?.location?.country, countryCode = COUNTRY_MAP[country] || null;
+            const flagHTML = countryCode
+                ? `<img src="https://flagcdn.com/w40/${countryCode.toLowerCase()}.png" class="attendee-flag" alt="${country}">`
+                : '<div style="width:28px;height:20px;background:rgba(255,255,255,0.05);border-radius:3px;"></div>';
+            const playerId = p.player?.id || '';
+            const prefix = p.prefix || '';
+            const displayName = prefix ? `${prefix} | ${p.gamerTag}` : p.gamerTag;
+            html += `
+                <div class="attendee-item" data-prefix="${prefix.toLowerCase()}" data-tag="${(p.gamerTag || '').toLowerCase()}">
+                    <span class="attendee-number">#${idx + 1}</span>
+                    ${flagHTML}
+                    <a href="player.html?id=${playerId}&tag=${encodeURIComponent(p.gamerTag)}&prefix=${encodeURIComponent(prefix)}" class="attendee-name">
+                        ${displayName}
+                    </a>
+                    ${prefix ? `<span style="color:#aaa;font-size:11px;">${prefix}</span>` : ''}
+                </div>
+            `;
+        });
+        content.innerHTML = html;
+    } catch (e) {
+        content.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">Erro ao buscar inscritos.</div>';
+    }
+}
 
 // ==================== HISTORICO ====================
 async function buscarSetsDoEvento(eventId, playerId) {
@@ -482,7 +592,7 @@ async function carregarBracketPool(phaseGroupId, container) {
         const setsJson = await callStartGG(querySets, { id: phaseGroupId });
         const sets = setsJson.data?.phaseGroup?.sets?.nodes || [];
         
-        if (sets.length === 0) { container.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Nenhuma partida encontrada nesta chave ou torneio ainda não iniciou.</div>'; return; }
+        if (sets.length === 0) { await mostrarSeedingPreview(phaseGroupId, container); return; }
         
         const rounds = {};
         sets.forEach(set => {
@@ -527,6 +637,86 @@ async function carregarBracketPool(phaseGroupId, container) {
         
         setTimeout(() => drawConnectorsLayout(sets, setMap), 250);
     } catch (e) { container.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">Erro ao renderizar bracket.</div>'; }
+}
+
+// ==================== PRÉVIA DE SEEDING (ANTES DA BRACKET COMEÇAR) ====================
+async function mostrarSeedingPreview(phaseGroupId, container) {
+    container.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Verificando seeding...</p></div>';
+    try {
+        const query = `query($id: ID!) { 
+            phaseGroup(id: $id) { 
+                seeds(query: {perPage: 64}) { 
+                    pageInfo { total }
+                    nodes { seedNum entrant { id name participants { prefix user { location { country } } } } } 
+                } 
+            } 
+        }`;
+        const json = await callStartGG(query, { id: phaseGroupId });
+        const seeds = json.data?.phaseGroup?.seeds?.nodes || [];
+
+        if (seeds.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Nenhuma partida encontrada nesta chave ou torneio ainda não iniciou.</div>';
+            return;
+        }
+
+        const sorted = seeds.slice().sort((a, b) => (a.seedNum ?? 999) - (b.seedNum ?? 999));
+        const totalSeeds = sorted.length;
+        const seedMap = {};
+        sorted.forEach(s => { seedMap[s.seedNum] = s.entrant; });
+        const getPrefixo = (entrant) => (entrant?.participants?.[0]?.prefix || '').trim().toLowerCase();
+
+        // ===== Gera a ordem padrão de seeding (1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6...) =====
+        const bracketSize = Math.pow(2, Math.ceil(Math.log2(Math.max(totalSeeds, 2))));
+        function gerarOrdemSeeds(size) {
+            if (size === 1) return [1];
+            const prev = gerarOrdemSeeds(size / 2);
+            const result = [];
+            prev.forEach(x => { result.push(x); result.push(size + 1 - x); });
+            return result;
+        }
+        const ordem = gerarOrdemSeeds(bracketSize);
+
+        const confrontos = [];
+        for (let i = 0; i < ordem.length; i += 2) {
+            const seedA = ordem[i], seedB = ordem[i + 1];
+            const entrantA = seedA <= totalSeeds ? seedMap[seedA] : null;
+            const entrantB = seedB <= totalSeeds ? seedMap[seedB] : null;
+            if (!entrantA && !entrantB) continue; // dupla bye, não deveria acontecer mas por segurança
+            const mesmaEquipe = entrantA && entrantB && getPrefixo(entrantA) && getPrefixo(entrantA) === getPrefixo(entrantB);
+            confrontos.push({ seedA, seedB, entrantA, entrantB, mesmaEquipe });
+        }
+
+        let html = `<div class="brk-container">
+            <div class="seed-preview-banner"><i class="fa-solid fa-seedling" aria-hidden="true"></i> Bracket ainda não começou — seedagem prevista com base na ordem padrão (pode mudar se o TO ajustar manualmente)</div>
+
+            <div>
+                <div class="brk-label" style="font-size:20px;">Confrontos Prováveis da R1</div>
+                <div class="seed-preview-matchups">`;
+
+        confrontos.forEach(c => {
+            const nomeA = c.entrantA?.name || 'BYE', nomeB = c.entrantB?.name || 'BYE';
+            html += `<div class="seed-matchup-card ${c.mesmaEquipe ? 'seed-matchup-warning' : ''}">
+                ${c.mesmaEquipe ? `<div class="seed-matchup-warning-tag"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Mesma equipe/prefixo</div>` : ''}
+                <div class="seed-matchup-side"><span class="seed-preview-num">#${c.seedA}</span>${c.entrantA ? getFlagHTMLBracket(c.entrantA) : ''}<span class="seed-preview-name">${nomeA}</span></div>
+                <div class="seed-matchup-vs">VS</div>
+                <div class="seed-matchup-side"><span class="seed-preview-num">#${c.seedB}</span>${c.entrantB ? getFlagHTMLBracket(c.entrantB) : ''}<span class="seed-preview-name">${nomeB}</span></div>
+            </div>`;
+        });
+
+        html += `</div></div>
+
+            <div>
+                <div class="brk-label" style="font-size:20px;">Lista de Seeds</div>
+                <div class="seed-preview-wrap">`;
+        sorted.forEach(s => {
+            const entrant = s.entrant;
+            html += `<div class="seed-preview-item"><span class="seed-preview-num">#${s.seedNum ?? '-'}</span>${getFlagHTMLBracket(entrant)}<span class="seed-preview-name">${entrant?.name || 'TBD'}</span></div>`;
+        });
+        html += `</div></div></div>`;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Nenhuma partida encontrada nesta chave ou torneio ainda não iniciou.</div>';
+    }
 }
 
 function drawConnectorsLayout(sets, setMap) {

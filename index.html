@@ -243,6 +243,11 @@
     <div class="overlay" id="attendees_overlay" onclick="fecharAttendees()"></div>
     <div class="sidebar-base attendees-sidebar" id="attendees_sidebar" role="dialog" aria-modal="true" aria-label="Lista de inscritos">
         <div class="sidebar-header"><div><h2>👥 INSCRITOS</h2><span class="count" id="attendees_count"></span></div><button class="btn-close" onclick="fecharAttendees()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button></div>
+        <div class="attendees-search-bar">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="text" id="attendees_search_input" placeholder="Buscar por prefixo ou nick (ex: WASF, KZ)..." oninput="_onAttendeesSearchInput(this.value)" aria-label="Buscar inscrito por prefixo ou nick">
+        </div>
+        <div id="attendees_search_global_hint" class="attendees-search-hint" style="display:none;"></div>
         <div class="sidebar-content" id="attendees_content"><div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando inscritos...</p></div></div>
     </div>
 
