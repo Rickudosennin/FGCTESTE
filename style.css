@@ -335,12 +335,69 @@ select:focus-visible,
 /* ========== INDEX: ENTRADA E MICROINTERAÇÕES (menos estático) ========== */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in-up { animation: fadeInUp 0.6s ease-out both; }
+
+@keyframes cardPopIn {
+    0% { opacity: 0; transform: translateY(40px) scale(0.9); }
+    60% { opacity: 1; transform: translateY(-6px) scale(1.02); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes borderGlowPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(220, 38, 38, 0); }
+    50% { box-shadow: 0 0 22px rgba(220, 38, 38, 0.35); }
+}
 #resultados .glass-card {
-    animation: fadeInUp 0.45s ease-out both;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    animation: cardPopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: transform;
 }
 #resultados .glass-card:hover {
-    transform: translateY(-5px);
-    border-color: #ef4444;
-    box-shadow: 0 12px 30px rgba(220, 38, 38, 0.3);
+    transform: translateY(-10px) scale(1.035);
+    border-color: #ff2d2d;
+    box-shadow: 0 20px 45px rgba(220, 38, 38, 0.45), 0 0 30px rgba(220, 38, 38, 0.3);
+    z-index: 5;
+}
+#resultados .glass-card:hover h3 {
+    color: #ff4d4d;
+    transition: color 0.2s ease;
+}
+#resultados .glass-card > div:first-child img {
+    transition: transform 0.5s ease;
+}
+#resultados .glass-card:hover > div:first-child img {
+    transform: scale(1.12);
+}
+#resultados .glass-card .attendees-icon-left {
+    transition: all 0.2s ease, transform 0.2s ease;
+}
+#resultados .glass-card:hover .attendees-icon-left {
+    animation: none;
+}
+
+/* CTA principal com respiração de brilho contínua pra chamar atenção */
+.btn-primary {
+    animation: borderGlowPulse 2.4s ease-in-out infinite;
+}
+.btn-primary:hover {
+    animation: none;
+    transform: translateY(-2px) scale(1.02);
+}
+.btn-primary:active {
+    transform: scale(0.97);
+}
+
+/* Botões de ação dos cards ganham feedback de "press" */
+#resultados .glass-card a, #resultados .glass-card button {
+    transition: all 0.2s ease;
+}
+#resultados .glass-card a:active, #resultados .glass-card button:active {
+    transform: scale(0.96);
+}
+
+/* Título do header com leve flutuação contínua */
+@keyframes titleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+header h1 {
+    animation: titleFloat 3.5s ease-in-out infinite;
 }
