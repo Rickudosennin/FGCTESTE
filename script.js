@@ -714,7 +714,8 @@ async function pesquisar() {
         const fetches = TORNEIOS_LONGOS_MONITORADOS.map(slug =>
             callStartGG(queryTorneioPorSlug, { slug, vId }).then(json => json.data?.tournament).catch(() => null)
         );
-        return (await Promise.all(fetches)).filter(Boolean);
+        const resultados = await Promise.all(fetches);
+        return resultados.filter(t => t && t.events && t.events.length > 0);
     }
     try {
         const baseVars = { vId: [gameObj.videogameId], isOnline: typeVal === "online" };

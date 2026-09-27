@@ -1,5 +1,5 @@
 diff --git a/script.js b/script.js
-index 1d3cb67..98e3d68 100644
+index 1d3cb67..d973239 100644
 --- a/script.js
 +++ b/script.js
 @@ -74,6 +74,14 @@ const LIGAS_MONITORADAS = [
@@ -17,7 +17,7 @@ index 1d3cb67..98e3d68 100644
  let leagueTournamentMap = {};
  function verificarLigaDeTorneio(url) {
      const slug = extrairSlugTorneio(url);
-@@ -699,6 +707,15 @@ async function pesquisar() {
+@@ -699,6 +707,16 @@ async function pesquisar() {
          nodes{${camposNode}}
        }
      }`;
@@ -28,12 +28,13 @@ index 1d3cb67..98e3d68 100644
 +        const fetches = TORNEIOS_LONGOS_MONITORADOS.map(slug =>
 +            callStartGG(queryTorneioPorSlug, { slug, vId }).then(json => json.data?.tournament).catch(() => null)
 +        );
-+        return (await Promise.all(fetches)).filter(Boolean);
++        const resultados = await Promise.all(fetches);
++        return resultados.filter(t => t && t.events && t.events.length > 0);
 +    }
      try {
          const baseVars = { vId: [gameObj.videogameId], isOnline: typeVal === "online" };
          if (typeVal === "offline") baseVars.country = localVal;
-@@ -706,12 +723,13 @@ async function pesquisar() {
+@@ -706,12 +724,13 @@ async function pesquisar() {
          const varsUpcoming = { ...baseVars };
          const varsLongRunning = { ...baseVars, afterDate: Math.floor(Date.now()/1000) - (400*24*60*60) };
          
@@ -50,7 +51,7 @@ index 1d3cb67..98e3d68 100644
          
          const vistos = new Set();
          let nodes = [...nodesA, ...nodesB].filter(t => {
-@@ -723,8 +741,9 @@ async function pesquisar() {
+@@ -723,8 +742,9 @@ async function pesquisar() {
          const agora = Math.floor(Date.now()/1000);
          nodes = nodes.filter(t => (t.endAt || t.startAt) >= agora);
          
