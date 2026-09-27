@@ -126,9 +126,18 @@ index 4e2a29e..8595305 100644
          })();
      </script>
 diff --git a/players.js b/players.js
-index f36f196..15c5bc1 100644
+index f36f196..8fd42ad 100644
 --- a/players.js
 +++ b/players.js
+@@ -15,7 +15,7 @@ async function _salvarPerfilCache(playerId, dados) {
+         await _playersCollection.doc(String(playerId)).set({
+             dados: dados,
+             timestamp: Date.now()
+-        });
++        }, { merge: true });
+     } catch (e) {
+         console.error('Erro ao salvar cache no Firestore:', e);
+     }
 @@ -253,6 +253,30 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix
      return { dados, fonte: 'live' };
  }

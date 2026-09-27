@@ -15,7 +15,7 @@ async function _salvarPerfilCache(playerId, dados) {
         await _playersCollection.doc(String(playerId)).set({
             dados: dados,
             timestamp: Date.now()
-        });
+        }, { merge: true });
     } catch (e) {
         console.error('Erro ao salvar cache no Firestore:', e);
     }
