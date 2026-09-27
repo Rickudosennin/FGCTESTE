@@ -39,6 +39,39 @@
             const prefix = params.get('prefix') || '';
             const conteudo = document.getElementById('perfil_conteudo');
 
+            const CHAR_ART_MAP = {
+                aki: { label: 'A.K.I.', file: 'imagens/sf6/full/file_AKI_0.png' },
+                akuma: { label: 'Akuma', file: 'imagens/sf6/full/file_Akuma_0.png' },
+                alex: { label: 'Alex', file: 'imagens/sf6/full/file_Alex_0.png' },
+                bison: { label: 'M. Bison', file: 'imagens/sf6/full/file_Bison_0.png' },
+                blanka: { label: 'Blanka', file: 'imagens/sf6/full/file_Blanka_0.png' },
+                chunli: { label: 'Chun-Li', file: 'imagens/sf6/full/file_ChunLi_0.png' },
+                deejay: { label: 'Dee Jay', file: 'imagens/sf6/full/file_DeeJay_0.png' },
+                dhalsim: { label: 'Dhalsim', file: 'imagens/sf6/full/file_Dhalsim_0.png' },
+                ed: { label: 'Ed', file: 'imagens/sf6/full/file_Ed_0.png' },
+                elena: { label: 'Elena', file: 'imagens/sf6/full/file_Elena_0.png' },
+                guile: { label: 'Guile', file: 'imagens/sf6/full/file_Guile_0.png' },
+                honda: { label: 'E. Honda', file: 'imagens/sf6/full/file_Honda_0.png' },
+                ingrid: { label: 'Ingrid', file: 'imagens/sf6/full/file_Ingrid_0.png' },
+                jp: { label: 'JP', file: 'imagens/sf6/full/file_JP_0.png' },
+                jamie: { label: 'Jamie', file: 'imagens/sf6/full/file_Jamie_0.png' },
+                juri: { label: 'Juri', file: 'imagens/sf6/full/file_Juri_0.png' },
+                ken: { label: 'Ken', file: 'imagens/sf6/full/file_Ken_0.png' },
+                kimberly: { label: 'Kimberly', file: 'imagens/sf6/full/file_Kimberly_0.png' },
+                lily: { label: 'Lily', file: 'imagens/sf6/full/file_Lily_0.png' },
+                luke: { label: 'Luke', file: 'imagens/sf6/full/file_Luke_0.png' },
+                mai: { label: 'Mai', file: 'imagens/sf6/full/file_Mai_0.png' },
+                manon: { label: 'Manon', file: 'imagens/sf6/full/file_Manon_0.png' },
+                marisa: { label: 'Marisa', file: 'imagens/sf6/full/file_Marisa_0.png' },
+                rashid: { label: 'Rashid', file: 'imagens/sf6/full/file_Rashid_0.png' },
+                ryu: { label: 'Ryu', file: 'imagens/sf6/full/file_Ryu_0.png' },
+                sagat: { label: 'Sagat', file: 'imagens/sf6/full/file_Sagat_0.png' },
+                terry: { label: 'Terry', file: 'imagens/sf6/full/file_Terry_0.png' },
+                viper: { label: 'Viper', file: 'imagens/sf6/full/file_Viper_0.png' },
+                yasmine: { label: 'Yasmine', file: 'imagens/sf6/full/file_Yasmine_0.png' },
+                zangief: { label: 'Zangief', file: 'imagens/sf6/full/file_Zangief_0.png' }
+            };
+
             function getDotClass(placement) {
                 if (placement === 1) return 'dot-1st';
                 if (placement <= 3) return 'dot-top3';
@@ -57,8 +90,9 @@
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime,
                     recentForm, highlights, headToHead, tournaments, avatarUrl, bannerUrl, playerPrefix,
-                    realName, social, userSlug
+                    realName, social, userSlug, characterArt
                 } = dados;
+                const charArtInfo = characterArt ? CHAR_ART_MAP[characterArt] : null;
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
@@ -75,6 +109,7 @@
                         <!-- BANNER DO PLAYER -->
                         <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-xl w-full">
                             <div class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
+                                ${charArtInfo ? `<img src="${charArtInfo.file}" alt="${charArtInfo.label}" class="absolute right-2 md:right-8 bottom-0 h-full object-contain object-bottom pointer-events-none select-none opacity-90" style="mask-image:linear-gradient(to bottom, transparent, black 15%);-webkit-mask-image:linear-gradient(to bottom, transparent, black 15%);">` : ''}
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                             </div>
                             
@@ -117,6 +152,9 @@
                                 
                                 <div class="flex items-center gap-2 flex-shrink-0">
                                     <span class="text-xs text-slate-500">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
+                                    <button onclick="abrirSeletorChar()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-images"></i> Personagem
+                                    </button>
                                     <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-rotate"></i> Atualizar
                                     </button>
@@ -254,6 +292,24 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- MODAL: ESCOLHER ARTE DE PERSONAGEM -->
+                    <div id="char_art_modal" class="fixed inset-0 z-50 hidden bg-black/70 flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-md w-full max-h-[80vh] overflow-y-auto space-y-4" role="dialog" aria-modal="true" aria-label="Escolher personagem">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Escolher personagem</h3>
+                                <button onclick="fecharSeletorChar()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                ${Object.entries(CHAR_ART_MAP).map(([key, info]) => `
+                                    <button onclick="selecionarCharArt('${key}')" class="flex flex-col items-center gap-1.5 p-2 rounded-lg border ${characterArt === key ? 'border-red-500 bg-slate-800' : 'border-slate-700 hover:border-slate-500'} transition">
+                                        <img src="${info.file}" alt="${info.label}" class="w-full h-20 object-contain object-bottom">
+                                        <span class="text-xs text-slate-300 font-semibold">${info.label}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
                 `;
             }
 
@@ -310,6 +366,7 @@
                 try {
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix);
+                    dados.characterArt = await _lerCharArt(playerId);
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     renderizarGraficoEvolucao(dados.tournaments || []);
                 } catch (e) {
@@ -320,6 +377,20 @@
 
             window.atualizarDados = function() {
                 carregarPerfil(true);
+            };
+
+            window.abrirSeletorChar = function() {
+                document.getElementById('char_art_modal').classList.remove('hidden');
+            };
+
+            window.fecharSeletorChar = function() {
+                document.getElementById('char_art_modal').classList.add('hidden');
+            };
+
+            window.selecionarCharArt = async function(charKey) {
+                await _salvarCharArt(playerId, charKey);
+                fecharSeletorChar();
+                carregarPerfil(false);
             };
 
             carregarPerfil(false);

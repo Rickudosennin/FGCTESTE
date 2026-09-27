@@ -253,6 +253,30 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix
     return { dados, fonte: 'live' };
 }
 
+// ==================== ARTE DE PERSONAGEM ESCOLHIDA (Firestore, campo separado) ====================
+// Campo isolado de `dados`/timestamp via merge:true, então nunca é apagado
+// quando o cache de stats é sobrescrito (_salvarPerfilCache faz .set() sem merge).
+async function _salvarCharArt(playerId, charKey) {
+    try {
+        await _playersCollection.doc(String(playerId)).set({
+            characterArt: charKey
+        }, { merge: true });
+    } catch (e) {
+        console.error('Erro ao salvar char art:', e);
+    }
+}
+
+async function _lerCharArt(playerId) {
+    try {
+        const doc = await _playersCollection.doc(String(playerId)).get();
+        if (!doc.exists) return null;
+        return doc.data().characterArt || null;
+    } catch (e) {
+        console.error('Erro ao ler char art:', e);
+        return null;
+    }
+}
+
 // ==================== BUSCA DE PLAYERS (Firestore) ====================
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
