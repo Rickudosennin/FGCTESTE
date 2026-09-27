@@ -741,8 +741,9 @@ async function pesquisar() {
         const agora = Math.floor(Date.now()/1000);
         nodes = nodes.filter(t => (t.endAt || t.startAt) >= agora);
         
+        const idsMonitorados = new Set(nodesMonitorados.map(t => t.id));
         if (typeVal === "online" && localVal === "south-america") {
-            nodes = nodes.filter(t => southAmericanCountries.includes(t.owner?.location?.country));
+            nodes = nodes.filter(t => idsMonitorados.has(t.id) || southAmericanCountries.includes(t.owner?.location?.country));
         }
         
         const proximaDataEvento = t => {
