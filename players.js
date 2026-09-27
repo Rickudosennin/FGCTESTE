@@ -1,75 +1,66 @@
 // ==================== CONFIG ====================
-// Token fine-grained do GitHub, com permissão APENAS "Issues: Read and write"
-// restrita a este repositório. Fica exposto no client — é um risco aceito
-// (alguém pode spammar issues), mas não dá acesso a mais nada do repo.
-const GITHUB_ISSUES_TOKEN = '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'; // preencher com o token fine-grained
-const GITHUB_REPO = 'Rickudosennin/FGCTESTE'; // trocar pra 'Rickudosennin/fgchub' quando for pra produção
-const CACHE_JSON_PATH = 'players-cache.json'; // servido estático, mesmo domínio
+const CACHE_MAX_IDADE_HORAS = 24;
 
-// ==================== LISTA LOCAL DE PLAYERS (localStorage) ====================
-// Continua local apenas para a lista de "players conhecidos" da busca por
-// gamertag (buscar.html) — não guarda mais os dados do perfil em si.
-const LOCAL_PLAYERS_KEY = 'fgchub_local_players';
+// ==================== FIREBASE ====================
+// Requer que firebase-config.js (com o firebase.initializeApp(...)) seja
+// carregado ANTES deste arquivo, junto com os SDKs firebase-app-compat.js
+// e firebase-firestore-compat.js. Veja o arquivo firebase-config.js.
+const _db = firebase.firestore();
+const _playersCollection = _db.collection('players');       // cache de perfis
+const _knownPlayersCollection = _db.collection('knownPlayers'); // lista p/ busca
 
-// ==================== CACHE COMPARTILHADO (players-cache.json via Git) ====================
-let _cacheCompartilhadoPromise = null;
-
-function _carregarCacheCompartilhado() {
-    if (!_cacheCompartilhadoPromise) {
-        _cacheCompartilhadoPromise = fetch(CACHE_JSON_PATH, { cache: 'no-store' })
-            .then(r => r.ok ? r.json() : { players: {} })
-            .then(json => json && json.players ? json : { players: {} })
-            .catch(() => ({ players: {} }));
-    }
-    return _cacheCompartilhadoPromise;
-}
-
-async function _lerPerfilCacheCompartilhado(playerId) {
-    const cache = await _carregarCacheCompartilhado();
-    return cache.players[String(playerId)] || null;
-}
-
-// Atualiza o cache em memória na hora (pra quem está navegando não esperar
-// a Action rodar) e dispara a Issue que vai gerar o commit de verdade.
-async function _salvarPerfilCacheCompartilhado(playerId, dados) {
-    const cache = await _carregarCacheCompartilhado();
-    cache.players[String(playerId)] = dados;
-
-    if (!GITHUB_ISSUES_TOKEN) {
-        alert('[DEBUG] GITHUB_ISSUES_TOKEN está vazio — a issue não vai ser criada.');
-        return;
-    }
-
+// ==================== CACHE DE PERFIL (Firestore, compartilhado) ====================
+async function _salvarPerfilCache(playerId, dados) {
     try {
-        const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${GITHUB_ISSUES_TOKEN}`,
-                'Accept': 'application/vnd.github+json'
-            },
-            body: JSON.stringify({
-                title: `[cache] atualizar player ${playerId}`,
-                labels: ['player-cache-update'],
-                body: '```json\n' + JSON.stringify({ playerId: String(playerId), dados }, null, 2) + '\n```'
-            })
+        await _playersCollection.doc(String(playerId)).set({
+            dados: dados,
+            timestamp: Date.now()
         });
-        if (!resp.ok) {
-            const texto = await resp.text();
-            alert('[DEBUG] Falha ao criar issue. Status ' + resp.status + ': ' + texto.slice(0, 300));
-        } else {
-            alert('[DEBUG] Issue criada com sucesso pro player ' + playerId + '!');
-        }
     } catch (e) {
-        alert('[DEBUG] Erro de rede ao tentar criar a issue: ' + e.message);
-        // Falhou em abrir a issue (rate limit, offline, etc.) — não trava a
-        // navegação, o dado só não fica persistido pra outros visitantes ainda.
+        console.error('Erro ao salvar cache no Firestore:', e);
     }
 }
 
-function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
-    // Não faz mais nada: a lista de players conhecidos agora vem do
-    // players-cache.json compartilhado (ver carregarPlayersConhecidos).
-    // Mantida como no-op só pra não quebrar chamadas existentes.
+async function _lerPerfilCache(playerId) {
+    try {
+        const doc = await _playersCollection.doc(String(playerId)).get();
+        if (!doc.exists) return null;
+        const cacheData = doc.data();
+        const idade = (Date.now() - cacheData.timestamp) / 3600000;
+        if (idade < CACHE_MAX_IDADE_HORAS) {
+            return cacheData.dados;
+        }
+        return null;
+    } catch (e) {
+        console.error('Erro ao ler cache do Firestore:', e);
+        return null;
+    }
+}
+
+// ==================== LISTA DE PLAYERS CONHECIDOS (Firestore, compartilhada) ====================
+async function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
+    try {
+        await _knownPlayersCollection.doc(String(playerId)).set({
+            gamerTag,
+            prefix: prefix || ''
+        }, { merge: true });
+    } catch (e) {
+        console.error('Erro ao salvar player conhecido no Firestore:', e);
+    }
+}
+
+async function _carregarPlayersLocal() {
+    try {
+        const snap = await _knownPlayersCollection.get();
+        return snap.docs.map(d => ({
+            playerId: d.id,
+            gamerTag: d.data().gamerTag,
+            prefix: d.data().prefix || ''
+        }));
+    } catch (e) {
+        console.error('Erro ao carregar players conhecidos do Firestore:', e);
+        return [];
+    }
 }
 
 // ==================== PROCESSAMENTO ====================
@@ -80,6 +71,7 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     let wins6m = 0, losses6m = 0;
     const torneios = [];
     const colocacoes = [];
+    const h2h = {};
 
     standings.forEach(s => {
         const eventId = s.container?.id;
@@ -89,14 +81,22 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         totalWins += resultado.wins;
         totalLosses += resultado.losses;
 
+        (resultado.sets || []).forEach(set => {
+            if (!set.opponentId) return;
+            const key = String(set.opponentId);
+            if (!h2h[key]) h2h[key] = { opponentId: set.opponentId, opponentTag: set.opponentTag || 'Desconhecido', wins: 0, losses: 0 };
+            if (set.venceu) h2h[key].wins++; else h2h[key].losses++;
+            if (set.opponentTag) h2h[key].opponentTag = set.opponentTag;
+        });
+
         const isRecent = startAt && (startAt * 1000) > seisMesesAtras;
         if (isRecent) {
             wins6m += resultado.wins;
             losses6m += resultado.losses;
         }
 
-        const winrate = (resultado.wins + resultado.losses) > 0 
-            ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100) 
+        const winrate = (resultado.wins + resultado.losses) > 0
+            ? Math.round((resultado.wins / (resultado.wins + resultado.losses)) * 100)
             : 0;
 
         const tournamentImages = s.container?.tournament?.images || [];
@@ -120,6 +120,15 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     });
 
     torneios.sort((a, b) => b.startAt - a.startAt);
+
+    const headToHead = Object.values(h2h)
+        .map(r => {
+            const total = r.wins + r.losses;
+            return { ...r, total, winrate: total > 0 ? Math.round((r.wins / total) * 100) : 0 };
+        })
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
     const colocacoesOrdenadas = torneios
         .filter(t => t.placement && t.placement !== '?')
         .map(t => ({ placement: t.placement, icon: t.icon }));
@@ -148,6 +157,7 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         losses6m,
         recentForm: colocacoesOrdenadas.slice(0, 10),
         highlights,
+        headToHead,
         tournaments: torneios,
         updatedAt: new Date().toISOString()
     };
@@ -229,42 +239,25 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
 // ==================== FUNÇÃO PRINCIPAL ====================
 async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '') {
     if (!forceRefresh) {
-        const cacheData = await _lerPerfilCacheCompartilhado(playerId);
+        const cacheData = await _lerPerfilCache(playerId);
         if (cacheData) {
             if (prefix && !cacheData.playerPrefix) {
                 cacheData.playerPrefix = prefix;
             }
-            _salvarPlayerLocal(playerId, gamerTag, prefix);
             return { dados: cacheData, fonte: 'cache' };
         }
     }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
-    await _salvarPerfilCacheCompartilhado(playerId, dados);
-    _salvarPlayerLocal(playerId, gamerTag, prefix);
+    await _salvarPerfilCache(playerId, dados);
+    await _salvarPlayerLocal(playerId, gamerTag, prefix);
     return { dados, fonte: 'live' };
 }
 
-// ==================== BUSCA DE PLAYERS (cache compartilhado via Git) ====================
+// ==================== BUSCA DE PLAYERS (Firestore) ====================
 let _listaPlayersConhecidos = null;
 async function carregarPlayersConhecidos() {
     if (_listaPlayersConhecidos) return _listaPlayersConhecidos;
-
-    const cache = await _carregarCacheCompartilhado();
-    const mapa = new Map();
-
-    Object.entries(cache.players || {}).forEach(([id, dados]) => {
-        if (!dados || !dados.gamerTag) return;
-        if (!mapa.has(id)) {
-            mapa.set(id, {
-                playerId: id,
-                gamerTag: dados.gamerTag,
-                prefix: dados.playerPrefix || '',
-                placement: null
-            });
-        }
-    });
-
-    _listaPlayersConhecidos = Array.from(mapa.values());
+    _listaPlayersConhecidos = await _carregarPlayersLocal();
     return _listaPlayersConhecidos;
 }
 

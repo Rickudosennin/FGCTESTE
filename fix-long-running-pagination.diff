@@ -1,0 +1,47 @@
+diff --git a/script.js b/script.js
+index 1d3cb67..6225b52 100644
+--- a/script.js
++++ b/script.js
+@@ -694,11 +694,25 @@ async function pesquisar() {
+         nodes{${camposNode}}
+       }
+     }`;
+-    const queryLongRunning = `query TournamentsLongRunning($vId:[ID], $isOnline:Boolean, $country:String, $afterDate:Timestamp){
+-      tournaments(query:{perPage:40, sortBy:"startAt desc", filter:{afterDate:$afterDate, videogameIds:$vId, hasOnlineEvents:$isOnline, countryCode:$country}}){
++    const queryLongRunning = `query TournamentsLongRunning($vId:[ID], $isOnline:Boolean, $country:String, $afterDate:Timestamp, $page:Int){
++      tournaments(query:{page:$page, perPage:40, sortBy:"startAt desc", filter:{afterDate:$afterDate, videogameIds:$vId, hasOnlineEvents:$isOnline, countryCode:$country}}){
+         nodes{${camposNode}}
+       }
+     }`;
++    async function buscarLongRunningPaginado(vars, maxPages = 5) {
++        const agora = Math.floor(Date.now()/1000);
++        let todos = [];
++        for (let page = 1; page <= maxPages; page++) {
++            const json = await callStartGG(queryLongRunning, { ...vars, page });
++            const pageNodes = json.data?.tournaments?.nodes || [];
++            if (pageNodes.length === 0) break;
++            todos = todos.concat(pageNodes);
++            const menorEndAt = Math.min(...pageNodes.map(t => t.endAt || t.startAt));
++            if (menorEndAt < agora) break; // já entrou em torneios encerrados, pode parar
++            if (pageNodes.length < 40) break; // última página
++        }
++        return todos;
++    }
+     try {
+         const baseVars = { vId: [gameObj.videogameId], isOnline: typeVal === "online" };
+         if (typeVal === "offline") baseVars.country = localVal;
+@@ -706,12 +720,11 @@ async function pesquisar() {
+         const varsUpcoming = { ...baseVars };
+         const varsLongRunning = { ...baseVars, afterDate: Math.floor(Date.now()/1000) - (400*24*60*60) };
+         
+-        const [jsonUpcoming, jsonLongRunning] = await Promise.all([
++        const [jsonUpcoming, nodesB] = await Promise.all([
+             callStartGG(queryUpcoming, varsUpcoming),
+-            callStartGG(queryLongRunning, varsLongRunning)
++            buscarLongRunningPaginado(varsLongRunning)
+         ]);
+         const nodesA = jsonUpcoming.data?.tournaments?.nodes || [];
+-        const nodesB = jsonLongRunning.data?.tournaments?.nodes || [];
+         
+         const vistos = new Set();
+         let nodes = [...nodesA, ...nodesB].filter(t => {

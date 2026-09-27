@@ -32,7 +32,7 @@
         </div>
 
         <div id="lista_salvos" class="hidden glass-card p-4 rounded-xl mb-4 max-h-60 overflow-y-auto">
-            <p class="text-xs text-slate-400 mb-2">Players salvos (cache compartilhado):</p>
+            <p class="text-xs text-slate-400 mb-2">Players salvos localmente:</p>
             <div id="conteudo_salvos" class="text-sm text-white space-y-1"></div>
         </div>
 
@@ -41,6 +41,9 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="players.js"></script>
     <script>
@@ -53,17 +56,19 @@
         let listaCompleta = [];
 
         function atualizarContador() {
-            const lista = listaCompleta || [];
-            contadorSalvos.textContent = lista.length;
-            if (!listaSalvosDiv.classList.contains('hidden')) {
-                if (lista.length === 0) {
-                    conteudoSalvos.innerHTML = '<span class="text-slate-500">Nenhum player salvo.</span>';
-                } else {
-                    conteudoSalvos.innerHTML = lista.map(p =>
-                        `<span class="block text-xs">${p.prefix ? p.prefix + ' | ' : ''}${p.gamerTag} (${p.playerId})</span>`
-                    ).join('');
+            try {
+                const lista = listaCompleta;
+                contadorSalvos.textContent = lista.length;
+                if (!listaSalvosDiv.classList.contains('hidden')) {
+                    if (lista.length === 0) {
+                        conteudoSalvos.innerHTML = '<span class="text-slate-500">Nenhum player salvo.</span>';
+                    } else {
+                        conteudoSalvos.innerHTML = lista.map(p => 
+                            `<span class="block text-xs">${p.prefix ? p.prefix + ' | ' : ''}${p.gamerTag} (${p.playerId})</span>`
+                        ).join('');
+                    }
                 }
-            }
+            } catch (e) {}
         }
 
         function renderizarLista(lista) {
