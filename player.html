@@ -137,16 +137,14 @@
                         <!-- BANNER DO PLAYER -->
                         <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-xl w-full">
                             <div class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
+                                ${charArtInfo ? `<img src="${charArtInfo.file}" alt="${charArtInfo.label}" class="absolute right-2 md:right-8 bottom-0 h-full object-contain object-bottom pointer-events-none select-none opacity-100" style="mask-image:linear-gradient(to bottom, transparent, black 10%);-webkit-mask-image:linear-gradient(to bottom, transparent, black 10%);">` : ''}
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                             </div>
                             
                             <div class="p-6 -mt-16 relative flex flex-col md:flex-row items-center md:items-end justify-between gap-4">
                                 <div class="flex flex-col md:flex-row items-center md:items-end gap-4 text-center md:text-left min-w-0 w-full">
-                                    <div class="relative flex-shrink-0">
-                                        <div class="w-24 h-24 md:w-28 md:h-28 rounded-xl border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl">
-                                            ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
-                                        </div>
-                                        ${charArtInfo ? `<img src="${charArtInfo.file}" alt="${charArtInfo.label}" class="absolute left-full bottom-0 ml-1 md:ml-2 h-[200px] md:h-[260px] max-w-[45vw] md:max-w-none object-contain object-bottom pointer-events-none select-none opacity-95 drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)]" style="mask-image:linear-gradient(to bottom, transparent, black 12%);-webkit-mask-image:linear-gradient(to bottom, transparent, black 12%);">` : ''}
+                                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-xl border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl flex-shrink-0">
+                                        ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
                                     </div>
                                     <div class="space-y-1 min-w-0 w-full">
                                         <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-3 break-all">
