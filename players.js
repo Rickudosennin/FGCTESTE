@@ -63,6 +63,52 @@ async function _carregarPlayersLocal() {
     }
 }
 
+// Importa players de uma lista externa sem sobrescrever os já cadastrados.
+// O ID do documento é o playerId do Start.gg, então a deduplicação é estável.
+async function importarPlayersConhecidos(players) {
+    const porId = new Map();
+    let semId = 0;
+    (players || []).forEach(player => {
+        const playerId = player?.playerId;
+        const gamerTag = String(player?.gamerTag || '').trim();
+        if (!playerId || !gamerTag) {
+            semId++;
+            return;
+        }
+        const id = String(playerId);
+        if (!porId.has(id)) {
+            porId.set(id, { playerId: id, gamerTag, prefix: String(player.prefix || '').trim() });
+        }
+    });
+
+    const snapshot = await _knownPlayersCollection.get();
+    const existentes = new Set(snapshot.docs.map(doc => String(doc.id)));
+    const novos = [...porId.values()].filter(player => !existentes.has(player.playerId));
+    const loteMaximo = 450;
+
+    for (let inicio = 0; inicio < novos.length; inicio += loteMaximo) {
+        const batch = _db.batch();
+        novos.slice(inicio, inicio + loteMaximo).forEach(player => {
+            batch.set(_knownPlayersCollection.doc(player.playerId), {
+                gamerTag: player.gamerTag,
+                prefix: player.prefix
+            }, { merge: true });
+        });
+        await batch.commit();
+    }
+
+    if (_listaPlayersConhecidos) {
+        _listaPlayersConhecidos.push(...novos);
+    }
+
+    return {
+        encontrados: porId.size,
+        adicionados: novos.length,
+        jaExistiam: [...porId.keys()].filter(id => existentes.has(id)).length,
+        semId
+    };
+}
+
 // ==================== PROCESSAMENTO ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
