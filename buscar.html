@@ -43,10 +43,17 @@
                    class="bg-transparent flex-1 outline-none text-white placeholder-slate-500 py-2" />
         </div>
 
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
             <button id="btn_mostrar_salvos" class="text-xs text-slate-500 hover:text-red-400 transition">
                 <i class="fa-solid fa-database"></i> Mostrar players salvos (<span id="contador_salvos">0</span>)
             </button>
+            <button id="btn_mostrar_times" class="text-xs text-slate-500 hover:text-red-400 transition">
+                <i class="fa-solid fa-shield-halved"></i> Buscar por time
+            </button>
+        </div>
+
+        <div id="grid_times" class="hidden glass-card p-4 rounded-xl mb-6">
+            <div id="conteudo_times" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3"></div>
         </div>
 
         <div id="lista_salvos" class="hidden glass-card p-4 rounded-xl mb-4 max-h-60 overflow-y-auto">
@@ -71,10 +78,117 @@
         const listaSalvosDiv = document.getElementById('lista_salvos');
         const conteudoSalvos = document.getElementById('conteudo_salvos');
         const btnMostrar = document.getElementById('btn_mostrar_salvos');
+        const btnMostrarTimes = document.getElementById('btn_mostrar_times');
+        const gridTimesDiv = document.getElementById('grid_times');
+        const conteudoTimes = document.getElementById('conteudo_times');
         const linkEventoInput = document.getElementById('link_evento_input');
         const btnImportarEvento = document.getElementById('btn_importar_evento');
         const statusImportacaoEvento = document.getElementById('status_importacao_evento');
         let listaCompleta = [];
+
+        const TEAMS = [
+                { tag: "037C16B3-FF28-4A46-B164-08E92827A768", logo: "imagens/sponsors/037C16B3-FF28-4A46-B164-08E92827A768.webp" },
+                { tag: "2G", logo: "imagens/sponsors/2G.webp" },
+                { tag: "2GAME", logo: "imagens/sponsors/2GAME.webp" },
+                { tag: "2GAME_MDT", logo: "imagens/sponsors/2GAME_MDT.webp" },
+                { tag: "4ALLV", logo: "imagens/sponsors/4ALLV.webp" },
+                { tag: "AD", logo: "imagens/sponsors/AD.webp" },
+                { tag: "AET", logo: "imagens/sponsors/AET.webp" },
+                { tag: "AL", logo: "imagens/sponsors/AL.webp" },
+                { tag: "ARCADIAN", logo: "imagens/sponsors/ARCADIAN.webp" },
+                { tag: "BONG", logo: "imagens/sponsors/BONG.webp" },
+                { tag: "BRABOS", logo: "imagens/sponsors/BRABOS.webp" },
+                { tag: "BW", logo: "imagens/sponsors/BW.webp" },
+                { tag: "CDL", logo: "imagens/sponsors/CDL.webp" },
+                { tag: "CHR", logo: "imagens/sponsors/CHR.webp" },
+                { tag: "CNTR", logo: "imagens/sponsors/CNTR.webp" },
+                { tag: "COUNTER", logo: "imagens/sponsors/COUNTER.webp" },
+                { tag: "CPS", logo: "imagens/sponsors/CPS.webp" },
+                { tag: "DASH", logo: "imagens/sponsors/DASH.webp" },
+                { tag: "DK", logo: "imagens/sponsors/DK.webp" },
+                { tag: "DK.IMP", logo: "imagens/sponsors/DK.IMP.webp" },
+                { tag: "DR", logo: "imagens/sponsors/DR.webp" },
+                { tag: "DXO", logo: "imagens/sponsors/DXO.webp" },
+                { tag: "E1", logo: "imagens/sponsors/E1.webp" },
+                { tag: "E1SPORTS", logo: "imagens/sponsors/E1SPORTS.webp" },
+                { tag: "EGO", logo: "imagens/sponsors/EGO.webp" },
+                { tag: "FESPMS", logo: "imagens/sponsors/FESPMS.webp" },
+                { tag: "FLECHINHA", logo: "imagens/sponsors/FLECHINHA.webp" },
+                { tag: "FLORIPA", logo: "imagens/sponsors/FLORIPA.webp" },
+                { tag: "FORCE", logo: "imagens/sponsors/FORCE.webp" },
+                { tag: "FSH", logo: "imagens/sponsors/FSH.webp" },
+                { tag: "FSN", logo: "imagens/sponsors/FSN.webp" },
+                { tag: "FT", logo: "imagens/sponsors/FT.webp" },
+                { tag: "FURIA", logo: "imagens/sponsors/FURIA.webp" },
+                { tag: "GF", logo: "imagens/sponsors/GF.webp" },
+                { tag: "HDG", logo: "imagens/sponsors/HDG.webp" },
+                { tag: "HIDEOUT", logo: "imagens/sponsors/HIDEOUT.webp" },
+                { tag: "IMP", logo: "imagens/sponsors/IMP.webp" },
+                { tag: "IMPERIAL", logo: "imagens/sponsors/IMPERIAL.webp" },
+                { tag: "KK", logo: "imagens/sponsors/KK.webp" },
+                { tag: "KWH", logo: "imagens/sponsors/KWH.webp" },
+                { tag: "KZ", logo: "imagens/sponsors/KZ.webp" },
+                { tag: "LF", logo: "imagens/sponsors/LF.webp" },
+                { tag: "LGD", logo: "imagens/sponsors/LGD.webp" },
+                { tag: "LMS", logo: "imagens/sponsors/LMS.webp" },
+                { tag: "LOS BRABOS", logo: "imagens/sponsors/LOS BRABOS.webp" },
+                { tag: "LUA", logo: "imagens/sponsors/LUA.webp" },
+                { tag: "MDTUPPER", logo: "imagens/sponsors/MDTUPPER.webp" },
+                { tag: "MRK", logo: "imagens/sponsors/MRK.webp" },
+                { tag: "NEXUS", logo: "imagens/sponsors/NEXUS.webp" },
+                { tag: "NEXUS GAMING", logo: "imagens/sponsors/NEXUS GAMING.webp" },
+                { tag: "NM", logo: "imagens/sponsors/NM.webp" },
+                { tag: "ONS", logo: "imagens/sponsors/ONS.webp" },
+                { tag: "ONX", logo: "imagens/sponsors/ONX.webp" },
+                { tag: "PFW", logo: "imagens/sponsors/PFW.webp" },
+                { tag: "PHT", logo: "imagens/sponsors/PHT.webp" },
+                { tag: "PINX", logo: "imagens/sponsors/PINX.webp" },
+                { tag: "PLG", logo: "imagens/sponsors/PLG.webp" },
+                { tag: "PRESSB", logo: "imagens/sponsors/PRESSB.webp" },
+                { tag: "PRORD", logo: "imagens/sponsors/PRORD.webp" },
+                { tag: "RCS", logo: "imagens/sponsors/RCS.webp" },
+                { tag: "RENEGADOS", logo: "imagens/sponsors/RENEGADOS.webp" },
+                { tag: "RIZE", logo: "imagens/sponsors/RIZE.webp" },
+                { tag: "RNG", logo: "imagens/sponsors/RNG.webp" },
+                { tag: "ROT", logo: "imagens/sponsors/ROT.webp" },
+                { tag: "RVL", logo: "imagens/sponsors/RVL.webp" },
+                { tag: "SA", logo: "imagens/sponsors/SA.webp" },
+                { tag: "SGP", logo: "imagens/sponsors/SGP.webp" },
+                { tag: "SHODOWN", logo: "imagens/sponsors/SHODOWN.webp" },
+                { tag: "SILVAGAMES REV", logo: "imagens/sponsors/SILVAGAMES REV.webp" },
+                { tag: "SMASHPE", logo: "imagens/sponsors/SMASHPE.webp" },
+                { tag: "SMASHRS", logo: "imagens/sponsors/SMASHRS.webp" },
+                { tag: "SMK", logo: "imagens/sponsors/SMK.webp" },
+                { tag: "SOL", logo: "imagens/sponsors/SOL.webp" },
+                { tag: "SPB", logo: "imagens/sponsors/SPB.webp" },
+                { tag: "SPDQ", logo: "imagens/sponsors/SPDQ.webp" },
+                { tag: "SUN", logo: "imagens/sponsors/SUN.webp" },
+                { tag: "TAIPAN", logo: "imagens/sponsors/TAIPAN.webp" },
+                { tag: "TDH", logo: "imagens/sponsors/TDH.webp" },
+                { tag: "TESA", logo: "imagens/sponsors/TESA.webp" },
+                { tag: "TLS", logo: "imagens/sponsors/TLS.webp" },
+                { tag: "TRO", logo: "imagens/sponsors/TRO.webp" },
+                { tag: "TRT", logo: "imagens/sponsors/TRT.webp" },
+                { tag: "TSD", logo: "imagens/sponsors/TSD.webp" },
+                { tag: "TWS", logo: "imagens/sponsors/TWS.webp" },
+                { tag: "UA", logo: "imagens/sponsors/UA.webp" },
+                { tag: "UPP", logo: "imagens/sponsors/UPP.webp" },
+                { tag: "UPPER", logo: "imagens/sponsors/UPPER.webp" },
+                { tag: "VC", logo: "imagens/sponsors/VC.webp" },
+                { tag: "VENON", logo: "imagens/sponsors/VENON.webp" },
+                { tag: "VENON FLOW", logo: "imagens/sponsors/VENON FLOW.webp" },
+                { tag: "VFC", logo: "imagens/sponsors/VFC.webp" },
+                { tag: "VIPERS", logo: "imagens/sponsors/VIPERS.webp" },
+                { tag: "Vitimas FC", logo: "imagens/sponsors/Vitimas FC.webp" },
+                { tag: "Vítimas FC", logo: "imagens/sponsors/Vítimas FC.webp" },
+                { tag: "VOID", logo: "imagens/sponsors/VOID.webp" },
+                { tag: "WASF", logo: "imagens/sponsors/WASF.webp" },
+                { tag: "ZENKO", logo: "imagens/sponsors/ZENKO.webp" },
+                { tag: "ZF", logo: "imagens/sponsors/ZF.webp" },
+                { tag: "ZK", logo: "imagens/sponsors/ZK.webp" },
+                { tag: "ZS FIGHTERS", logo: "imagens/sponsors/ZS FIGHTERS.webp" },
+                { tag: "ZSF", logo: "imagens/sponsors/ZSF.webp" }
+        ].sort((a, b) => a.tag.localeCompare(b.tag, 'pt-BR', { sensitivity: 'base' }));
 
         function extrairSlugEventoStartGG(valor) {
             let url;
@@ -158,6 +272,28 @@
             }
         });
 
+        function renderizarGridTimes() {
+            conteudoTimes.innerHTML = TEAMS.map(t => `
+                <button onclick="buscarPorTime('${t.tag.replace(/'/g, "\\'")}')" title="${t.tag}" class="flex items-center justify-center p-2 h-16 rounded-lg border border-slate-700 hover:border-red-500 bg-slate-800/50 transition">
+                    <img src="${t.logo}" alt="${t.tag}" class="max-w-full max-h-10 object-contain">
+                </button>
+            `).join('');
+        }
+
+        window.buscarPorTime = function(tag) {
+            const t = tag.trim().toLowerCase();
+            const filtrados = listaCompleta
+                .filter(p => (p.prefix || '').trim().toLowerCase() === t)
+                .sort((a, b) => a.gamerTag.localeCompare(b.gamerTag, 'pt-BR', { sensitivity: 'base' }));
+            inputBusca.value = '';
+            if (filtrados.length === 0) {
+                resultadosDiv.innerHTML = `<div class="text-slate-500 text-sm text-center py-8">Nenhum player com o time "${tag}" encontrado.</div>`;
+                return;
+            }
+            renderizarLista(filtrados);
+            resultadosDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
         function atualizarContador() {
             try {
                 const lista = listaCompleta;
@@ -227,6 +363,11 @@
                 atualizarContador();
             }
         });
+
+        btnMostrarTimes.addEventListener('click', () => {
+            gridTimesDiv.classList.toggle('hidden');
+        });
+        renderizarGridTimes();
 
         carregarDados();
     </script>
