@@ -96,7 +96,7 @@
 
         async function buscarInscritosDoEvento(eventSlug) {
             const porPagina = 100;
-            const query = `query ImportarInscritosEvento($slug:String!,$page:Int!,$perPage:Int!){event(slug:$slug){id name entrants(query:{page:$page,perPage:$perPage}){pageInfo{total} nodes{id name participants{gamerTag prefix player{id}}}}}}`;
+            const query = `query ImportarInscritosEvento($slug:String!,$page:Int!,$perPage:Int!){event(slug:$slug){id name entrants(query:{page:$page,perPage:$perPage}){pageInfo{total} nodes{id name participants{gamerTag prefix player{id gamerTag prefix}}}}}}`;
             const todos = [];
             let nomeEvento = 'evento';
             let pagina = 1;
@@ -144,12 +144,12 @@
                 const { nomeEvento, entrants } = await buscarInscritosDoEvento(slug);
                 const players = entrants.flatMap(entrant => (entrant.participants || []).map(participant => ({
                     playerId: participant.player?.id,
-                    gamerTag: participant.gamerTag || ((entrant.participants || []).length === 1 ? entrant.name : ''),
-                    prefix: participant.prefix || ''
+                    gamerTag: participant.player?.gamerTag || participant.gamerTag || ((entrant.participants || []).length === 1 ? entrant.name : ''),
+                    prefix: participant.player ? (participant.player.prefix || '') : (participant.prefix || '')
                 })));
                 const resultado = await importarPlayersConhecidos(players);
                 await carregarDados();
-                statusImportacaoEvento.textContent = `${nomeEvento}: ${resultado.adicionados} player(s) novo(s) salvo(s); ${resultado.jaExistiam} já estavam no banco; ${resultado.semId} sem ID ou nick foram ignorados.`;
+                statusImportacaoEvento.textContent = `${nomeEvento}: ${resultado.adicionados} player(s) novo(s) salvo(s); ${resultado.prefixosAtualizados} prefixo(s) de sponsor atualizado(s); ${resultado.jaExistiam} já estavam no banco; ${resultado.semId} sem ID ou nick foram ignorados.`;
             } catch (erro) {
                 console.error('Erro ao importar inscritos do evento:', erro);
                 statusImportacaoEvento.textContent = erro.message || 'Não foi possível importar os inscritos. Confira o link e tente novamente.';

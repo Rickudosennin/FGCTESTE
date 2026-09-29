@@ -1,5 +1,5 @@
 // ==================== CONFIG ====================
-const CACHE_MAX_IDADE_HORAS = 24;
+// O cache dos perfis não expira automaticamente; é renovado pelo botão Atualizar.
 
 // ==================== FIREBASE ====================
 // Requer que firebase-config.js (com o firebase.initializeApp(...)) seja
@@ -26,11 +26,7 @@ async function _lerPerfilCache(playerId) {
         const doc = await _playersCollection.doc(String(playerId)).get();
         if (!doc.exists) return null;
         const cacheData = doc.data();
-        const idade = (Date.now() - cacheData.timestamp) / 3600000;
-        if (idade < CACHE_MAX_IDADE_HORAS) {
-            return cacheData.dados;
-        }
-        return null;
+        return cacheData.dados || null;
     } catch (e) {
         console.error('Erro ao ler cache do Firestore:', e);
         return null;
@@ -63,7 +59,7 @@ async function _carregarPlayersLocal() {
     }
 }
 
-// Importa players de uma lista externa sem sobrescrever os já cadastrados.
+// Importa players novos e sincroniza o prefixo dos já cadastrados.
 // O ID do documento é o playerId do Start.gg, então a deduplicação é estável.
 async function importarPlayersConhecidos(players) {
     const porId = new Map();
@@ -71,40 +67,62 @@ async function importarPlayersConhecidos(players) {
     (players || []).forEach(player => {
         const playerId = player?.playerId;
         const gamerTag = String(player?.gamerTag || '').trim();
+        const prefix = String(player?.prefix || '').trim();
         if (!playerId || !gamerTag) {
             semId++;
             return;
         }
         const id = String(playerId);
         if (!porId.has(id)) {
-            porId.set(id, { playerId: id, gamerTag, prefix: String(player.prefix || '').trim() });
+            porId.set(id, { playerId: id, gamerTag, prefix });
+        } else if (!porId.get(id).prefix && prefix) {
+            porId.get(id).prefix = prefix;
         }
     });
 
     const snapshot = await _knownPlayersCollection.get();
-    const existentes = new Set(snapshot.docs.map(doc => String(doc.id)));
-    const novos = [...porId.values()].filter(player => !existentes.has(player.playerId));
+    const existentes = new Map(snapshot.docs.map(doc => [String(doc.id), doc.data()]));
+    const novos = [];
+    const prefixosAtualizados = [];
+    for (const player of porId.values()) {
+        const existente = existentes.get(player.playerId);
+        if (!existente) {
+            novos.push(player);
+        } else if (String(existente.prefix || '').trim() !== player.prefix) {
+            prefixosAtualizados.push(player);
+        }
+    }
+
+    const operacoes = [
+        ...novos.map(player => ({ player, novo: true })),
+        ...prefixosAtualizados.map(player => ({ player, novo: false }))
+    ];
     const loteMaximo = 450;
 
-    for (let inicio = 0; inicio < novos.length; inicio += loteMaximo) {
+    for (let inicio = 0; inicio < operacoes.length; inicio += loteMaximo) {
         const batch = _db.batch();
-        novos.slice(inicio, inicio + loteMaximo).forEach(player => {
-            batch.set(_knownPlayersCollection.doc(player.playerId), {
-                gamerTag: player.gamerTag,
-                prefix: player.prefix
-            }, { merge: true });
+        operacoes.slice(inicio, inicio + loteMaximo).forEach(({ player, novo }) => {
+            batch.set(_knownPlayersCollection.doc(player.playerId), novo
+                ? { gamerTag: player.gamerTag, prefix: player.prefix }
+                : { prefix: player.prefix }, { merge: true });
         });
         await batch.commit();
     }
 
     if (_listaPlayersConhecidos) {
+        const locaisPorId = new Map(_listaPlayersConhecidos.map(player => [String(player.playerId), player]));
+        prefixosAtualizados.forEach(player => {
+            const local = locaisPorId.get(player.playerId);
+            if (local) local.prefix = player.prefix;
+        });
         _listaPlayersConhecidos.push(...novos);
     }
 
     return {
         encontrados: porId.size,
         adicionados: novos.length,
-        jaExistiam: [...porId.keys()].filter(id => existentes.has(id)).length,
+        jaExistiam: porId.size - novos.length,
+        prefixosAtualizados: prefixosAtualizados.length,
         semId
     };
 }
@@ -213,6 +231,8 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
 async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const query1 = `query PlayerHistory($id: ID!) {
         player(id: $id) {
+            gamerTag
+            prefix
             user {
                 id
                 slug
@@ -248,7 +268,13 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         }
     }`;
     const json1 = await callStartGG(query1, { id: playerId });
-    const user = json1.data?.player?.user;
+    const jogador = json1.data?.player;
+    if (!jogador || !Object.prototype.hasOwnProperty.call(jogador, 'prefix')) {
+        throw new Error('O Start.gg não retornou o sponsor atual deste player.');
+    }
+    const gamerTagAtual = jogador.gamerTag || gamerTag;
+    const prefixAtual = typeof jogador.prefix === 'string' ? jogador.prefix.trim() : '';
+    const user = jogador.user;
     const standings = json1.data?.player?.recentStandings || [];
     const images = user?.images || [];
     const authorizations = user?.authorizations || [];
@@ -269,7 +295,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         setsPorEvento[eventId] = resultado;
     }
 
-    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix);
+    const dados = processarDadosPlayer(standings, setsPorEvento, gamerTagAtual, prefixAtual);
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     dados.realName = realName;
@@ -283,11 +309,11 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================
-async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '') {
+async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix = '', prefixProvided = false) {
     if (!forceRefresh) {
         const cacheData = await _lerPerfilCache(playerId);
         if (cacheData) {
-            if (prefix && !cacheData.playerPrefix) {
+            if ((prefixProvided || prefix) && cacheData.playerPrefix !== prefix) {
                 cacheData.playerPrefix = prefix;
             }
             return { dados: cacheData, fonte: 'cache' };
@@ -295,7 +321,7 @@ async function obterDadosPlayer(playerId, gamerTag, forceRefresh = false, prefix
     }
     const dados = await _buscarPlayerAoVivo(playerId, gamerTag, prefix);
     await _salvarPerfilCache(playerId, dados);
-    await _salvarPlayerLocal(playerId, gamerTag, prefix);
+    await _salvarPlayerLocal(playerId, dados.gamerTag || gamerTag, dados.playerPrefix || '');
     return { dados, fonte: 'live' };
 }
 
