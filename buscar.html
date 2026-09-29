@@ -273,7 +273,17 @@
         });
 
         function renderizarGridTimes() {
-            conteudoTimes.innerHTML = TEAMS.map(t => `
+            const prefixosComPlayer = new Set(
+                listaCompleta
+                    .map(p => (p.prefix || '').trim().toLowerCase())
+                    .filter(Boolean)
+            );
+            const timesComPlayer = TEAMS.filter(t => prefixosComPlayer.has(t.tag.trim().toLowerCase()));
+            if (timesComPlayer.length === 0) {
+                conteudoTimes.innerHTML = '<span class="col-span-full text-slate-500 text-xs text-center py-4">Nenhum time com player cadastrado.</span>';
+                return;
+            }
+            conteudoTimes.innerHTML = timesComPlayer.map(t => `
                 <button onclick="buscarPorTime('${t.tag.replace(/'/g, "\\'")}')" title="${t.tag}" class="flex items-center justify-center p-2 h-16 rounded-lg border border-slate-700 hover:border-red-500 bg-slate-800/50 transition">
                     <img src="${t.logo}" alt="${t.tag}" class="max-w-full max-h-10 object-contain">
                 </button>
@@ -341,6 +351,7 @@
             listaCompleta = await carregarPlayersConhecidos();
             resultadosDiv.innerHTML = '<div class="text-slate-500 text-sm text-center py-8">Digite um nome para buscar</div>';
             atualizarContador();
+            renderizarGridTimes();
         }
 
         let timeoutId;
@@ -367,7 +378,6 @@
         btnMostrarTimes.addEventListener('click', () => {
             gridTimesDiv.classList.toggle('hidden');
         });
-        renderizarGridTimes();
 
         carregarDados();
     </script>
