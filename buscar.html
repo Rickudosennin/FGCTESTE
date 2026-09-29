@@ -19,6 +19,24 @@
             <p class="text-slate-400 text-sm mt-2">Players carregados da lista de inscritos.</p>
         </div>
 
+        <section class="glass-card p-4 md:p-5 rounded-xl mb-6" aria-labelledby="importar_evento_titulo">
+            <h2 id="importar_evento_titulo" class="text-white font-bold text-sm uppercase mb-2">
+                <i class="fa-solid fa-cloud-arrow-down text-red-500 mr-2" aria-hidden="true"></i>Importar inscritos de um evento
+            </h2>
+            <p class="text-slate-400 text-xs mb-3">Cole o link completo do evento no Start.gg. Players já cadastrados no HUB serão ignorados.</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input id="link_evento_input" type="url" inputmode="url" autocomplete="url"
+                       placeholder="https://www.start.gg/tournament/.../event/..."
+                       aria-label="Link do evento no Start.gg"
+                       class="bg-slate-950/60 border border-slate-700 rounded-lg flex-1 min-w-0 outline-none text-white placeholder-slate-500 px-3 py-3 focus:border-red-600" />
+                <button id="btn_importar_evento" type="button"
+                        class="bg-red-700 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs uppercase rounded-lg px-4 py-3 transition">
+                    Importar inscritos
+                </button>
+            </div>
+            <p id="status_importacao_evento" class="text-xs mt-3 text-slate-400" role="status" aria-live="polite"></p>
+        </section>
+
         <div class="glass-card p-3 rounded-xl mb-8 flex items-center gap-3">
             <i class="fa-solid fa-magnifying-glass text-slate-500 pl-2" aria-hidden="true"></i>
             <input id="busca_input" type="text" placeholder="Digite o gamertag do player..." autocomplete="off"
@@ -53,7 +71,92 @@
         const listaSalvosDiv = document.getElementById('lista_salvos');
         const conteudoSalvos = document.getElementById('conteudo_salvos');
         const btnMostrar = document.getElementById('btn_mostrar_salvos');
+        const linkEventoInput = document.getElementById('link_evento_input');
+        const btnImportarEvento = document.getElementById('btn_importar_evento');
+        const statusImportacaoEvento = document.getElementById('status_importacao_evento');
         let listaCompleta = [];
+
+        function extrairSlugEventoStartGG(valor) {
+            let url;
+            try {
+                const link = valor.trim();
+                url = new URL(/^https?:\/\//i.test(link) ? link : `https://${link}`);
+            } catch (e) {
+                throw new Error('Informe um link válido de evento do Start.gg.');
+            }
+            if (!['start.gg', 'www.start.gg'].includes(url.hostname.toLowerCase())) {
+                throw new Error('O link precisa ser de um evento no domínio start.gg.');
+            }
+            const partes = url.pathname.split('/').filter(Boolean);
+            if (partes[0]?.toLowerCase() !== 'tournament' || partes[2]?.toLowerCase() !== 'event' || !partes[3]) {
+                throw new Error('Cole o link completo do evento (ex.: start.gg/tournament/nome/event/nome-do-evento).');
+            }
+            return partes.slice(0, 4).join('/');
+        }
+
+        async function buscarInscritosDoEvento(eventSlug) {
+            const porPagina = 100;
+            const query = `query ImportarInscritosEvento($slug:String!,$page:Int!,$perPage:Int!){event(slug:$slug){id name entrants(query:{page:$page,perPage:$perPage}){pageInfo{total} nodes{id name participants{gamerTag prefix player{id}}}}}}`;
+            const todos = [];
+            let nomeEvento = 'evento';
+            let pagina = 1;
+            let total = null;
+
+            do {
+                statusImportacaoEvento.textContent = total === null
+                    ? `Buscando inscritos do evento (página ${pagina})...`
+                    : `Buscando inscritos do evento: página ${pagina} de ${Math.max(1, Math.ceil(total / porPagina))}...`;
+                const resposta = await callStartGG(query, { slug: eventSlug, page: pagina, perPage: porPagina });
+                if (resposta.errors?.length) {
+                    throw new Error(resposta.errors.map(erro => erro.message).filter(Boolean).join(' ') || 'A API do Start.gg retornou um erro.');
+                }
+                const evento = resposta.data?.event;
+                if (!evento) throw new Error('Evento não encontrado ou indisponível no Start.gg.');
+                nomeEvento = evento.name || nomeEvento;
+                const inscritos = evento.entrants || {};
+                const nodes = inscritos.nodes || [];
+                const totalDaResposta = Number(inscritos.pageInfo?.total ?? (todos.length + nodes.length));
+                if (nodes.length === 0 && todos.length < totalDaResposta) {
+                    throw new Error('A API do Start.gg não retornou a próxima página de inscritos. Tente novamente.');
+                }
+                todos.push(...nodes);
+                total = totalDaResposta;
+                pagina++;
+            } while (todos.length < total && pagina <= 500);
+
+            if (todos.length < total) {
+                throw new Error('Não foi possível carregar todas as páginas de inscritos. Tente novamente.');
+            }
+            return { nomeEvento, entrants: todos };
+        }
+
+        btnImportarEvento.addEventListener('click', async () => {
+            const valor = linkEventoInput.value.trim();
+            if (!valor) {
+                statusImportacaoEvento.textContent = 'Cole o link do evento para começar.';
+                linkEventoInput.focus();
+                return;
+            }
+
+            btnImportarEvento.disabled = true;
+            try {
+                const slug = extrairSlugEventoStartGG(valor);
+                const { nomeEvento, entrants } = await buscarInscritosDoEvento(slug);
+                const players = entrants.flatMap(entrant => (entrant.participants || []).map(participant => ({
+                    playerId: participant.player?.id,
+                    gamerTag: participant.gamerTag || ((entrant.participants || []).length === 1 ? entrant.name : ''),
+                    prefix: participant.prefix || ''
+                })));
+                const resultado = await importarPlayersConhecidos(players);
+                await carregarDados();
+                statusImportacaoEvento.textContent = `${nomeEvento}: ${resultado.adicionados} player(s) novo(s) salvo(s); ${resultado.jaExistiam} já estavam no banco; ${resultado.semId} sem ID ou nick foram ignorados.`;
+            } catch (erro) {
+                console.error('Erro ao importar inscritos do evento:', erro);
+                statusImportacaoEvento.textContent = erro.message || 'Não foi possível importar os inscritos. Confira o link e tente novamente.';
+            } finally {
+                btnImportarEvento.disabled = false;
+            }
+        });
 
         function atualizarContador() {
             try {
