@@ -25,6 +25,7 @@
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="players.js"></script>
+    <script src="country-codes.js"></script>
     <script>
         (function() {
             if (window._playerLoaded) {
@@ -344,12 +345,144 @@
                 }
             };
 
+            const SPONSOR_LOGO_FILES = [
+                "2GAME.webp",
+                "2GAME_MDT.webp",
+                "4ALLV.webp",
+                "AD.webp",
+                "AET.webp",
+                "AL.webp",
+                "ARCADIAN.webp",
+                "BONG.webp",
+                "BRABOS.webp",
+                "BW.webp",
+                "CDL.webp",
+                "CHR.webp",
+                "CNTR.webp",
+                "COUNTER.webp",
+                "CPS.webp",
+                "DASH.webp",
+                "DK.IMP.webp",
+                "DK.webp",
+                "DR.webp",
+                "DXO.webp",
+                "E1.webp",
+                "E1SPORTS.webp",
+                "EGO.webp",
+                "FESPMS.webp",
+                "FLECHINHA.webp",
+                "FLORIPA.webp",
+                "FORCE.webp",
+                "FSH.webp",
+                "FSN.webp",
+                "FT.webp",
+                "FURIA.webp",
+                "GF.webp",
+                "HDG.webp",
+                "HIDEOUT.webp",
+                "IMP.webp",
+                "IMPERIAL.webp",
+                "KK.webp",
+                "KWH.webp",
+                "KZ.webp",
+                "LF.webp",
+                "LGD.webp",
+                "LMS.webp",
+                "LOS BRABOS.webp",
+                "LUA.webp",
+                "MDTUPPER.webp",
+                "MRK.webp",
+                "NEXUS GAMING.webp",
+                "NEXUS.webp",
+                "NM.webp",
+                "ONS.webp",
+                "ONX.webp",
+                "PFW.webp",
+                "PHT.webp",
+                "PINX.webp",
+                "PLG.webp",
+                "PRESSB.webp",
+                "PRORD.webp",
+                "RCS.webp",
+                "RENEGADOS.webp",
+                "RIZE.webp",
+                "RNG.webp",
+                "ROT.webp",
+                "RVL.webp",
+                "SA.webp",
+                "SGP.webp",
+                "SHODOWN.webp",
+                "SILVAGAMES REV.webp",
+                "SMASHPE.webp",
+                "SMASHRS.webp",
+                "SMK.webp",
+                "SOL.webp",
+                "SPB.webp",
+                "SPDQ.webp",
+                "SUN.webp",
+                "TAIPAN.webp",
+                "TDH.webp",
+                "TESA.webp",
+                "TLS.webp",
+                "TRO.webp",
+                "TRT.webp",
+                "TSD.webp",
+                "TWS.webp",
+                "UA.webp",
+                "UPP.webp",
+                "UPPER.webp",
+                "VC.webp",
+                "VENON FLOW.webp",
+                "VENON.webp",
+                "VFC.webp",
+                "VIPERS.webp",
+                "VOID.webp",
+                "Vitimas FC.webp",
+                "Vítimas FC.webp",
+                "WASF.webp",
+                "ZENKO.webp",
+                "ZF.webp",
+                "ZK.webp",
+                "ZS FIGHTERS.webp",
+                "ZSF.webp"
+            ];
+
+            function normalizarSponsorKey(value) {
+                return String(value || '').trim()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toUpperCase()
+                    .replace(/\s+/g, '_')
+                    .replace(/[^A-Z0-9_-]/g, '_')
+                    .replace(/_+/g, '_')
+                    .replace(/^_+|_+$/g, '');
+            }
+
+            function getSponsorLogoInfo(prefix) {
+                const sponsorKey = normalizarSponsorKey(prefix);
+                if (!sponsorKey) return null;
+                const mappedFile = SPONSOR_LOGO_FILES.find(file =>
+                    normalizarSponsorKey(file.slice(0, file.lastIndexOf('.'))) === sponsorKey
+                );
+                return {
+                    label: sponsorKey,
+                    file: `imagens/sponsors/${mappedFile || `${sponsorKey}.webp`}`
+                };
+            }
+
             function getCharArtInfo(characterArt) {
                 if (!characterArt) return null;
                 const [gameKey, charKey] = characterArt.split(':');
                 const game = GAMES_ART_MAP[gameKey];
                 if (!game) return null;
                 return game.chars[charKey] || null;
+            }
+
+            function getCountryFlagHtml(countryName, countryCode) {
+                const iso2 = (window.fgcCountryIso2 && window.fgcCountryIso2(countryCode)) ||
+                    (window.fgcCountryIso2 && window.fgcCountryIso2(countryName));
+                if (!iso2) return '';
+                return `<img src="https://flagcdn.com/w80/${iso2.toLowerCase()}.png" alt="Bandeira do país ${iso2}" title="País: ${iso2}" class="w-10 h-7 md:w-12 md:h-8 object-cover rounded border border-white/40 shadow-lg bg-slate-900/80" loading="lazy" decoding="async" onerror="this.remove()">`;
             }
 
             function getDotClass(placement) {
@@ -370,9 +503,11 @@
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime,
                     recentForm, highlights, headToHead, tournaments, avatarUrl, bannerUrl, playerPrefix,
-                    realName, social, userSlug, characterArt
+                    realName, social, userSlug, characterArt, countryName, countryCode
                 } = dados;
                 const charArtInfo = getCharArtInfo(characterArt);
+                const sponsorLogoInfo = getSponsorLogoInfo(playerPrefix);
+                const countryFlagHtml = getCountryFlagHtml(countryName, countryCode);
 
                 const wrClass = winrateAllTime >= 60 ? 'text-green-500' : (winrateAllTime >= 40 ? 'text-yellow-500' : 'text-red-500');
                 const displayName = playerPrefix ? `${playerPrefix} | ${gamerTag}` : gamerTag;
@@ -386,10 +521,16 @@
 
                 return `
                     <div class="space-y-6 w-full min-w-0">
+                        ${sponsorLogoInfo ? `
+                            <div class="flex justify-center -mb-4">
+                                <img src="${encodeURI(sponsorLogoInfo.file)}" alt="Logo ${sponsorLogoInfo.label}" class="h-20 w-48 md:h-24 md:w-56 object-contain drop-shadow-lg" decoding="async" onerror="this.parentElement.remove()">
+                            </div>
+                        ` : ''}
                         <!-- BANNER DO PLAYER -->
                         <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-xl w-full">
-                            <div class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
+                            <div id="player-banner" class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+                                <div id="player-country-flag-container" class="absolute top-3 left-3 z-20">${countryFlagHtml}</div>
                                 ${charArtInfo ? `<img src="${charArtInfo.file}" alt="${charArtInfo.label}" class="absolute right-2 md:right-8 bottom-0 h-full object-contain object-bottom pointer-events-none select-none">` : ''}
                             </div>
                             
@@ -657,6 +798,37 @@
                 });
             }
 
+            async function atualizarPaisCacheAntigo(playerId, dados) {
+                try {
+                    const query = `query PlayerCountry($id: ID!) {
+                        player(id: $id) {
+                            user {
+                                location {
+                                    country
+                                }
+                            }
+                        }
+                    }`;
+                    const resposta = await callStartGG(query, { id: playerId });
+                    const jogador = resposta.data?.player;
+                    if (!jogador) return;
+
+                    const countryName = typeof jogador.user?.location?.country === 'string' && jogador.user.location.country.trim()
+                        ? jogador.user.location.country.trim()
+                        : null;
+                    dados.countryName = countryName;
+                    dados.countryChecked = true;
+                    await _salvarPaisPerfilCache(playerId, countryName, true);
+
+                    const flagContainer = document.getElementById('player-country-flag-container');
+                    if (flagContainer) {
+                        flagContainer.innerHTML = getCountryFlagHtml(countryName, null);
+                    }
+                } catch (e) {
+                    console.warn('Não foi possível consultar o país do player no Start.gg:', e);
+                }
+            }
+
             async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
@@ -668,6 +840,9 @@
                     dados.characterArt = await _lerCharArt(playerId);
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     renderizarGraficoEvolucao(dados.tournaments || []);
+                    if (fonte === 'cache' && dados.countryChecked !== true && !dados.countryName && !dados.countryCode) {
+                        void atualizarPaisCacheAntigo(playerId, dados);
+                    }
                 } catch (e) {
                     console.error(e);
                     conteudo.innerHTML = '<div class="history-empty">❌ Erro ao carregar perfil do player.</div>';

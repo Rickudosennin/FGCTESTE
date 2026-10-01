@@ -33,6 +33,17 @@ async function _lerPerfilCache(playerId) {
     }
 }
 
+async function _salvarPaisPerfilCache(playerId, countryName, countryChecked = true) {
+    try {
+        await _playersCollection.doc(String(playerId)).update({
+            'dados.countryName': countryName || null,
+            'dados.countryChecked': Boolean(countryChecked)
+        });
+    } catch (e) {
+        console.error('Erro ao salvar país no cache do perfil:', e);
+    }
+}
+
 // ==================== LISTA DE PLAYERS CONHECIDOS (Firestore, compartilhada) ====================
 async function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
     try {
@@ -45,14 +56,49 @@ async function _salvarPlayerLocal(playerId, gamerTag, prefix = '') {
     }
 }
 
+// Compatibilidade com registros antigos salvos como "SPONSOR | gamerTag" em um único campo.
+function _normalizarPlayerConhecido(playerId, dados = {}) {
+    let gamerTag = String(dados.gamerTag || '').trim();
+    let prefix = String(dados.prefix || '').trim();
+    const partesCombinadas = gamerTag.split('|').map(parte => parte.trim());
+
+    if (partesCombinadas.length >= 2) {
+        const prefixosEmbutidos = partesCombinadas.slice(0, -1)
+            .flatMap(parte => parte.split(/[|/&]/))
+            .map(parte => parte.trim())
+            .filter(Boolean);
+        const gamerTagEmbutido = partesCombinadas[partesCombinadas.length - 1];
+        const dividirPrefixos = valor => String(valor || '')
+            .split(/[|/&]/)
+            .map(parte => parte.trim())
+            .filter(Boolean);
+        const normalizarPrefixo = valor => String(valor || '').trim()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+        const prefixosExistentes = dividirPrefixos(prefix);
+        const prefixosCorrespondem = prefixosExistentes.length === 0 ||
+            (prefixosExistentes.length <= prefixosEmbutidos.length &&
+                prefixosExistentes.every((existente, indice) =>
+                    normalizarPrefixo(existente) === normalizarPrefixo(prefixosEmbutidos[indice])
+                ));
+
+        if (prefixosEmbutidos.length > 0 && gamerTagEmbutido && prefixosCorrespondem) {
+            if (prefixosEmbutidos.length > prefixosExistentes.length) {
+                prefix = prefixosEmbutidos.join(' | ');
+            }
+            gamerTag = gamerTagEmbutido;
+        }
+    }
+
+    return { playerId: String(playerId), gamerTag, prefix };
+}
+
 async function _carregarPlayersLocal() {
     try {
         const snap = await _knownPlayersCollection.get();
-        return snap.docs.map(d => ({
-            playerId: d.id,
-            gamerTag: d.data().gamerTag,
-            prefix: d.data().prefix || ''
-        }));
+        return snap.docs.map(d => _normalizarPlayerConhecido(d.id, d.data()));
     } catch (e) {
         console.error('Erro ao carregar players conhecidos do Firestore:', e);
         return [];
@@ -237,6 +283,9 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
                 id
                 slug
                 name
+                location {
+                    country
+                }
                 authorizations {
                     type
                     externalUsername
@@ -275,6 +324,9 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const gamerTagAtual = jogador.gamerTag || gamerTag;
     const prefixAtual = typeof jogador.prefix === 'string' ? jogador.prefix.trim() : '';
     const user = jogador.user;
+    const countryName = typeof user?.location?.country === 'string' && user.location.country.trim()
+        ? user.location.country.trim()
+        : null;
     const standings = json1.data?.player?.recentStandings || [];
     const images = user?.images || [];
     const authorizations = user?.authorizations || [];
@@ -300,6 +352,8 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     dados.bannerUrl = bannerUrl;
     dados.realName = realName;
     dados.userSlug = userSlug;
+    dados.countryName = countryName;
+    dados.countryChecked = true;
     dados.social = {
         twitch: twitchAuth ? twitchAuth.externalUsername : null,
         twitter: twitterAuth ? twitterAuth.externalUsername : null,
