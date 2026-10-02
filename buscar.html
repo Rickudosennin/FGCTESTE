@@ -87,108 +87,116 @@
         let listaCompleta = [];
 
         const TEAMS = [
-                { tag: "037C16B3-FF28-4A46-B164-08E92827A768", logo: "imagens/sponsors/037C16B3-FF28-4A46-B164-08E92827A768.webp" },
-                { tag: "2G", logo: "imagens/sponsors/2G.webp" },
-                { tag: "2GAME", logo: "imagens/sponsors/2GAME.webp" },
-                { tag: "2GAME_MDT", logo: "imagens/sponsors/2GAME_MDT.webp" },
-                { tag: "4ALLV", logo: "imagens/sponsors/4ALLV.webp" },
-                { tag: "AD", logo: "imagens/sponsors/AD.webp" },
-                { tag: "AET", logo: "imagens/sponsors/AET.webp" },
-                { tag: "AL", logo: "imagens/sponsors/AL.webp" },
-                { tag: "ARCADIAN", logo: "imagens/sponsors/ARCADIAN.webp" },
-                { tag: "BONG", logo: "imagens/sponsors/BONG.webp" },
-                { tag: "BRABOS", logo: "imagens/sponsors/BRABOS.webp" },
-                { tag: "BW", logo: "imagens/sponsors/BW.webp" },
-                { tag: "CDL", logo: "imagens/sponsors/CDL.webp" },
-                { tag: "CHR", logo: "imagens/sponsors/CHR.webp" },
-                { tag: "CNTR", logo: "imagens/sponsors/CNTR.webp" },
-                { tag: "COUNTER", logo: "imagens/sponsors/COUNTER.webp" },
-                { tag: "CPS", logo: "imagens/sponsors/CPS.webp" },
-                { tag: "DASH", logo: "imagens/sponsors/DASH.webp" },
-                { tag: "DK", logo: "imagens/sponsors/DK.webp" },
-                { tag: "DK.IMP", logo: "imagens/sponsors/DK.IMP.webp" },
-                { tag: "DR", logo: "imagens/sponsors/DR.webp" },
-                { tag: "DXO", logo: "imagens/sponsors/DXO.webp" },
-                { tag: "E1", logo: "imagens/sponsors/E1.webp" },
-                { tag: "E1SPORTS", logo: "imagens/sponsors/E1SPORTS.webp" },
-                { tag: "EGO", logo: "imagens/sponsors/EGO.webp" },
-                { tag: "FESPMS", logo: "imagens/sponsors/FESPMS.webp" },
-                { tag: "FLECHINHA", logo: "imagens/sponsors/FLECHINHA.webp" },
-                { tag: "FLORIPA", logo: "imagens/sponsors/FLORIPA.webp" },
-                { tag: "FORCE", logo: "imagens/sponsors/FORCE.webp" },
-                { tag: "FSH", logo: "imagens/sponsors/FSH.webp" },
-                { tag: "FSN", logo: "imagens/sponsors/FSN.webp" },
-                { tag: "FT", logo: "imagens/sponsors/FT.webp" },
-                { tag: "FURIA", logo: "imagens/sponsors/FURIA.webp" },
-                { tag: "GF", logo: "imagens/sponsors/GF.webp" },
-                { tag: "HDG", logo: "imagens/sponsors/HDG.webp" },
-                { tag: "HIDEOUT", logo: "imagens/sponsors/HIDEOUT.webp" },
-                { tag: "IMP", logo: "imagens/sponsors/IMP.webp" },
-                { tag: "IMPERIAL", logo: "imagens/sponsors/IMPERIAL.webp" },
-                { tag: "KK", logo: "imagens/sponsors/KK.webp" },
-                { tag: "KWH", logo: "imagens/sponsors/KWH.webp" },
-                { tag: "KZ", logo: "imagens/sponsors/KZ.webp" },
-                { tag: "LF", logo: "imagens/sponsors/LF.webp" },
-                { tag: "LGD", logo: "imagens/sponsors/LGD.webp" },
-                { tag: "LMS", logo: "imagens/sponsors/LMS.webp" },
-                { tag: "LOS BRABOS", logo: "imagens/sponsors/LOS BRABOS.webp" },
-                { tag: "LUA", logo: "imagens/sponsors/LUA.webp" },
-                { tag: "MDTUPPER", logo: "imagens/sponsors/MDTUPPER.webp" },
-                { tag: "MRK", logo: "imagens/sponsors/MRK.webp" },
-                { tag: "NEXUS", logo: "imagens/sponsors/NEXUS.webp" },
-                { tag: "NEXUS GAMING", logo: "imagens/sponsors/NEXUS GAMING.webp" },
-                { tag: "NM", logo: "imagens/sponsors/NM.webp" },
-                { tag: "ONS", logo: "imagens/sponsors/ONS.webp" },
-                { tag: "ONX", logo: "imagens/sponsors/ONX.webp" },
-                { tag: "PFW", logo: "imagens/sponsors/PFW.webp" },
-                { tag: "PHT", logo: "imagens/sponsors/PHT.webp" },
-                { tag: "PINX", logo: "imagens/sponsors/PINX.webp" },
-                { tag: "PLG", logo: "imagens/sponsors/PLG.webp" },
-                { tag: "PRESSB", logo: "imagens/sponsors/PRESSB.webp" },
-                { tag: "PRORD", logo: "imagens/sponsors/PRORD.webp" },
-                { tag: "RCS", logo: "imagens/sponsors/RCS.webp" },
-                { tag: "RENEGADOS", logo: "imagens/sponsors/RENEGADOS.webp" },
-                { tag: "RIZE", logo: "imagens/sponsors/RIZE.webp" },
-                { tag: "RNG", logo: "imagens/sponsors/RNG.webp" },
-                { tag: "ROT", logo: "imagens/sponsors/ROT.webp" },
-                { tag: "RVL", logo: "imagens/sponsors/RVL.webp" },
-                { tag: "SA", logo: "imagens/sponsors/SA.webp" },
-                { tag: "SGP", logo: "imagens/sponsors/SGP.webp" },
-                { tag: "SHODOWN", logo: "imagens/sponsors/SHODOWN.webp" },
-                { tag: "SILVAGAMES REV", logo: "imagens/sponsors/SILVAGAMES REV.webp" },
-                { tag: "SMASHPE", logo: "imagens/sponsors/SMASHPE.webp" },
-                { tag: "SMASHRS", logo: "imagens/sponsors/SMASHRS.webp" },
-                { tag: "SMK", logo: "imagens/sponsors/SMK.webp" },
-                { tag: "SOL", logo: "imagens/sponsors/SOL.webp" },
-                { tag: "SPB", logo: "imagens/sponsors/SPB.webp" },
-                { tag: "SPDQ", logo: "imagens/sponsors/SPDQ.webp" },
-                { tag: "SUN", logo: "imagens/sponsors/SUN.webp" },
-                { tag: "TAIPAN", logo: "imagens/sponsors/TAIPAN.webp" },
-                { tag: "TDH", logo: "imagens/sponsors/TDH.webp" },
-                { tag: "TESA", logo: "imagens/sponsors/TESA.webp" },
-                { tag: "TLS", logo: "imagens/sponsors/TLS.webp" },
-                { tag: "TRO", logo: "imagens/sponsors/TRO.webp" },
-                { tag: "TRT", logo: "imagens/sponsors/TRT.webp" },
-                { tag: "TSD", logo: "imagens/sponsors/TSD.webp" },
-                { tag: "TWS", logo: "imagens/sponsors/TWS.webp" },
-                { tag: "UA", logo: "imagens/sponsors/UA.webp" },
-                { tag: "UPP", logo: "imagens/sponsors/UPP.webp" },
-                { tag: "UPPER", logo: "imagens/sponsors/UPPER.webp" },
-                { tag: "VC", logo: "imagens/sponsors/VC.webp" },
-                { tag: "VENON", logo: "imagens/sponsors/VENON.webp" },
-                { tag: "VENON FLOW", logo: "imagens/sponsors/VENON FLOW.webp" },
-                { tag: "VFC", logo: "imagens/sponsors/VFC.webp" },
-                { tag: "VIPERS", logo: "imagens/sponsors/VIPERS.webp" },
-                { tag: "Vitimas FC", logo: "imagens/sponsors/Vitimas FC.webp" },
-                { tag: "Vítimas FC", logo: "imagens/sponsors/Vítimas FC.webp" },
-                { tag: "VOID", logo: "imagens/sponsors/VOID.webp" },
-                { tag: "WASF", logo: "imagens/sponsors/WASF.webp" },
-                { tag: "ZENKO", logo: "imagens/sponsors/ZENKO.webp" },
-                { tag: "ZF", logo: "imagens/sponsors/ZF.webp" },
-                { tag: "ZK", logo: "imagens/sponsors/ZK.webp" },
-                { tag: "ZS FIGHTERS", logo: "imagens/sponsors/ZS FIGHTERS.webp" },
-                { tag: "ZSF", logo: "imagens/sponsors/ZSF.webp" }
-        ].sort((a, b) => a.tag.localeCompare(b.tag, 'pt-BR', { sensitivity: 'base' }));
+                { label: "2G", logo: "imagens/sponsors/2G.webp", tags: ["2G"] },
+                { label: "2GAME", logo: "imagens/sponsors/2GAME.webp", tags: ["2GAME"] },
+                { label: "2GAME_MDT", logo: "imagens/sponsors/2GAME_MDT.webp", tags: ["2GAME_MDT"] },
+                { label: "4ALLV", logo: "imagens/sponsors/4ALLV.webp", tags: ["4ALLV"] },
+                { label: "AD", logo: "imagens/sponsors/AD.webp", tags: ["AD"] },
+                { label: "AET", logo: "imagens/sponsors/AET.webp", tags: ["AET"] },
+                { label: "AL", logo: "imagens/sponsors/AL.webp", tags: ["AL"] },
+                { label: "ARCADIAN", logo: "imagens/sponsors/ARCADIAN.webp", tags: ["ARCADIAN"] },
+                { label: "BONG", logo: "imagens/sponsors/BONG.webp", tags: ["BONG"] },
+                { label: "BRABOS", logo: "imagens/sponsors/BRABOS.webp", tags: ["BRABOS"] },
+                { label: "BW", logo: "imagens/sponsors/BW.webp", tags: ["BW"] },
+                { label: "CDL", logo: "imagens/sponsors/CDL.webp", tags: ["CDL"] },
+                { label: "CHR", logo: "imagens/sponsors/CHR.webp", tags: ["CHR"] },
+                { label: "CNTR", logo: "imagens/sponsors/CNTR.webp", tags: ["CNTR"] },
+                { label: "COUNTER", logo: "imagens/sponsors/COUNTER.webp", tags: ["COUNTER"] },
+                { label: "CPS", logo: "imagens/sponsors/CPS.webp", tags: ["CPS"] },
+                { label: "CX", logo: "imagens/sponsors/CX.webp", tags: ["CX"] },
+                { label: "DASH", logo: "imagens/sponsors/DASH.webp", tags: ["DASH"] },
+                { label: "DK", logo: "imagens/sponsors/DK.webp", tags: ["DK"] },
+                { label: "DK.IMP", logo: "imagens/sponsors/DK.IMP.webp", tags: ["DK.IMP"] },
+                { label: "DR", logo: "imagens/sponsors/DR.webp", tags: ["DR"] },
+                { label: "DXO", logo: "imagens/sponsors/DXO.webp", tags: ["DXO"] },
+                { label: "E1", logo: "imagens/sponsors/E1.webp", tags: ["E1"] },
+                { label: "E1SPORTS", logo: "imagens/sponsors/E1SPORTS.webp", tags: ["E1SPORTS"] },
+                { label: "EGO", logo: "imagens/sponsors/EGO.webp", tags: ["EGO"] },
+                { label: "FESPMS", logo: "imagens/sponsors/FESPMS.webp", tags: ["FESPMS"] },
+                { label: "FLECHINHA", logo: "imagens/sponsors/FLECHINHA.webp", tags: ["FLECHINHA"] },
+                { label: "FLORIPA", logo: "imagens/sponsors/FLORIPA.webp", tags: ["FLORIPA"] },
+                { label: "FNX", logo: "imagens/sponsors/FNX.webp", tags: ["FNX"] },
+                { label: "FORCE", logo: "imagens/sponsors/FORCE.webp", tags: ["FORCE"] },
+                { label: "FSH", logo: "imagens/sponsors/FSH.webp", tags: ["FSH"] },
+                { label: "FSN", logo: "imagens/sponsors/FSN.webp", tags: ["FSN"] },
+                { label: "FT", logo: "imagens/sponsors/FT.webp", tags: ["FT"] },
+                { label: "FURIA", logo: "imagens/sponsors/FURIA.webp", tags: ["FURIA"] },
+                { label: "GF", logo: "imagens/sponsors/GF.webp", tags: ["GF"] },
+                { label: "HDG", logo: "imagens/sponsors/HDG.webp", tags: ["HDG"] },
+                { label: "HIDEOUT", logo: "imagens/sponsors/HIDEOUT.webp", tags: ["HIDEOUT"] },
+                { label: "IMP", logo: "imagens/sponsors/IMP.webp", tags: ["IMP"] },
+                { label: "IMPERIAL", logo: "imagens/sponsors/IMPERIAL.webp", tags: ["IMPERIAL"] },
+                { label: "KK", logo: "imagens/sponsors/KK.webp", tags: ["KK"] },
+                { label: "KND", logo: "imagens/sponsors/KND.webp", tags: ["KND"] },
+                { label: "KWH", logo: "imagens/sponsors/KWH.webp", tags: ["KWH"] },
+                { label: "KZ", logo: "imagens/sponsors/KZ.webp", tags: ["KZ"] },
+                { label: "LF", logo: "imagens/sponsors/LF.webp", tags: ["LF"] },
+                { label: "LGD", logo: "imagens/sponsors/LGD.webp", tags: ["LGD"] },
+                { label: "LMS", logo: "imagens/sponsors/LMS.webp", tags: ["LMS"] },
+                { label: "LOS BRABOS", logo: "imagens/sponsors/LOS BRABOS.webp", tags: ["LOS BRABOS"] },
+                { label: "LUA", logo: "imagens/sponsors/LUA.webp", tags: ["LUA"] },
+                { label: "MAZE", logo: "imagens/sponsors/MAZE.webp", tags: ["MAZE"] },
+                { label: "MDTUPPER", logo: "imagens/sponsors/MDTUPPER.webp", tags: ["MDTUPPER"] },
+                { label: "MRK", logo: "imagens/sponsors/MRK.webp", tags: ["MRK"] },
+                { label: "NEXUS", logo: "imagens/sponsors/NEXUS.webp", tags: ["NEXUS"] },
+                { label: "NEXUS GAMING", logo: "imagens/sponsors/NEXUS GAMING.webp", tags: ["NEXUS GAMING"] },
+                { label: "NM", logo: "imagens/sponsors/NM.webp", tags: ["NM"] },
+                { label: "ONS", logo: "imagens/sponsors/ONS.webp", tags: ["ONS"] },
+                { label: "ONX", logo: "imagens/sponsors/ONX.webp", tags: ["ONX"] },
+                { label: "PFW", logo: "imagens/sponsors/PFW.webp", tags: ["PFW"] },
+                { label: "PHT", logo: "imagens/sponsors/PHT.webp", tags: ["PHT"] },
+                { label: "PINX", logo: "imagens/sponsors/PINX.webp", tags: ["PINX"] },
+                { label: "PLG", logo: "imagens/sponsors/PLG.webp", tags: ["PLG"] },
+                { label: "PRESSB", logo: "imagens/sponsors/PRESSB.webp", tags: ["PRESSB"] },
+                { label: "PRORD", logo: "imagens/sponsors/PRORD.webp", tags: ["PRORD"] },
+                { label: "RCS", logo: "imagens/sponsors/RCS.webp", tags: ["RCS"] },
+                { label: "RENEGADOS", logo: "imagens/sponsors/RENEGADOS.webp", tags: ["RENEGADOS"] },
+                { label: "RIZE", logo: "imagens/sponsors/RIZE.webp", tags: ["RIZE"] },
+                { label: "RNG", logo: "imagens/sponsors/RNG.webp", tags: ["RNG"] },
+                { label: "ROT", logo: "imagens/sponsors/ROT.webp", tags: ["ROT"] },
+                { label: "RVL", logo: "imagens/sponsors/RVL.webp", tags: ["RVL"] },
+                { label: "SA", logo: "imagens/sponsors/SA.webp", tags: ["SA"] },
+                { label: "SGP", logo: "imagens/sponsors/SGP.webp", tags: ["SGP"] },
+                { label: "SHODOWN", logo: "imagens/sponsors/SHODOWN.webp", tags: ["SHODOWN"] },
+                { label: "SILVAGAMES REV", logo: "imagens/sponsors/SILVAGAMES REV.webp", tags: ["SILVAGAMES REV"] },
+                { label: "SMASHPE", logo: "imagens/sponsors/SMASHPE.webp", tags: ["SMASHPE"] },
+                { label: "SMASHRS", logo: "imagens/sponsors/SMASHRS.webp", tags: ["SMASHRS"] },
+                { label: "SMK", logo: "imagens/sponsors/SMK.webp", tags: ["SMK"] },
+                { label: "SOL", logo: "imagens/sponsors/SOL.webp", tags: ["SOL"] },
+                { label: "SPB", logo: "imagens/sponsors/SPB.webp", tags: ["SPB"] },
+                { label: "SPDQ", logo: "imagens/sponsors/SPDQ.webp", tags: ["SPDQ"] },
+                { label: "SUN", logo: "imagens/sponsors/SUN.webp", tags: ["SUN"] },
+                { label: "TAIPAN", logo: "imagens/sponsors/TAIPAN.webp", tags: ["TAIPAN"] },
+                { label: "TDH", logo: "imagens/sponsors/TDH.webp", tags: ["TDH"] },
+                { label: "TESA", logo: "imagens/sponsors/TESA.webp", tags: ["TESA"] },
+                { label: "TLS", logo: "imagens/sponsors/TLS.webp", tags: ["TLS"] },
+                { label: "TRO", logo: "imagens/sponsors/TRO.webp", tags: ["TRO"] },
+                { label: "TRT", logo: "imagens/sponsors/TRT.webp", tags: ["TRT"] },
+                { label: "TSD", logo: "imagens/sponsors/TSD.webp", tags: ["TSD"] },
+                { label: "TWS", logo: "imagens/sponsors/TWS.webp", tags: ["TWS"] },
+                { label: "UA", logo: "imagens/sponsors/UA.webp", tags: ["UA"] },
+                { label: "UPP", logo: "imagens/sponsors/UPP.webp", tags: ["UPP"] },
+                { label: "UPPER", logo: "imagens/sponsors/UPPER.webp", tags: ["UPPER"] },
+                { label: "VC", logo: "imagens/sponsors/VC.webp", tags: ["VC"] },
+                { label: "VENON", logo: "imagens/sponsors/VENON.webp", tags: ["VENON"] },
+                { label: "VENON FLOW", logo: "imagens/sponsors/VENON FLOW.webp", tags: ["VENON FLOW"] },
+                { label: "VIPERS", logo: "imagens/sponsors/VIPERS.webp", tags: ["VIPERS"] },
+                { label: "Vítimas FC", logo: "imagens/sponsors/Vítimas FC.webp", tags: ["VFC","Vitimas FC","Vítimas FC"] },
+                { label: "VOID", logo: "imagens/sponsors/VOID.webp", tags: ["VOID"] },
+                { label: "WASF", logo: "imagens/sponsors/WASF.webp", tags: ["WASF"] },
+                { label: "ZENKO", logo: "imagens/sponsors/ZENKO.webp", tags: ["ZENKO"] },
+                { label: "ZF", logo: "imagens/sponsors/ZF.webp", tags: ["ZF"] },
+                { label: "ZK", logo: "imagens/sponsors/ZK.webp", tags: ["ZK"] },
+                { label: "ZS FIGHTERS", logo: "imagens/sponsors/ZS FIGHTERS.webp", tags: ["ZS FIGHTERS"] },
+                { label: "ZSF", logo: "imagens/sponsors/ZSF.webp", tags: ["ZSF"] }
+        ].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
+
+        function extrairTagsDoPrefix(prefix) {
+            return String(prefix || '')
+                .split(/[|/&]/)
+                .map(t => t.trim().toLowerCase())
+                .filter(Boolean);
+        }
 
         function extrairSlugEventoStartGG(valor) {
             let url;
@@ -272,32 +280,47 @@
             }
         });
 
+        let timesRenderizados = [];
+
         function renderizarGridTimes() {
-            const prefixosComPlayer = new Set(
-                listaCompleta
-                    .map(p => (p.prefix || '').trim().toLowerCase())
-                    .filter(Boolean)
+            const prefixosComPlayer = new Set();
+            listaCompleta.forEach(p => extrairTagsDoPrefix(p.prefix).forEach(t => prefixosComPlayer.add(t)));
+
+            timesRenderizados = TEAMS.filter(t =>
+                t.tags.some(tag => prefixosComPlayer.has(tag.trim().toLowerCase()))
             );
-            const timesComPlayer = TEAMS.filter(t => prefixosComPlayer.has(t.tag.trim().toLowerCase()));
-            if (timesComPlayer.length === 0) {
+            if (timesRenderizados.length === 0) {
                 conteudoTimes.innerHTML = '<span class="col-span-full text-slate-500 text-xs text-center py-4">Nenhum time com player cadastrado.</span>';
                 return;
             }
-            conteudoTimes.innerHTML = timesComPlayer.map(t => `
-                <button onclick="buscarPorTime('${t.tag.replace(/'/g, "\\'")}')" title="${t.tag}" class="flex items-center justify-center p-2 h-16 rounded-lg border border-slate-700 hover:border-red-500 bg-slate-800/50 transition">
-                    <img src="${t.logo}" alt="${t.tag}" class="max-w-full max-h-10 object-contain">
+            conteudoTimes.innerHTML = timesRenderizados.map((t, idx) => `
+                <button id="time_btn_${idx}" onclick="buscarPorTime(${idx})" title="${t.label}" class="flex items-center justify-center p-2 h-16 rounded-lg border border-slate-700 hover:border-red-500 bg-slate-800/50 transition">
+                    <img src="${t.logo}" alt="${t.label}" class="max-w-full max-h-10 object-contain">
                 </button>
             `).join('');
         }
 
-        window.buscarPorTime = function(tag) {
-            const t = tag.trim().toLowerCase();
+        window.buscarPorTime = function(idx) {
+            const time = timesRenderizados[idx];
+            if (!time) return;
+
+            document.querySelectorAll('#conteudo_times button').forEach(btn => {
+                btn.classList.remove('border-red-500', 'bg-slate-800');
+                btn.classList.add('border-slate-700', 'bg-slate-800/50');
+            });
+            const btnSelecionado = document.getElementById('time_btn_' + idx);
+            if (btnSelecionado) {
+                btnSelecionado.classList.remove('border-slate-700', 'bg-slate-800/50');
+                btnSelecionado.classList.add('border-red-500', 'bg-slate-800');
+            }
+
+            const tagsSet = new Set(time.tags.map(t => t.trim().toLowerCase()));
             const filtrados = listaCompleta
-                .filter(p => (p.prefix || '').trim().toLowerCase() === t)
+                .filter(p => extrairTagsDoPrefix(p.prefix).some(t => tagsSet.has(t)))
                 .sort((a, b) => a.gamerTag.localeCompare(b.gamerTag, 'pt-BR', { sensitivity: 'base' }));
             inputBusca.value = '';
             if (filtrados.length === 0) {
-                resultadosDiv.innerHTML = `<div class="text-slate-500 text-sm text-center py-8">Nenhum player com o time "${tag}" encontrado.</div>`;
+                resultadosDiv.innerHTML = `<div class="text-slate-500 text-sm text-center py-8">Nenhum player com o time "${time.label}" encontrado.</div>`;
                 return;
             }
             renderizarLista(filtrados);
