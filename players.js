@@ -286,7 +286,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
                 location {
                     country
                 }
-                authorizations {
+/* [redacted sensitive line 289] */
                     type
                     externalUsername
                 }
@@ -329,15 +329,15 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         : null;
     const standings = json1.data?.player?.recentStandings || [];
     const images = user?.images || [];
-    const authorizations = user?.authorizations || [];
+/* [redacted sensitive line 332] */
     const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
     const realName = user?.name || null;
     const userSlug = user?.slug || null;
 
-    const twitchAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITCH');
-    const twitterAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITTER' || (a.type || '').toUpperCase() === 'X');
-    const discordAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'DISCORD');
+/* [redacted sensitive line 338] */
+/* [redacted sensitive line 339] */
+/* [redacted sensitive line 340] */
 
     const setsPorEvento = {};
     for (const standing of standings) {
