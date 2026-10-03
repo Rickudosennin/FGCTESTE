@@ -173,6 +173,38 @@ async function importarPlayersConhecidos(players) {
     };
 }
 
+// ==================== SETS DO EVENTO COM DADOS DO OPONENTE (próprio do player.html) ====================
+async function _buscarSetsDoEventoComOponente(eventId, playerId) {
+    try {
+        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id name participants { player { id gamerTag } } } } } } } }`;
+        const json = await callStartGG(query, { eventId });
+        const sets = json.data?.event?.sets?.nodes || [];
+        let wins = 0, losses = 0;
+        const setsDetalhados = [];
+        sets.forEach(set => {
+            const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId));
+            if (!playerSlot || !playerSlot.entrant) return;
+            const myEntrantId = playerSlot.entrant.id;
+            const oppSlot = set.slots?.find(slot => slot.entrant?.id !== myEntrantId && slot.entrant);
+            const oppEntrant = oppSlot?.entrant || null;
+            const oppParticipant = oppEntrant?.participants?.[0];
+            if (set.winnerId) {
+                const venceu = String(set.winnerId) === String(myEntrantId);
+                if (venceu) wins++; else losses++;
+                setsDetalhados.push({
+                    setId: set.id,
+                    venceu,
+                    opponentId: oppParticipant?.player?.id || null,
+                    opponentTag: oppParticipant?.player?.gamerTag || oppEntrant?.name || null
+                });
+            }
+        });
+        return { wins, losses, total: wins + losses, sets: setsDetalhados };
+    } catch (e) {
+        return { wins: 0, losses: 0, total: 0, error: true, sets: [] };
+    }
+}
+
 // ==================== PROCESSAMENTO ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
@@ -286,7 +318,7 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
                 location {
                     country
                 }
-/* [redacted sensitive line 289] */
+                authorizations {
                     type
                     externalUsername
                 }
@@ -329,25 +361,42 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
         : null;
     const standings = json1.data?.player?.recentStandings || [];
     const images = user?.images || [];
-/* [redacted sensitive line 332] */
+    const authorizations = user?.authorizations || [];
     const avatarUrl = images.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
     const bannerUrl = images.find(img => (img.type || '').toLowerCase() === 'banner')?.url || null;
     const realName = user?.name || null;
     const userSlug = user?.slug || null;
 
-/* [redacted sensitive line 338] */
-/* [redacted sensitive line 339] */
-/* [redacted sensitive line 340] */
+    const twitchAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITCH');
+    const twitterAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'TWITTER' || (a.type || '').toUpperCase() === 'X');
+    const discordAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'DISCORD');
 
     const setsPorEvento = {};
+    const recentSets = [];
     for (const standing of standings) {
         const eventId = standing.container?.id;
         if (!eventId) continue;
-        const resultado = await buscarSetsDoEvento(eventId, playerId);
+        const resultado = await _buscarSetsDoEventoComOponente(eventId, playerId);
         setsPorEvento[eventId] = resultado;
+        const eventName = standing.container?.name || '—';
+        const tournamentName = standing.container?.tournament?.name || '—';
+        const startAt = standing.container?.startAt || 0;
+        (resultado.sets || []).forEach(s => {
+            recentSets.push({
+                setId: s.setId,
+                venceu: s.venceu,
+                opponentTag: s.opponentTag || null,
+                eventName,
+                tournamentName,
+                startAt
+            });
+        });
     }
+    recentSets.sort((a, b) => b.startAt - a.startAt);
+    const recentSetsLimitados = recentSets.slice(0, 20);
 
     const dados = processarDadosPlayer(standings, setsPorEvento, gamerTagAtual, prefixAtual);
+    dados.recentSets = recentSetsLimitados;
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     dados.realName = realName;
@@ -400,6 +449,75 @@ async function _lerCharArt(playerId) {
     } catch (e) {
         console.error('Erro ao ler char art:', e);
         return null;
+    }
+}
+
+// ==================== JOGOS DO PLAYER (Firestore, campo separado) ====================
+async function _salvarGamesPlayed(playerId, gameKeys) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey) return false;
+        const validKeys = Array.isArray(gameKeys)
+            ? [...new Set(gameKeys.filter(key => typeof key === 'string' && key.trim()))].slice(0, 20)
+            : [];
+        await _playersCollection.doc(playerKey).set({
+            gamesPlayed: validKeys
+        }, { merge: true });
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar jogos do player:', e);
+        return false;
+    }
+}
+
+async function _lerGamesPlayed(playerId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey) return [];
+        const doc = await _playersCollection.doc(playerKey).get();
+        if (!doc.exists) return [];
+        const gamesPlayed = doc.data().gamesPlayed;
+        return Array.isArray(gamesPlayed) ? gamesPlayed : [];
+    } catch (e) {
+        console.error('Erro ao ler jogos do player:', e);
+        return [];
+    }
+}
+
+// ==================== REPORT DE PERSONAGEM POR SET (Firestore) ====================
+const _charReportsCollection = _db.collection('charReports');
+
+function _charReportDocId(setId, playerId) {
+    return `${setId}_${playerId}`;
+}
+
+async function _salvarCharReportSet(setId, playerId, gameKey, charKey) {
+    try {
+        await _charReportsCollection.doc(_charReportDocId(setId, playerId)).set({
+            setId: String(setId),
+            playerId: String(playerId),
+            characterArt: `${gameKey}:${charKey}`,
+            timestamp: Date.now()
+        });
+    } catch (e) {
+        console.error('Erro ao salvar report de personagem:', e);
+    }
+}
+
+async function _lerCharReportsDoPlayer(playerId, setIds) {
+    if (!setIds || setIds.length === 0) return {};
+    try {
+        const docs = await Promise.all(
+            setIds.map(setId => _charReportsCollection.doc(_charReportDocId(setId, playerId)).get())
+        );
+        const resultado = {};
+        docs.forEach(doc => {
+            if (doc.exists) resultado[doc.data().setId] = doc.data().characterArt;
+        });
+        return resultado;
+    } catch (e) {
+        console.error('Erro ao ler reports de personagem:', e);
+        return {};
     }
 }
 
