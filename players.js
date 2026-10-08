@@ -173,38 +173,6 @@ async function importarPlayersConhecidos(players) {
     };
 }
 
-// ==================== SETS DO EVENTO COM DADOS DO OPONENTE (próprio do player.html) ====================
-async function _buscarSetsDoEventoComOponente(eventId, playerId) {
-    try {
-        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id name participants { player { id gamerTag } } } } } } } }`;
-        const json = await callStartGG(query, { eventId });
-        const sets = json.data?.event?.sets?.nodes || [];
-        let wins = 0, losses = 0;
-        const setsDetalhados = [];
-        sets.forEach(set => {
-            const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId));
-            if (!playerSlot || !playerSlot.entrant) return;
-            const myEntrantId = playerSlot.entrant.id;
-            const oppSlot = set.slots?.find(slot => slot.entrant?.id !== myEntrantId && slot.entrant);
-            const oppEntrant = oppSlot?.entrant || null;
-            const oppParticipant = oppEntrant?.participants?.[0];
-            if (set.winnerId) {
-                const venceu = String(set.winnerId) === String(myEntrantId);
-                if (venceu) wins++; else losses++;
-                setsDetalhados.push({
-                    setId: set.id,
-                    venceu,
-                    opponentId: oppParticipant?.player?.id || null,
-                    opponentTag: oppParticipant?.player?.gamerTag || oppEntrant?.name || null
-                });
-            }
-        });
-        return { wins, losses, total: wins + losses, sets: setsDetalhados };
-    } catch (e) {
-        return { wins: 0, losses: 0, total: 0, error: true, sets: [] };
-    }
-}
-
 // ==================== PROCESSAMENTO ====================
 function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const seisMesesAtras = Date.now() - 180 * 24 * 60 * 60 * 1000;
@@ -214,11 +182,35 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
     const torneios = [];
     const colocacoes = [];
     const h2h = {};
+    const characterUsageByGame = new Map();
+    let characterUsageUnavailable = false;
+    let characterUsagePartial = false;
 
     standings.forEach(s => {
         const eventId = s.container?.id;
         const startAt = s.container?.startAt;
         const resultado = setsPorEvento[eventId] || { wins: 0, losses: 0 };
+
+        if (resultado.characterUsageUnavailable) characterUsageUnavailable = true;
+        const usage = resultado.characterUsage;
+        if (usage?.partial) characterUsagePartial = true;
+        if (usage?.gameName && Array.isArray(usage.picks)) {
+            let gameStats = characterUsageByGame.get(usage.gameName);
+            if (!gameStats) {
+                gameStats = { gameName: usage.gameName, reportedSelections: 0, characters: new Map() };
+                characterUsageByGame.set(usage.gameName, gameStats);
+            }
+            gameStats.reportedSelections += Number(usage.reportedSelections) || 0;
+            usage.picks.forEach(pick => {
+                const key = String(pick.characterId || pick.name || '').trim();
+                const name = String(pick.name || '').trim();
+                const count = Number(pick.count) || 0;
+                if (!key || !name || count <= 0) return;
+                const current = gameStats.characters.get(key) || { name, count: 0 };
+                current.count += count;
+                gameStats.characters.set(key, current);
+            });
+        }
 
         totalWins += resultado.wins;
         totalLosses += resultado.losses;
@@ -245,6 +237,7 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         const tournamentIcon = tournamentImages.find(img => (img.type || '').toLowerCase() === 'profile')?.url || null;
 
         torneios.push({
+            eventId: eventId || null,
             name: s.container?.tournament?.name || '—',
             eventName: s.container?.name || '—',
             placement: s.placement || '?',
@@ -288,6 +281,22 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
             date: t.date
         }));
 
+    const characterUsage = [...characterUsageByGame.values()]
+        .filter(game => game.reportedSelections > 0)
+        .map(game => ({
+            gameName: game.gameName,
+            reportedSelections: game.reportedSelections,
+            topCharacters: [...game.characters.values()]
+                .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+                .slice(0, 3)
+                .map(character => ({
+                    name: character.name,
+                    count: character.count,
+                    percentage: Math.round((character.count / game.reportedSelections) * 100)
+                }))
+        }))
+        .sort((a, b) => a.gameName.localeCompare(b.gameName));
+
     return {
         gamerTag,
         playerPrefix: prefix || '',
@@ -300,6 +309,9 @@ function processarDadosPlayer(standings, setsPorEvento, gamerTag, prefix = '') {
         recentForm: colocacoesOrdenadas.slice(0, 10),
         highlights,
         headToHead,
+        characterUsage,
+        characterUsageUnavailable,
+        characterUsagePartial,
         tournaments: torneios,
         updatedAt: new Date().toISOString()
     };
@@ -372,31 +384,14 @@ async function _buscarPlayerAoVivo(playerId, gamerTag, prefix = '') {
     const discordAuth = authorizations.find(a => (a.type || '').toUpperCase() === 'DISCORD');
 
     const setsPorEvento = {};
-    const recentSets = [];
     for (const standing of standings) {
         const eventId = standing.container?.id;
         if (!eventId) continue;
-        const resultado = await _buscarSetsDoEventoComOponente(eventId, playerId);
+        const resultado = await buscarSetsDoEvento(eventId, playerId, true);
         setsPorEvento[eventId] = resultado;
-        const eventName = standing.container?.name || '—';
-        const tournamentName = standing.container?.tournament?.name || '—';
-        const startAt = standing.container?.startAt || 0;
-        (resultado.sets || []).forEach(s => {
-            recentSets.push({
-                setId: s.setId,
-                venceu: s.venceu,
-                opponentTag: s.opponentTag || null,
-                eventName,
-                tournamentName,
-                startAt
-            });
-        });
     }
-    recentSets.sort((a, b) => b.startAt - a.startAt);
-    const recentSetsLimitados = recentSets.slice(0, 20);
 
     const dados = processarDadosPlayer(standings, setsPorEvento, gamerTagAtual, prefixAtual);
-    dados.recentSets = recentSetsLimitados;
     dados.avatarUrl = avatarUrl;
     dados.bannerUrl = bannerUrl;
     dados.realName = realName;
@@ -484,40 +479,294 @@ async function _lerGamesPlayed(playerId) {
     }
 }
 
-// ==================== REPORT DE PERSONAGEM POR SET (Firestore) ====================
-const _charReportsCollection = _db.collection('charReports');
+// ==================== HISTÓRICO COMPLETO DE PERSONAGENS (Start.gg) ====================
+const _CHAR_HISTORY_INDEX_PAGE_SIZE = 100;
+const _CHAR_HISTORY_EVENT_PAGE_SIZE = 25;
 
-function _charReportDocId(setId, playerId) {
-    return `${setId}_${playerId}`;
+const MAX_EVENTOS_VARREDURA_PERSONAGENS = 15;
+
+function criarEstadoHistoricoPersonagens(playerId, tournaments = []) {
+    const eventosRecentes = (Array.isArray(tournaments) ? tournaments : [])
+        .filter(t => t.eventId)
+        .slice(0, MAX_EVENTOS_VARREDURA_PERSONAGENS)
+        .map(t => ({
+            eventId: String(t.eventId),
+            eventName: t.eventName || 'Evento',
+            gameName: '',
+            page: 1,
+            totalPages: null,
+            status: 'pending',
+            reportedSelections: 0
+        }));
+
+    return {
+        version: 2,
+        playerId: String(playerId),
+        status: 'running',
+        phase: 'scan',
+        indexPage: 1,
+        indexTotalPages: 1,
+        totalSets: 0,
+        events: eventosRecentes,
+        eventIndex: 0,
+        completedEvents: 0,
+        scannedSets: 0,
+        totalSelections: 0,
+        countsByGame: [],
+        updatedAt: new Date().toISOString()
+    };
 }
 
-async function _salvarCharReportSet(setId, playerId, gameKey, charKey) {
-    try {
-        await _charReportsCollection.doc(_charReportDocId(setId, playerId)).set({
-            setId: String(setId),
-            playerId: String(playerId),
-            characterArt: `${gameKey}:${charKey}`,
-            timestamp: Date.now()
-        });
-    } catch (e) {
-        console.error('Erro ao salvar report de personagem:', e);
+function _adicionarSelecoesReportadasAoEstado(state, gameName, selections) {
+    if (!gameName || !selections.length) return;
+    let gameStats = state.countsByGame.find(item => item.gameName === gameName);
+    if (!gameStats) {
+        gameStats = { gameName, reportedSelections: 0, characters: [] };
+        state.countsByGame.push(gameStats);
+    }
+    selections.forEach(character => {
+        gameStats.reportedSelections++;
+        state.totalSelections++;
+        let current = gameStats.characters.find(item => item.characterId === character.characterId);
+        if (!current) {
+            current = { characterId: character.characterId, name: character.name, count: 0 };
+            gameStats.characters.push(current);
+        }
+        current.count++;
+    });
+}
+
+function _montarResumoHistoricoPersonagens(state) {
+    return state.countsByGame
+        .filter(game => game.reportedSelections > 0)
+        .map(game => ({
+            gameName: game.gameName,
+            reportedSelections: game.reportedSelections,
+            topCharacters: [...game.characters]
+                .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+                .slice(0, 3)
+                .map(character => ({
+                    name: character.name,
+                    count: character.count,
+                    percentage: Math.round((character.count / game.reportedSelections) * 100)
+                }))
+        }))
+        .sort((a, b) => a.gameName.localeCompare(b.gameName));
+}
+
+function _erroStartGGHistorico(json) {
+    if (json?.errors?.length) {
+        throw new Error('A API Start.gg não concluiu esta etapa. O progresso foi salvo; aguarde e tente continuar.');
     }
 }
 
-async function _lerCharReportsDoPlayer(playerId, setIds) {
-    if (!setIds || setIds.length === 0) return {};
-    try {
-        const docs = await Promise.all(
-            setIds.map(setId => _charReportsCollection.doc(_charReportDocId(setId, playerId)).get())
-        );
-        const resultado = {};
-        docs.forEach(doc => {
-            if (doc.exists) resultado[doc.data().setId] = doc.data().characterArt;
+async function _chamarStartGGHistorico(query, variables, callbacks = {}) {
+    const options = {
+        minIntervalMs: 1500,
+        maxCallsPerMinute: 65,
+        waitIfPaused: callbacks.waitIfPaused,
+        onWait: callbacks.onWait
+    };
+    const json = typeof callStartGGComLimite === 'function'
+        ? await callStartGGComLimite(query, variables, options)
+        : await callStartGG(query, variables);
+    _erroStartGGHistorico(json);
+    return json;
+}
+
+function _contarSelecoesDoPlayer(set, playerId) {
+    const slot = set.slots?.find(item =>
+        item.entrant?.participants?.some(participant => String(participant.player?.id) === String(playerId))
+    );
+    if (!slot?.entrant) return [];
+
+    const entrantId = String(slot.entrant.id);
+    const participantIds = new Set((slot.entrant.participants || [])
+        .filter(participant => String(participant.player?.id) === String(playerId))
+        .map(participant => String(participant.id)));
+    const reported = [];
+
+    (set.games || []).forEach(game => {
+        const picksForGame = new Map();
+        (game.selections || []).forEach(selection => {
+            const participantId = selection.participant?.id;
+            const belongsToPlayer = participantId != null && participantIds.size
+                ? participantIds.has(String(participantId))
+                : String(selection.entrant?.id) === entrantId;
+            const character = selection.character;
+            const name = String(character?.name || '').trim();
+            if (!belongsToPlayer || !name) return;
+            const characterId = character.id == null ? name.toLocaleLowerCase() : String(character.id);
+            picksForGame.set(characterId, { characterId, name });
         });
-        return resultado;
+        picksForGame.forEach(character => reported.push(character));
+    });
+    return reported;
+}
+
+async function varrerHistoricoCompletoPersonagens(playerId, state, callbacks = {}) {
+    const playerKey = playerId == null ? '' : String(playerId).trim();
+    if (!playerKey) throw new Error('ID de jogador ausente.');
+    if (!state || state.version !== 2 || String(state.playerId) !== playerKey) {
+        throw new Error('O progresso salvo não corresponde a este perfil.');
+    }
+
+    const save = async () => {
+        state.updatedAt = new Date().toISOString();
+        if (callbacks.saveState) await callbacks.saveState(state);
+        if (callbacks.onProgress) callbacks.onProgress(state);
+    };
+    const waitIfPaused = callbacks.waitIfPaused || (() => Promise.resolve());
+
+    state.status = 'running';
+    await save();
+
+    try {
+        while (state.phase === 'index') {
+            await waitIfPaused();
+            const page = Math.max(1, Number(state.indexPage) || 1);
+            const query = `query PlayerEventIndex($id: ID!, $page: Int!) {
+                player(id: $id) {
+                    sets(perPage: 100, page: $page) {
+                        pageInfo { total totalPages page perPage }
+                        nodes { event { id name videogame { name } } }
+                    }
+                }
+            }`;
+            const json = await _chamarStartGGHistorico(query, { id: playerKey, page }, callbacks);
+            const connection = json.data?.player?.sets;
+            if (!connection) throw new Error('Não foi possível listar os eventos deste perfil.');
+
+            const pageInfo = connection.pageInfo || {};
+            state.totalSets = Number(pageInfo.total) || state.totalSets;
+            state.indexTotalPages = Math.max(1, Number(pageInfo.totalPages) || 1);
+            (connection.nodes || []).forEach(node => {
+                const event = node.event;
+                if (event?.id == null) return;
+                const eventId = String(event.id);
+                let record = state.events.find(item => item.eventId === eventId);
+                if (!record) {
+                    record = {
+                        eventId,
+                        eventName: String(event.name || 'Evento'),
+                        gameName: String(event.videogame?.name || ''),
+                        page: 1,
+                        totalPages: null,
+                        status: 'pending',
+                        reportedSelections: 0
+                    };
+                    state.events.push(record);
+                } else {
+                    if (!record.eventName && event.name) record.eventName = String(event.name);
+                    if (!record.gameName && event.videogame?.name) record.gameName = String(event.videogame.name);
+                }
+            });
+
+            state.indexPage = page + 1;
+            if (page >= state.indexTotalPages || !(connection.nodes || []).length) {
+                state.phase = 'scan';
+                state.indexPage = state.indexTotalPages;
+                state.eventIndex = Math.min(Number(state.eventIndex) || 0, state.events.length);
+                if (callbacks.onPhaseChange) callbacks.onPhaseChange('scan', state);
+            }
+            await save();
+        }
+
+        while (state.phase === 'scan' && state.eventIndex < state.events.length) {
+            await waitIfPaused();
+            const event = state.events[state.eventIndex];
+            const page = Math.max(1, Number(event.page) || 1);
+            const query = `query EventPlayerSets($eventId: ID!, $playerId: ID!, $page: Int!) {
+                event(id: $eventId) {
+                    name
+                    videogame { name }
+                    sets(perPage: 25, page: $page, filters: { playerIds: [$playerId], hideEmpty: true }) {
+                        pageInfo { total totalPages page perPage }
+                        nodes {
+                            id
+                            slots { entrant { id participants { id player { id } } } }
+                            games { selections { entrant { id } participant { id } character { id name } } }
+                        }
+                    }
+                }
+            }`;
+            const json = await _chamarStartGGHistorico(query, { eventId: event.eventId, playerId: playerKey, page }, callbacks);
+            const eventData = json.data?.event;
+            const connection = eventData?.sets;
+            if (!connection) throw new Error(`Não foi possível ler o evento ${event.eventName}.`);
+
+            event.eventName = String(eventData.name || event.eventName || 'Evento');
+            event.gameName = String(eventData.videogame?.name || event.gameName || 'Jogo desconhecido');
+            event.totalPages = Math.max(1, Number(connection.pageInfo?.totalPages) || 1);
+            event.status = 'scanning';
+
+            (connection.nodes || []).forEach(set => {
+                state.scannedSets++;
+                const picks = _contarSelecoesDoPlayer(set, playerKey);
+                event.reportedSelections += picks.length;
+                _adicionarSelecoesReportadasAoEstado(state, event.gameName, picks);
+            });
+
+            if (page >= event.totalPages || !(connection.nodes || []).length) {
+                event.status = 'complete';
+                event.page = event.totalPages;
+                state.completedEvents = state.eventIndex + 1;
+                state.eventIndex++;
+            } else {
+                event.page = page + 1;
+            }
+            await save();
+        }
+
+        if (state.phase === 'scan' && state.eventIndex >= state.events.length) {
+            state.phase = 'complete';
+            state.status = 'complete';
+            state.completedEvents = state.events.length;
+            state.characterUsage = _montarResumoHistoricoPersonagens(state);
+            state.completedAt = new Date().toISOString();
+            await save();
+        }
+        return state;
+    } catch (error) {
+        state.status = 'error';
+        state.errorMessage = error?.message || 'Falha ao consultar o histórico.';
+        await save();
+        throw error;
+    }
+}
+
+async function _salvarHistoricoPersonagensCache(playerId, history) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey || !history?.complete || !Array.isArray(history.usage)) return false;
+        await _playersCollection.doc(playerKey).set({
+            characterUsageHistory: {
+                complete: true,
+                eventCount: Math.max(0, Number(history.eventCount) || 0),
+                setCount: Math.max(0, Number(history.setCount) || 0),
+                reportedSelections: Math.max(0, Number(history.reportedSelections) || 0),
+                usage: history.usage,
+                completedAt: history.completedAt || new Date().toISOString()
+            }
+        }, { merge: true });
+        return true;
     } catch (e) {
-        console.error('Erro ao ler reports de personagem:', e);
-        return {};
+        console.error('Erro ao salvar o histórico completo de personagens:', e);
+        return false;
+    }
+}
+
+async function _lerHistoricoPersonagensCache(playerId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey) return null;
+        const doc = await _playersCollection.doc(playerKey).get();
+        if (!doc.exists) return null;
+        const history = doc.data().characterUsageHistory;
+        return history?.complete && Array.isArray(history.usage) ? history : null;
+    } catch (e) {
+        console.error('Erro ao ler o histórico completo de personagens:', e);
+        return null;
     }
 }
 

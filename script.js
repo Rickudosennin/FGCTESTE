@@ -41,7 +41,7 @@ const games = [
     { "label": "Mortal Kombat X", "value": "MKX", "videogameId": 22 }, { "label": "Ultimate Mortal Kombat 3", "value": "UMK3", "videogameId": 55 },
     { "label": "MultiVersus", "value": "MVS", "videogameId": 45044 }, { "label": "Pocket Bravery", "value": "PB", "videogameId": 44108 },
     { "label": "Rivals of Aether", "value": "ROA", "videogameId": 24, "hidden": true }, { "label": "Rocket League", "value": "ROCKET_LEAGUE", "videogameId": 14 },
-    { "label": "SAMURAI SHODOWN", "value": "SS", "videogameId": 3568, "hidden": false },
+    { "label": "Samurai Shodown", "value": "SS", "videogameId": 3568, "hidden": false },
     { "label": "Skullgirls 2nd Encore", "value": "SG", "videogameId": 12 }, { "label": "Street Fighter 6", "value": "SF6", "videogameId": 43868 },
     { "label": "Street Fighter III: 3rd Strike", "value": "SF3", "videogameId": 43 }, { "label": "Super Smash Bros. Melee", "value": "SSBM", "videogameId": 1 },
     { "label": "Super Smash Bros. Ultimate", "value": "SSBU", "videogameId": 1386 }, { "label": "Super Street Fighter II Turbo", "value": "ST", "videogameId": 33 },
@@ -62,6 +62,7 @@ function extrairSlugTorneio(url) { if (!url) return null; const match = url.matc
 const LIGAS_MONITORADAS = [
     { slug: 'kombat-ranking-mk1', label: 'Kombat Ranking MK1', rankingUrl: 'https://www.start.gg/league/kombat-ranking-mk1/standings' },
     { slug: 'cipher-x-tournament-1', label: 'Cipher-X Tournament MK1', rankingUrl: 'https://www.start.gg/league/cipher-x-tournament-1/standings' },
+    { slug: 'ranking-cipher-x-tournament-street-fighter-66', label: 'Cipher-X Tournament SF6', rankingUrl: 'https://www.start.gg/league/ranking-cipher-x-tournament-street-fighter-66/standings' },
     { slug: 'arena-outworld-edi-o-6-2', label: 'Arena Outworld Edição 6', rankingUrl: 'https://www.start.gg/league/arena-outworld-edi-o-6-2/standings' },
     { slug: 'ranking-brasil-tekken-8-2026', label: 'Ranking Brasil Tekken 8 2026', rankingUrl: 'https://www.start.gg/league/ranking-brasil-tekken-8-2026/standings' },
     { slug: 'kampeonato-brasileiro-de-mortal-kombat-1-temporada-2', label: 'Kampeonato Brasileiro MK1 - T2', rankingUrl: 'https://www.start.gg/league/kampeonato-brasileiro-de-mortal-kombat-1-temporada-2/standings' },
@@ -248,13 +249,101 @@ async function _proximaPaginaAttendees() {
 function fecharAttendees() { document.getElementById('attendees_sidebar').classList.remove('open'); document.getElementById('attendees_overlay').classList.remove('active'); document.body.style.overflow = ''; }
 
 // ==================== HISTORICO ====================
-async function buscarSetsDoEvento(eventId, playerId) {
+async function buscarSetsDoEvento(eventId, playerId, incluirPersonagens = false) {
+    const setsPorPagina = incluirPersonagens ? 25 : 100;
+    // No modo detalhado, até 4 páginas mantêm cada resposta sob o limite de objetos
+    // da API e o máximo teórico em 15 eventos recentes fica abaixo de 80 chamadas.
+    const maxPaginas = incluirPersonagens ? 4 : 1;
+
     try {
-        const query = `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id participants { player { id } } } } } } } }`;
-        const json = await callStartGG(query, { eventId }); const sets = json.data?.event?.sets?.nodes || []; let wins = 0, losses = 0; const setsDetalhados = [];
-        sets.forEach(set => { const playerSlot = set.slots?.find(slot => slot.entrant?.participants?.some(p => p.player?.id == playerId)); if (!playerSlot || !playerSlot.entrant) return; const myEntrantId = playerSlot.entrant.id; if (set.winnerId) { const venceu = String(set.winnerId) === String(myEntrantId); if (venceu) wins++; else losses++; setsDetalhados.push({ setId: set.id, venceu }); } });
-        return { wins, losses, total: wins + losses, sets: setsDetalhados };
-    } catch (e) { return { wins: 0, losses: 0, total: 0, error: true, sets: [] }; }
+        const todosSets = [];
+        let gameName = '';
+        let partial = false;
+
+        for (let page = 1; page <= maxPaginas; page++) {
+            const query = incluirPersonagens
+                ? `query EventSets($eventId: ID!, $page: Int!) { event(id: $eventId) { videogame { name } sets(perPage: 25, page: $page, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id participants { id player { id } } } } games { selections { entrant { id } participant { id } character { id name } } } } } } }`
+                : `query EventSets($eventId: ID!) { event(id: $eventId) { sets(perPage: 100, filters: {hideEmpty: true}) { nodes { id winnerId slots { entrant { id participants { player { id } } } } } } } }`;
+            const variables = incluirPersonagens ? { eventId, page } : { eventId };
+            const json = await callStartGG(query, variables);
+            if (json?.errors?.length) throw new Error('Start.gg retornou erro GraphQL ao consultar sets.');
+
+            const evento = json.data?.event;
+            if (!evento) throw new Error('Start.gg não retornou o evento.');
+            gameName = evento.videogame?.name || gameName;
+            const pageSets = evento.sets?.nodes || [];
+            todosSets.push(...pageSets);
+
+            if (!incluirPersonagens || pageSets.length < setsPorPagina) break;
+            if (page === maxPaginas) partial = true;
+        }
+
+        let wins = 0;
+        let losses = 0;
+        let reportedSelections = 0;
+        const setsDetalhados = [];
+        const characterCounts = new Map();
+
+        todosSets.forEach(set => {
+            const playerSlot = set.slots?.find(slot =>
+                slot.entrant?.participants?.some(participant => participant.player?.id == playerId)
+            );
+            if (!playerSlot?.entrant) return;
+            const myEntrantId = String(playerSlot.entrant.id);
+            const myParticipantIds = new Set((playerSlot.entrant.participants || [])
+                .filter(participant => String(participant.player?.id) === String(playerId))
+                .map(participant => String(participant.id)));
+
+            if (set.winnerId) {
+                const venceu = String(set.winnerId) === myEntrantId;
+                if (venceu) wins++; else losses++;
+                setsDetalhados.push({ setId: set.id, venceu });
+            }
+
+            if (!incluirPersonagens || !set.winnerId) return;
+            (set.games || []).forEach(game => {
+                const picksForGame = new Map();
+                (game.selections || []).forEach(selection => {
+                    const participantId = selection.participant?.id;
+                    const belongsToPlayer = participantId != null && myParticipantIds.size
+                        ? myParticipantIds.has(String(participantId))
+                        : String(selection.entrant?.id) === myEntrantId;
+                    const character = selection.character;
+                    const name = String(character?.name || '').trim();
+                    if (!belongsToPlayer || !name) return;
+                    const characterId = character.id == null ? name.toLocaleLowerCase() : String(character.id);
+                    picksForGame.set(characterId, { characterId, name });
+                });
+
+                picksForGame.forEach(character => {
+                    reportedSelections++;
+                    const existing = characterCounts.get(character.characterId) || { ...character, count: 0 };
+                    existing.count++;
+                    characterCounts.set(character.characterId, existing);
+                });
+            });
+        });
+
+        return {
+            wins,
+            losses,
+            total: wins + losses,
+            sets: setsDetalhados,
+            characterUsage: incluirPersonagens ? {
+                gameName,
+                reportedSelections,
+                partial,
+                picks: [...characterCounts.values()]
+            } : null
+        };
+    } catch (e) {
+        if (incluirPersonagens) {
+            console.warn('Falha ao ler personagens reportados; mantendo o histórico normal do player.', e);
+            const fallback = await buscarSetsDoEvento(eventId, playerId, false);
+            return { ...fallback, characterUsageUnavailable: true };
+        }
+        return { wins: 0, losses: 0, total: 0, error: true, sets: [] };
+    }
 }
 
 // ==================== WINRATE POR PERSONAGEM (reports manuais no Git) ====================

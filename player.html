@@ -15,17 +15,43 @@
     <div class="max-w-5xl mx-auto space-y-6 w-full min-w-0">
         <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-2 inline-block transition">&larr; Voltar para a busca</a>
 
-        <div id="perfil_conteudo" class="w-full min-w-0">
-            <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
+    <div id="perfil_conteudo" class="w-full min-w-0">
+        <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
+    </div>
+</div>
+
+<div id="performance-share-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm p-3 sm:p-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="performance-share-title" onclick="if(event.target===this) fecharCompartilhamentoDesempenho()">
+    <div class="max-w-6xl mx-auto my-4 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between gap-4 p-4 sm:p-5 border-b border-slate-800">
+            <div>
+                <h2 id="performance-share-title" class="font-black text-white">Compartilhar desempenho</h2>
+                <p class="text-xs text-slate-400 mt-1">Prévia do card PNG em 1920 × 1080.</p>
+            </div>
+            <button type="button" onclick="fecharCompartilhamentoDesempenho()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300" aria-label="Fechar prévia">✕</button>
+        </div>
+        <div class="p-4 sm:p-5 space-y-4">
+            <div class="min-h-40 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden">
+                <img id="performance-share-preview" class="hidden w-full h-auto" alt="Prévia do card de desempenho do jogador">
+                <p id="performance-share-status" class="text-sm text-slate-400 p-8 text-center" role="status">Preparando o card…</p>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p class="text-xs text-slate-500">Os dados são os já carregados no perfil; esta ação não faz novas consultas à API.</p>
+                <div class="flex flex-wrap gap-2">
+                    <button id="performance-share-download" type="button" onclick="baixarCardDesempenho()" disabled class="disabled:opacity-50 text-sm bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-4 py-2 rounded-lg font-bold">Baixar PNG</button>
+                    <button id="performance-share-native" type="button" onclick="compartilharCardDesempenho()" disabled class="disabled:opacity-50 text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold">Compartilhar PNG</button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js"></script>
-    <script src="players.js"></script>
+    <script src="script.js?v=character-history-scan-20261003-2"></script>
+    <script src="players.js?v=character-history-scan-20261003-2"></script>
     <script src="country-codes.js"></script>
+    <script src="player-share.js?v=20261008-1"></script>
     <script>
         (function() {
             if (window._playerLoaded) {
@@ -41,6 +67,11 @@
             const prefix = prefixParam || '';
             const prefixProvided = prefixParam !== null;
             const conteudo = document.getElementById('perfil_conteudo');
+            let jogosPlayer = [];
+            let jogosPlayerDraft = [];
+            let dadosPerfilAtual = null;
+            let estadoVarreduraPersonagens = null;
+            const controleVarreduraPersonagens = { running: false, paused: false, waiters: [] };
 
             const GAMES_ART_MAP = {
                 "sf6": {
@@ -346,6 +377,20 @@
                 }
             };
 
+            // Mapa independente do seletor Personagem.
+            // Para adicionar um jogo sem artes de personagens, cadastre-o somente aqui.
+            // Formato: "novojogo": { label: "Nome do jogo", logo: "imagens/logos/logonovojogo.png" },
+            const GAMES_PLAYED_MAP = {
+                "sf6": { label: GAMES_ART_MAP["sf6"].label, logo: GAMES_ART_MAP["sf6"].logo },
+                "mk1": { label: GAMES_ART_MAP["mk1"].label, logo: GAMES_ART_MAP["mk1"].logo },                
+                "tekken8": { label: GAMES_ART_MAP["tekken8"].label, logo: GAMES_ART_MAP["tekken8"].logo },
+                "2xko": { label: GAMES_ART_MAP["2xko"].label, logo: GAMES_ART_MAP["2xko"].logo },
+                "ffcotw": { label: GAMES_ART_MAP["ffcotw"].label, logo: GAMES_ART_MAP["ffcotw"].logo },
+                "gbvsr": { label: GAMES_ART_MAP["gbvsr"].label, logo: GAMES_ART_MAP["gbvsr"].logo },
+                "ggst": { label: GAMES_ART_MAP["ggst"].label, logo: GAMES_ART_MAP["ggst"].logo },
+                "mtfs": { label: GAMES_ART_MAP["mtfs"].label, logo: GAMES_ART_MAP["mtfs"].logo }
+            };
+
             const SPONSOR_LOGO_FILES = [
                 "2GAME.webp",
                 "2GAME_MDT.webp",
@@ -500,11 +545,93 @@
                 return `${placement}º`;
             }
 
+            function escaparTextoPersonagem(value) {
+                return String(value ?? '').replace(/[&<>"']/g, char => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                })[char]);
+            }
+
+            function montarHtmlUsoPersonagens(characterUsage, unavailable = false, partial = false, historyMeta = {}) {
+                const games = Array.isArray(characterUsage) ? characterUsage : [];
+                const historyComplete = historyMeta.characterUsageHistoryComplete === true;
+                const eventCount = Math.max(0, Number(historyMeta.characterUsageEventCount) || 0);
+                const setCount = Math.max(0, Number(historyMeta.characterUsageSetCount) || 0);
+                const gameCards = games.map(game => {
+                    const gameName = escaparTextoPersonagem(game.gameName || 'Jogo');
+                    const total = Math.max(0, Number(game.reportedSelections) || 0);
+                    const rows = (Array.isArray(game.topCharacters) ? game.topCharacters : []).map((character, index) => {
+                        const name = escaparTextoPersonagem(character.name || 'Desconhecido');
+                        const count = Math.max(0, Number(character.count) || 0);
+                        const percentage = Math.max(0, Math.min(100, Number(character.percentage) || 0));
+                        return `
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between gap-3 text-sm">
+                                    <span class="text-slate-200 font-semibold truncate">${index + 1}. ${name}</span>
+                                    <span class="text-white font-bold tabular-nums flex-shrink-0">${percentage}% <span class="text-slate-500 text-xs font-normal">(${count}/${total})</span></span>
+                                </div>
+                                <div class="h-2 rounded-full bg-slate-800 overflow-hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percentage}" aria-label="${name}: ${percentage}%">
+                                    <div class="h-full rounded-full bg-red-500" style="width:${percentage}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    return `
+                        <div class="bg-slate-950/50 border border-slate-800 rounded-lg p-4 space-y-3 min-w-0">
+                            <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
+                                <h4 class="text-sm font-bold text-white truncate">${gameName}</h4>
+                                <span class="text-[10px] text-slate-500 flex-shrink-0">${total} seleções</span>
+                            </div>
+                            ${rows}
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div id="character-usage-panel" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 w-full min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Personagens mais usados</h3>
+                            <span id="character-usage-scope" class="text-[10px] text-slate-500">${historyComplete ? `Histórico completo · ${eventCount} eventos` : 'Até 15 eventos recentes'}</span>
+                        </div>
+                        <p class="text-xs text-slate-500">Top 3 por jogo. Percentuais calculados somente entre personagens reportados pelo jogador no Start.gg.</p>
+                        <div id="character-usage-results">
+                            ${gameCards ? `<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">${gameCards}</div>` : `<p class="text-slate-500 text-sm">${historyComplete ? 'Nenhum personagem reportado nos eventos analisados.' : 'Nenhum personagem reportado nos sets recentes deste perfil.'}</p>`}
+                        </div>
+                        ${unavailable ? `<p class="text-xs text-amber-400">Não foi possível consultar os personagens de alguns eventos; as demais estatísticas do perfil continuam disponíveis.</p>` : ''}
+                        ${partial ? `<p class="text-xs text-amber-400">A consulta atingiu o limite de 100 sets em pelo menos um evento; os percentuais podem estar parciais.</p>` : ''}
+                        <div class="border-t border-slate-800 pt-4 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold text-slate-300">Últimos 15 eventos</p>
+                                    <p id="character-scan-status" class="text-[11px] text-slate-500 mt-1">Percorre os 15 eventos mais recentes com sets deste perfil. A contagem pode levar alguns minutos; o progresso fica salvo neste navegador.</p>
+                                </div>
+                                <div class="flex flex-wrap gap-2 flex-shrink-0">
+                                    <button id="character-scan-start" type="button" onclick="iniciarVarreduraPersonagens()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition">${historyComplete ? 'Recontar últimos 15 eventos' : 'Contar últimos 15 eventos'}</button>
+                                    <button id="character-scan-pause" type="button" onclick="pausarVarreduraPersonagens()" class="hidden text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold transition">Pausar</button>
+                                    <button id="character-scan-resume" type="button" onclick="continuarVarreduraPersonagens()" class="hidden text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition">Continuar</button>
+                                </div>
+                            </div>
+                            <div id="character-scan-progress-wrap" class="hidden space-y-2">
+                                <div class="flex items-center justify-between gap-3 text-[11px] text-slate-400">
+                                    <span id="character-scan-counter">Eventos: 0</span>
+                                    <span id="character-scan-percent" class="tabular-nums">0%</span>
+                                </div>
+                                <div id="character-scan-progressbar" class="h-2.5 rounded-full bg-slate-800 overflow-hidden" role="progressbar" aria-label="Progresso da contagem de eventos" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                    <div id="character-scan-progress-fill" class="h-full rounded-full bg-red-500 transition-all duration-300" style="width:0%"></div>
+                                </div>
+                                <p id="character-scan-detail" class="text-[10px] text-slate-500"></p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             function montarHtmlPerfil(dados, fonte) {
                 const {
                     gamerTag, totalWins, totalLosses, winrateAllTime,
                     recentForm, highlights, headToHead, tournaments, avatarUrl, bannerUrl, playerPrefix,
-                    realName, social, userSlug, characterArt, countryName, countryCode
+                    realName, social, userSlug, characterArt, countryName, countryCode,
+                    characterUsage, characterUsageUnavailable, characterUsagePartial,
+                    characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount
                 } = dados;
                 const charArtInfo = getCharArtInfo(characterArt);
                 const sponsorLogoInfo = getSponsorLogoInfo(playerPrefix);
@@ -572,10 +699,16 @@
                                     </div>
                                 </div>
                                 
-                                <div class="flex items-center gap-2 flex-shrink-0">
+                                <div class="flex flex-wrap items-center justify-center md:justify-end gap-2 flex-shrink-0 w-full md:w-auto">
                                     <span class="text-xs text-slate-500">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
                                     <button onclick="abrirSeletorChar()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-images"></i> Personagem
+                                    </button>
+                                    <button onclick="abrirSeletorJogosPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-gamepad"></i> Jogos
+                                    </button>
+                                    <button id="share-performance-button" onclick="abrirCompartilhamentoDesempenho()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-share-nodes"></i> Compartilhar
                                     </button>
                                     <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-rotate"></i> Atualizar
@@ -603,6 +736,32 @@
                                 <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Torneios</div>
                             </div>
                         </div>
+
+                        <!-- JOGOS QUE O PLAYER JOGA -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Jogos do player</h3>
+                                <span class="text-xs text-slate-500">${jogosPlayer.length} ${jogosPlayer.length === 1 ? 'jogo selecionado' : 'jogos selecionados'}</span>
+                            </div>
+                            ${jogosPlayer.length === 0 ? `
+                                <p class="text-slate-500 text-sm">Nenhum jogo adicionado. Use o botão Jogos para selecionar.</p>
+                            ` : `
+                                <div class="flex flex-wrap gap-3">
+                                    ${jogosPlayer.map(gameKey => {
+                                        const game = GAMES_PLAYED_MAP[gameKey];
+                                        if (!game) return '';
+                                        return `
+                                            <div class="w-28 sm:w-32 min-h-20 rounded-lg border border-slate-700 bg-slate-800/60 p-2 flex flex-col items-center justify-center gap-1.5">
+                                                <img src="${game.logo}" alt="${game.label}" title="${game.label}" class="w-full h-10 object-contain" loading="lazy" decoding="async">
+                                                <span class="text-[10px] sm:text-xs text-slate-300 text-center leading-tight">${game.label}</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `}
+                        </div>
+
+                        ${montarHtmlUsoPersonagens(characterUsage, characterUsageUnavailable, characterUsagePartial, { characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount })}
 
                         <!-- RECENT FORM -->
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
@@ -711,6 +870,39 @@
                                         </div>
                                     </div>
                                 `).join('') || '<div class="text-slate-500 text-sm py-2">Nenhum evento registrado.</div>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL: SELECIONAR JOGOS DO PLAYER -->
+                    <div id="games_played_modal" class="fixed inset-0 z-50 hidden bg-black/70 flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4" role="dialog" aria-modal="true" aria-label="Selecionar jogos do player">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Jogos que joga</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Selecione todos os jogos que fazem parte do perfil.</p>
+                                </div>
+                                <button type="button" onclick="fecharSeletorJogosPlayer()" aria-label="Fechar" class="text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div id="games_played_grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                ${Object.entries(GAMES_PLAYED_MAP).map(([gameKey, game]) => `
+                                    <button type="button" data-game-key="${gameKey}" aria-pressed="${jogosPlayer.includes(gameKey)}" onclick="toggleJogoPlayer('${gameKey}')" class="min-h-24 flex flex-col items-center justify-center gap-2 p-3 rounded-lg border ${jogosPlayer.includes(gameKey) ? 'border-red-500 bg-slate-800' : 'border-slate-700 bg-slate-800/50 hover:border-slate-500'} transition">
+                                        <img src="${game.logo}" alt="${game.label}" class="w-full h-10 object-contain" loading="lazy" decoding="async">
+                                        <span class="text-[11px] sm:text-xs text-slate-300 text-center leading-tight">${game.label}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div class="flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
+                                <div>
+                                    <p id="games_played_count" class="text-xs text-slate-400">${jogosPlayer.length} ${jogosPlayer.length === 1 ? 'jogo selecionado' : 'jogos selecionados'}</p>
+                                    <p id="games_played_status" class="text-xs text-red-400 mt-1" role="status"></p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="fecharSeletorJogosPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold transition">Cancelar</button>
+                                    <button type="button" id="games_played_save" onclick="salvarJogosPlayer()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold transition">Salvar</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -830,6 +1022,255 @@
                 }
             }
 
+            const chaveEstadoVarredura = `fgchub:character-history-scan:v1:${String(playerId || '')}`;
+
+            function salvarEstadoVarreduraLocal(state = estadoVarreduraPersonagens) {
+                if (!state) return;
+                try {
+                    window.localStorage.setItem(chaveEstadoVarredura, JSON.stringify(state));
+                } catch (e) {
+                    console.warn('Não foi possível salvar o ponto de retomada neste navegador:', e);
+                }
+            }
+
+            function carregarEstadoVarreduraLocal() {
+                try {
+                    const saved = JSON.parse(window.localStorage.getItem(chaveEstadoVarredura) || 'null');
+                    if (!saved || saved.version !== 2 || String(saved.playerId) !== String(playerId)) return null;
+                    if (saved.status === 'running' && !controleVarreduraPersonagens.running) {
+                        saved.status = 'paused';
+                        salvarEstadoVarreduraLocal(saved);
+                    }
+                    return saved;
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function aplicarHistoricoCompleto(dados, history) {
+                if (!history?.complete || !Array.isArray(history.usage)) return;
+                dados.characterUsage = history.usage;
+                dados.characterUsageUnavailable = false;
+                dados.characterUsagePartial = false;
+                dados.characterUsageHistoryComplete = true;
+                dados.characterUsageEventCount = Math.max(0, Number(history.eventCount) || 0);
+                dados.characterUsageSetCount = Math.max(0, Number(history.setCount) || 0);
+                dados.characterUsageReportedSelections = Math.max(0, Number(history.reportedSelections) || 0);
+                dados.characterUsageHistoryCompletedAt = history.completedAt || null;
+            }
+
+            function obterHistoricoCompletoLocal(state) {
+                if (state?.status !== 'complete' || !Array.isArray(state.characterUsage)) return null;
+                return {
+                    complete: true,
+                    eventCount: (state.events || []).length,
+                    setCount: Number(state.scannedSets) || 0,
+                    reportedSelections: Number(state.totalSelections) || 0,
+                    usage: state.characterUsage,
+                    completedAt: state.completedAt || null
+                };
+            }
+
+            function atualizarInterfaceVarreduraPersonagens() {
+                const statusElement = document.getElementById('character-scan-status');
+                const progressWrap = document.getElementById('character-scan-progress-wrap');
+                const progressBar = document.getElementById('character-scan-progressbar');
+                const progressFill = document.getElementById('character-scan-progress-fill');
+                const counter = document.getElementById('character-scan-counter');
+                const percentElement = document.getElementById('character-scan-percent');
+                const detail = document.getElementById('character-scan-detail');
+                const startButton = document.getElementById('character-scan-start');
+                const pauseButton = document.getElementById('character-scan-pause');
+                const resumeButton = document.getElementById('character-scan-resume');
+                if (!statusElement || !progressWrap) return;
+
+                const state = estadoVarreduraPersonagens;
+                const historyComplete = dadosPerfilAtual?.characterUsageHistoryComplete === true;
+                const completedEventCount = Math.max(0, Number(dadosPerfilAtual?.characterUsageEventCount) || 0);
+                let percent = 0;
+                let counterText = '';
+                let detailText = '';
+                let statusText = 'Percorre os eventos com sets deste perfil. A contagem pode levar alguns minutos; o progresso fica salvo neste navegador.';
+
+                if (!state) {
+                    const showCachedCompletion = historyComplete;
+                    progressWrap.classList.toggle('hidden', !showCachedCompletion);
+                    if (showCachedCompletion) {
+                        percent = 100;
+                        counterText = `${completedEventCount} eventos analisados`;
+                        detailText = `${Number(dadosPerfilAtual?.characterUsageSetCount) || 0} sets percorridos · ${Number(dadosPerfilAtual?.characterUsageReportedSelections) || 0} seleções reportadas`;
+                        statusText = 'Histórico completo carregado do cache compartilhado.';
+                    }
+                    if (startButton) startButton.textContent = showCachedCompletion ? 'Recontar últimos 15 eventos' : 'Contar últimos 15 eventos';
+                } else {
+                    progressWrap.classList.remove('hidden');
+                    const totalEvents = (state.events || []).length;
+                    const currentEvent = state.events?.[state.eventIndex] || null;
+                    if (state.phase === 'index') {
+                        const totalPages = Math.max(1, Number(state.indexTotalPages) || 1);
+                        const donePages = Math.min(totalPages, Math.max(0, (Number(state.indexPage) || 1) - 1));
+                        percent = Math.round(10 * donePages / totalPages);
+                        counterText = `${totalEvents} eventos identificados`;
+                        detailText = `Indexando sets: página ${donePages}/${totalPages} · ${Number(state.totalSets) || 0} sets no histórico`;
+                    } else if (state.phase === 'scan') {
+                        const pageTotal = Math.max(1, Number(currentEvent?.totalPages) || 1);
+                        const pageDone = currentEvent?.status === 'complete'
+                            ? 1
+                            : Math.min(1, Math.max(0, ((Number(currentEvent?.page) || 1) - 1) / pageTotal));
+                        const eventProgress = totalEvents > 0
+                            ? (Math.min(Number(state.eventIndex) || 0, totalEvents) + pageDone) / totalEvents
+                            : 0;
+                        percent = Math.round(10 + 90 * eventProgress);
+                        counterText = `Eventos concluídos: ${Number(state.completedEvents) || 0}/${totalEvents}`;
+                        detailText = currentEvent
+                            ? `Evento ${Math.min((Number(state.eventIndex) || 0) + 1, totalEvents)}/${totalEvents}: ${currentEvent.eventName || 'Evento'} · página ${currentEvent.page || 1}/${currentEvent.totalPages || '…'}`
+                            : 'Finalizando a contagem dos eventos.';
+                    } else if (state.phase === 'complete' || state.status === 'complete') {
+                        percent = 100;
+                        counterText = `${totalEvents} eventos concluídos`;
+                        detailText = `${Number(state.scannedSets) || 0} sets percorridos · ${Number(state.totalSelections) || 0} seleções reportadas`;
+                    }
+
+                    if (state.status === 'paused') statusText = 'Pausado. O ponto de retomada foi salvo neste navegador; clique em Continuar quando quiser.';
+                    else if (state.status === 'error') statusText = state.errorMessage || 'A consulta parou. O progresso está salvo; clique em Continuar para tentar novamente.';
+                    else if (Number(state.rateWaitSeconds) > 0) statusText = `Aguardando uma janela segura da API (${Number(state.rateWaitSeconds)} s)…`;
+                    else if (state.status === 'complete') statusText = `Concluído: ${totalEvents} eventos, ${Number(state.totalSelections) || 0} seleções de personagem reportadas.`;
+                    else if (state.phase === 'index') statusText = 'Localizando todos os eventos com sets registrados para este jogador…';
+                    else statusText = 'Lendo somente as seleções de personagem reportadas nos sets deste jogador…';
+
+                    if (startButton) startButton.textContent = 'Recontar últimos 15 eventos';
+                }
+
+                percent = Math.max(0, Math.min(100, percent));
+                statusElement.textContent = statusText;
+                if (counter) counter.textContent = counterText;
+                if (detail) detail.textContent = detailText;
+                if (percentElement) percentElement.textContent = `${percent}%`;
+                if (progressFill) progressFill.style.width = `${percent}%`;
+                if (progressBar) progressBar.setAttribute('aria-valuenow', String(percent));
+
+                const running = controleVarreduraPersonagens.running;
+                const paused = controleVarreduraPersonagens.paused || state?.status === 'paused';
+                if (startButton) startButton.classList.toggle('hidden', running || Boolean(state && state.status !== 'complete'));
+                if (pauseButton) pauseButton.classList.toggle('hidden', !running || paused);
+                if (resumeButton) resumeButton.classList.toggle('hidden', !state || (!paused && state.status !== 'error') || (running && !paused));
+            }
+
+            function atualizarCardPersonagensAtual() {
+                const currentPanel = document.getElementById('character-usage-panel');
+                if (!currentPanel || !dadosPerfilAtual) return;
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = montarHtmlUsoPersonagens(
+                    dadosPerfilAtual.characterUsage,
+                    dadosPerfilAtual.characterUsageUnavailable,
+                    dadosPerfilAtual.characterUsagePartial,
+                    dadosPerfilAtual
+                );
+                const nextPanel = wrapper.firstElementChild;
+                if (nextPanel) currentPanel.replaceWith(nextPanel);
+                atualizarInterfaceVarreduraPersonagens();
+            }
+
+            function esperarRetomadaVarreduraPersonagens() {
+                if (!controleVarreduraPersonagens.paused) return Promise.resolve();
+                return new Promise(resolve => controleVarreduraPersonagens.waiters.push(resolve));
+            }
+
+            window.iniciarVarreduraPersonagens = async function() {
+                if (controleVarreduraPersonagens.running || !playerId) return;
+                let state = carregarEstadoVarreduraLocal() || estadoVarreduraPersonagens;
+                if (!state || state.status === 'complete') {
+                    state = typeof criarEstadoHistoricoPersonagens === 'function'
+                        ? criarEstadoHistoricoPersonagens(playerId, dadosPerfilAtual?.tournaments || [])
+                        : null;
+                }
+                if (!state || typeof varrerHistoricoCompletoPersonagens !== 'function') {
+                    const status = document.getElementById('character-scan-status');
+                    if (status) status.textContent = 'Não foi possível iniciar a contagem. Atualize a página e tente novamente.';
+                    return;
+                }
+
+                estadoVarreduraPersonagens = state;
+                controleVarreduraPersonagens.running = true;
+                controleVarreduraPersonagens.paused = false;
+                state.status = 'running';
+                salvarEstadoVarreduraLocal(state);
+                atualizarInterfaceVarreduraPersonagens();
+
+                try {
+                    await varrerHistoricoCompletoPersonagens(playerId, state, {
+                        saveState: async current => {
+                            estadoVarreduraPersonagens = current;
+                            salvarEstadoVarreduraLocal(current);
+                        },
+                        onProgress: current => {
+                            estadoVarreduraPersonagens = current;
+                            atualizarInterfaceVarreduraPersonagens();
+                        },
+                        waitIfPaused: esperarRetomadaVarreduraPersonagens,
+                        onWait: seconds => {
+                            if (!estadoVarreduraPersonagens) return;
+                            if (seconds > 0) estadoVarreduraPersonagens.rateWaitSeconds = seconds;
+                            else delete estadoVarreduraPersonagens.rateWaitSeconds;
+                            atualizarInterfaceVarreduraPersonagens();
+                        }
+                    });
+
+                    if (state.status === 'complete') {
+                        const history = {
+                            complete: true,
+                            eventCount: state.events.length,
+                            setCount: state.scannedSets,
+                            reportedSelections: state.totalSelections,
+                            usage: state.characterUsage || [],
+                            completedAt: state.completedAt || new Date().toISOString()
+                        };
+                        if (dadosPerfilAtual) aplicarHistoricoCompleto(dadosPerfilAtual, history);
+                        if (typeof _salvarHistoricoPersonagensCache === 'function') {
+                            await _salvarHistoricoPersonagensCache(playerId, history);
+                        }
+                        atualizarCardPersonagensAtual();
+                    }
+                } catch (error) {
+                    console.warn('Varredura de personagens interrompida:', error);
+                    if (state.status !== 'error') {
+                        state.status = 'error';
+                        state.errorMessage = 'A consulta foi interrompida. O progresso está salvo; clique em Continuar para tentar novamente.';
+                        salvarEstadoVarreduraLocal(state);
+                    }
+                } finally {
+                    controleVarreduraPersonagens.running = false;
+                    controleVarreduraPersonagens.paused = false;
+                    atualizarInterfaceVarreduraPersonagens();
+                }
+            };
+
+            window.pausarVarreduraPersonagens = function() {
+                if (!controleVarreduraPersonagens.running) return;
+                controleVarreduraPersonagens.paused = true;
+                if (estadoVarreduraPersonagens) {
+                    estadoVarreduraPersonagens.status = 'paused';
+                    delete estadoVarreduraPersonagens.rateWaitSeconds;
+                    salvarEstadoVarreduraLocal(estadoVarreduraPersonagens);
+                }
+                atualizarInterfaceVarreduraPersonagens();
+            };
+
+            window.continuarVarreduraPersonagens = function() {
+                if (!controleVarreduraPersonagens.running) {
+                    window.iniciarVarreduraPersonagens();
+                    return;
+                }
+                if (!controleVarreduraPersonagens.paused) return;
+                controleVarreduraPersonagens.paused = false;
+                if (estadoVarreduraPersonagens) {
+                    estadoVarreduraPersonagens.status = 'running';
+                    salvarEstadoVarreduraLocal(estadoVarreduraPersonagens);
+                }
+                controleVarreduraPersonagens.waiters.splice(0).forEach(resolve => resolve());
+                atualizarInterfaceVarreduraPersonagens();
+            };
+
             async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
@@ -839,8 +1280,33 @@
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix, prefixProvided);
                     dados.characterArt = await _lerCharArt(playerId);
+                    let savedGames = [];
+                    try {
+                        if (typeof _lerGamesPlayed === 'function') {
+                            savedGames = await _lerGamesPlayed(playerId);
+                        }
+                    } catch (gamesError) {
+                        console.warn('Não foi possível carregar os jogos do player:', gamesError);
+                    }
+                    jogosPlayer = Array.isArray(savedGames) ? [...new Set(savedGames.filter(key => GAMES_PLAYED_MAP[key]))] : [];
+                    estadoVarreduraPersonagens = carregarEstadoVarreduraLocal();
+                    let sharedHistory = null;
+                    try {
+                        if (typeof _lerHistoricoPersonagensCache === 'function') {
+                            sharedHistory = await _lerHistoricoPersonagensCache(playerId);
+                        }
+                    } catch (historyError) {
+                        console.warn('Não foi possível carregar o resumo completo de personagens:', historyError);
+                    }
+                    const localHistory = obterHistoricoCompletoLocal(estadoVarreduraPersonagens);
+                    const historyToApply = localHistory && (!sharedHistory || String(localHistory.completedAt || '') > String(sharedHistory.completedAt || ''))
+                        ? localHistory
+                        : sharedHistory;
+                    if (historyToApply) aplicarHistoricoCompleto(dados, historyToApply);
+                    dadosPerfilAtual = dados;
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     renderizarGraficoEvolucao(dados.tournaments || []);
+                    atualizarInterfaceVarreduraPersonagens();
                     if (fonte === 'cache' && dados.countryChecked !== true && !dados.countryName && !dados.countryCode) {
                         void atualizarPaisCacheAntigo(playerId, dados);
                     }
@@ -853,6 +1319,161 @@
             window.atualizarDados = function() {
                 carregarPerfil(true);
             };
+
+            let performanceShareBlob = null;
+            let performanceShareObjectUrl = null;
+            let performanceShareName = 'player';
+
+            window.abrirCompartilhamentoDesempenho = async function() {
+                const modal = document.getElementById('performance-share-modal');
+                const preview = document.getElementById('performance-share-preview');
+                const status = document.getElementById('performance-share-status');
+                const downloadButton = document.getElementById('performance-share-download');
+                const shareButton = document.getElementById('performance-share-native');
+                const trigger = document.getElementById('share-performance-button');
+                if (!dadosPerfilAtual || !window.FGCPlayerShareCard?.render) {
+                    status.textContent = 'O perfil ainda não está pronto para gerar o card.';
+                    modal.classList.remove('hidden');
+                    return;
+                }
+
+                modal.classList.remove('hidden');
+                preview.classList.add('hidden');
+                preview.removeAttribute('src');
+                status.classList.remove('hidden');
+                status.textContent = 'Preparando o PNG 1920 × 1080…';
+                downloadButton.disabled = true;
+                shareButton.disabled = true;
+                if (trigger) {
+                    trigger.disabled = true;
+                    trigger.classList.add('opacity-60');
+                }
+                if (performanceShareObjectUrl) URL.revokeObjectURL(performanceShareObjectUrl);
+                performanceShareObjectUrl = null;
+                performanceShareBlob = null;
+
+                try {
+                    const dados = dadosPerfilAtual;
+                    const selectedArt = getCharArtInfo(dados.characterArt);
+                    const firstReportedGame = dados.characterUsage?.[0];
+                    const firstReportedCharacter = firstReportedGame?.topCharacters?.[0];
+                    const mainCharacter = selectedArt || (firstReportedCharacter ? {
+                        label: firstReportedCharacter.name,
+                        file: '',
+                        gameName: firstReportedGame?.gameName || '',
+                        source: 'usage'
+                    } : null);
+                    const sponsorInfo = getSponsorLogoInfo(dados.playerPrefix || '');
+                    const countryIso = (window.fgcCountryIso2 && (window.fgcCountryIso2(dados.countryCode) || window.fgcCountryIso2(dados.countryName))) || '';
+                    const selectedGames = jogosPlayer.map(key => {
+                        const game = GAMES_PLAYED_MAP[key];
+                        return game ? { label: game.label, logo: encodeURI(game.logo) } : null;
+                    }).filter(Boolean);
+                    const prefixText = String(dados.playerPrefix || '').trim();
+                    const tagText = String(dados.gamerTag || gamerTag || 'Player').trim();
+                    const displayName = prefixText ? `${prefixText} | ${tagText}` : tagText;
+
+                    performanceShareName = displayName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'player';
+                    performanceShareBlob = await window.FGCPlayerShareCard.render({
+                        displayName,
+                        gamerTag: tagText,
+                        realName: dados.realName || '',
+                        countryName: dados.countryName || '',
+                        countryCode: countryIso,
+                        flagUrl: countryIso ? `https://flagcdn.com/w80/${countryIso.toLowerCase()}.png` : '',
+                        avatarUrl: dados.avatarUrl || '',
+                        sponsor: prefixText,
+                        sponsorLogoUrl: sponsorInfo ? encodeURI(sponsorInfo.file) : '',
+                        wins: dados.totalWins,
+                        losses: dados.totalLosses,
+                        winRate: dados.winrateAllTime,
+                        tournamentCount: Array.isArray(dados.tournaments) ? dados.tournaments.length : 0,
+                        mainCharacterName: mainCharacter?.label || '',
+                        mainCharacterImage: mainCharacter?.file ? encodeURI(mainCharacter.file) : '',
+                        mainCharacterSource: mainCharacter?.source === 'usage' ? 'usage' : 'profile',
+                        mainCharacterGame: mainCharacter?.gameName || '',
+                        games: selectedGames,
+                        characterUsage: dados.characterUsage || [],
+                        historyComplete: dados.characterUsageHistoryComplete === true,
+                        eventCount: dados.characterUsageEventCount || 0,
+                        setCount: dados.characterUsageSetCount || 0,
+                        partial: dados.characterUsagePartial === true,
+                        recentForm: dados.recentForm || []
+                    });
+                    performanceShareObjectUrl = URL.createObjectURL(performanceShareBlob);
+                    preview.src = performanceShareObjectUrl;
+                    preview.classList.remove('hidden');
+                    status.classList.add('hidden');
+                    downloadButton.disabled = false;
+                    shareButton.disabled = false;
+                } catch (error) {
+                    console.error('Erro ao gerar card de desempenho:', error);
+                    status.textContent = 'Não foi possível gerar o PNG. Tente novamente em alguns instantes.';
+                    status.classList.remove('hidden');
+                } finally {
+                    if (trigger) {
+                        trigger.disabled = false;
+                        trigger.classList.remove('opacity-60');
+                    }
+                }
+            };
+
+            window.fecharCompartilhamentoDesempenho = function() {
+                document.getElementById('performance-share-modal').classList.add('hidden');
+                if (performanceShareObjectUrl) URL.revokeObjectURL(performanceShareObjectUrl);
+                performanceShareObjectUrl = null;
+                performanceShareBlob = null;
+            };
+
+            window.baixarCardDesempenho = function() {
+                if (!performanceShareBlob) return;
+                const downloadUrl = URL.createObjectURL(performanceShareBlob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `fgchub-${performanceShareName}-desempenho.png`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+            };
+
+            window.compartilharCardDesempenho = async function() {
+                if (!performanceShareBlob) return;
+                const status = document.getElementById('performance-share-status');
+                const displayName = dadosPerfilAtual?.gamerTag || gamerTag || 'Player';
+                try {
+                    if (typeof File === 'undefined' || !navigator.share || !navigator.canShare) {
+                        window.baixarCardDesempenho();
+                        status.textContent = 'Compartilhamento direto indisponível neste navegador; o PNG foi baixado.';
+                        status.classList.remove('hidden');
+                        return;
+                    }
+                    const file = new File([performanceShareBlob], `fgchub-${performanceShareName}-desempenho.png`, { type: 'image/png' });
+                    if (!navigator.canShare({ files: [file] })) {
+                        window.baixarCardDesempenho();
+                        status.textContent = 'Este navegador não compartilha arquivos diretamente; o PNG foi baixado.';
+                        status.classList.remove('hidden');
+                        return;
+                    }
+                    await navigator.share({
+                        files: [file],
+                        title: `Desempenho de ${displayName}`,
+                        text: `Confira o desempenho de ${displayName} no FGC HUB.`
+                    });
+                } catch (error) {
+                    if (error?.name !== 'AbortError') {
+                        console.error('Erro ao compartilhar card:', error);
+                        status.textContent = 'Não foi possível abrir o compartilhamento. Você pode baixar o PNG.';
+                        status.classList.remove('hidden');
+                    }
+                }
+            };
+
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && !document.getElementById('performance-share-modal').classList.contains('hidden')) {
+                    window.fecharCompartilhamentoDesempenho();
+                }
+            });
 
             window.abrirSeletorChar = function() {
                 voltarASeletorJogos();
@@ -879,6 +1500,66 @@
             window.selecionarCharArt = async function(gameKey, charKey) {
                 await _salvarCharArt(playerId, gameKey + ':' + charKey);
                 fecharSeletorChar();
+                carregarPerfil(false);
+            };
+
+            function atualizarEstadoSeletorJogos() {
+                document.querySelectorAll('#games_played_grid [data-game-key]').forEach(button => {
+                    const selected = jogosPlayerDraft.includes(button.dataset.gameKey);
+                    button.classList.toggle('border-red-500', selected);
+                    button.classList.toggle('bg-slate-800', selected);
+                    button.classList.toggle('border-slate-700', !selected);
+                    button.classList.toggle('bg-slate-800/50', !selected);
+                    button.setAttribute('aria-pressed', String(selected));
+                });
+                const count = document.getElementById('games_played_count');
+                if (count) count.textContent = `${jogosPlayerDraft.length} ${jogosPlayerDraft.length === 1 ? 'jogo selecionado' : 'jogos selecionados'}`;
+            }
+
+            window.abrirSeletorJogosPlayer = function() {
+                jogosPlayerDraft = [...jogosPlayer];
+                const status = document.getElementById('games_played_status');
+                if (status) status.textContent = '';
+                atualizarEstadoSeletorJogos();
+                document.getElementById('games_played_modal').classList.remove('hidden');
+            };
+
+            window.fecharSeletorJogosPlayer = function() {
+                document.getElementById('games_played_modal').classList.add('hidden');
+                jogosPlayerDraft = [...jogosPlayer];
+            };
+
+            window.toggleJogoPlayer = function(gameKey) {
+                if (!GAMES_PLAYED_MAP[gameKey]) return;
+                jogosPlayerDraft = jogosPlayerDraft.includes(gameKey)
+                    ? jogosPlayerDraft.filter(key => key !== gameKey)
+                    : [...jogosPlayerDraft, gameKey];
+                atualizarEstadoSeletorJogos();
+            };
+
+            window.salvarJogosPlayer = async function() {
+                const button = document.getElementById('games_played_save');
+                const status = document.getElementById('games_played_status');
+                button.disabled = true;
+                button.textContent = 'Salvando...';
+                status.textContent = '';
+                const selectedGames = [...new Set(jogosPlayerDraft)].filter(key => GAMES_PLAYED_MAP[key]);
+                let saved = false;
+                try {
+                    if (typeof _salvarGamesPlayed === 'function') {
+                        saved = await _salvarGamesPlayed(playerId, selectedGames);
+                    }
+                } catch (saveError) {
+                    console.error('Erro ao salvar jogos do player:', saveError);
+                }
+                button.disabled = false;
+                button.textContent = 'Salvar';
+                if (!saved) {
+                    status.textContent = 'Não foi possível salvar. Tente novamente.';
+                    return;
+                }
+                jogosPlayer = selectedGames;
+                window.fecharSeletorJogosPlayer();
                 carregarPerfil(false);
             };
 
