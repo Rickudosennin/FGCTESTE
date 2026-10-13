@@ -51,7 +51,7 @@
     <script src="script.js?v=character-history-scan-20261003-2"></script>
     <script src="players.js?v=character-history-scan-20261003-2"></script>
     <script src="country-codes.js"></script>
-    <script src="player-share.js?v=20261008-1"></script>
+    <script src="player-share.js?v=20261009-2"></script>
     <script>
         (function() {
             if (window._playerLoaded) {
@@ -382,7 +382,8 @@
             // Formato: "novojogo": { label: "Nome do jogo", logo: "imagens/logos/logonovojogo.png" },
             const GAMES_PLAYED_MAP = {
                 "sf6": { label: GAMES_ART_MAP["sf6"].label, logo: GAMES_ART_MAP["sf6"].logo },
-                "mk1": { label: GAMES_ART_MAP["mk1"].label, logo: GAMES_ART_MAP["mk1"].logo },                
+                "mk1": { label: GAMES_ART_MAP["mk1"].label, logo: GAMES_ART_MAP["mk1"].logo },
+                "mk11": { label: "Mortal Kombat 11", logo: "imagens/logos/logomk11.webp" },
                 "tekken8": { label: GAMES_ART_MAP["tekken8"].label, logo: GAMES_ART_MAP["tekken8"].logo },
                 "2xko": { label: GAMES_ART_MAP["2xko"].label, logo: GAMES_ART_MAP["2xko"].logo },
                 "ffcotw": { label: GAMES_ART_MAP["ffcotw"].label, logo: GAMES_ART_MAP["ffcotw"].logo },
@@ -634,6 +635,7 @@
                     characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount
                 } = dados;
                 const charArtInfo = getCharArtInfo(characterArt);
+                const rankImgInfo = getRankImgInfo(dados.tekkenRank);
                 const sponsorLogoInfo = getSponsorLogoInfo(playerPrefix);
                 const countryFlagHtml = getCountryFlagHtml(countryName, countryCode);
 
@@ -659,18 +661,19 @@
                             <div id="player-banner" class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                                 <div id="player-country-flag-container" class="absolute top-3 left-3 z-20">${countryFlagHtml}</div>
+                                ${rankImgInfo ? `<img src="${encodeURI(rankImgInfo.file)}" alt="${escaparTextoPersonagem(rankImgInfo.label)}" title="${escaparTextoPersonagem(rankImgInfo.label)}" class="absolute top-3 right-3 z-20 h-16 md:h-20 w-auto object-contain drop-shadow-lg pointer-events-none select-none" decoding="async" onerror="this.remove()">` : ''}
                                 ${charArtInfo ? `<img src="${charArtInfo.file}" alt="${charArtInfo.label}" class="absolute right-2 md:right-8 bottom-0 h-full object-contain object-bottom pointer-events-none select-none">` : ''}
                             </div>
                             
-                            <div class="p-6 -mt-16 relative flex flex-col md:flex-row items-center md:items-end justify-between gap-4">
+                            <div class="p-6 -mt-16 relative flex flex-col items-center md:items-stretch gap-4">
                                 <div class="flex flex-col md:flex-row items-center md:items-end gap-4 text-center md:text-left min-w-0 w-full">
                                     <div class="w-24 h-24 md:w-28 md:h-28 rounded-xl border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl flex-shrink-0">
                                         ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
                                     </div>
                                     <div class="space-y-1 min-w-0 w-full">
-                                        <h1 class="text-2xl md:text-3xl font-black tracking-wide text-white flex items-center justify-center md:justify-start gap-3 break-all">
-                                            <span>${displayName}</span>
-                                            <div class="inline-flex items-center gap-2.5 text-base font-normal ml-1">
+                                        <h1 class="w-full min-w-0 text-xl sm:text-2xl md:text-3xl font-black tracking-wide text-white flex flex-nowrap items-center justify-center md:justify-start gap-3 whitespace-nowrap">
+                                            <span class="whitespace-nowrap">${displayName}</span>
+                                            <div class="inline-flex flex-shrink-0 items-center gap-2.5 text-base font-normal ml-1">
                                                 <a href="${startGgUrl}" target="_blank" rel="noopener noreferrer" title="Perfil Start.gg" class="text-slate-400 hover:text-red-500 transition">
                                                     <i class="fa-solid fa-gamepad"></i>
                                                 </a>
@@ -699,16 +702,19 @@
                                     </div>
                                 </div>
                                 
-                                <div class="flex flex-wrap items-center justify-center md:justify-end gap-2 flex-shrink-0 w-full md:w-auto">
+                                <div class="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full">
                                     <span class="text-xs text-slate-500">${fonte === 'cache' ? '⚡ em cache' : '🔴 ao vivo'}</span>
                                     <button onclick="abrirSeletorChar()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-images"></i> Personagem
+                                    </button>
+                                    <button onclick="definirTekkenId()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-id-card"></i> ID Tekken
                                     </button>
                                     <button onclick="abrirSeletorJogosPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-gamepad"></i> Jogos
                                     </button>
                                     <button id="share-performance-button" onclick="abrirCompartilhamentoDesempenho()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
-                                        <i class="fa-solid fa-share-nodes"></i> Compartilhar
+                                        <i class="fa-solid fa-share-nodes"></i> Compartilhar(BETA)
                                     </button>
                                     <button onclick="atualizarDados()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-rotate"></i> Atualizar
@@ -1271,6 +1277,101 @@
                 atualizarInterfaceVarreduraPersonagens();
             };
 
+            // ===== RANK TEKKEN 8 (EWGF) =====
+            // Token em partes (mesmo esquema do resto do projeto). Visível no client: usar chave só-leitura.
+            const _EWGF_T = ['ewgf_', '74e1bbdefcfb', '489983402f94', '2321ed83'].join('');
+            const EWGF_API = 'https://api.ewgf.gg';
+            const RANK_TTL_MS = 24 * 60 * 60 * 1000;
+            const RANK_IMG_DIR = 'imagens/tekken8/ranks/';
+
+            function _dbPlayers() {
+                return firebase.firestore().collection('players').doc(String(playerId));
+            }
+
+            function normalizarTekkenId(v) {
+                return String(v || '').replace(/[^A-Za-z0-9]/g, '');
+            }
+
+            function slugRank(v) {
+                return String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+                    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            }
+
+            function getRankImgInfo(rank) {
+                if (!rank || (rank.name == null && rank.id == null)) return null;
+                const slug = rank.name ? slugRank(rank.name) : String(rank.id);
+                return { label: rank.name || ('Rank ' + rank.id), file: `${RANK_IMG_DIR}${slug}.png` };
+            }
+
+            // Extrai rank atual do payload de /external/battles/{id}.
+            // Campos exatos NÃO confirmados -> varre chaves tipo *rank* no lado do player.
+            function extrairRankDaResposta(json, tekkenId) {
+                const lista = Array.isArray(json) ? json : (json?.data ?? json?.battles ?? []);
+                if (!Array.isArray(lista) || !lista.length) return null;
+                const batalhas = [...lista].sort((a, b) =>
+                    (Number(b.battleAt ?? b.battle_at ?? b.date) || 0) - (Number(a.battleAt ?? a.battle_at ?? a.date) || 0));
+                const idLow = tekkenId.toLowerCase();
+                for (const b of batalhas) {
+                    for (const [k, v] of Object.entries(b)) {
+                        if (typeof v === 'string' && v.toLowerCase() === idLow) {
+                            const prefixo = k.replace(/(tekken)?_?id$/i, '');
+                            const rk = Object.keys(b).find(x => x !== k && x.startsWith(prefixo) && /rank/i.test(x) && !/power|rating|delta/i.test(x));
+                            if (rk && b[rk] != null) {
+                                return typeof b[rk] === 'object'
+                                    ? { id: b[rk].id ?? null, name: b[rk].name ?? null }
+                                    : (isNaN(b[rk]) ? { id: null, name: String(b[rk]) } : { id: Number(b[rk]), name: null });
+                            }
+                        }
+                    }
+                }
+                console.warn('[EWGF] rank não encontrado no payload. Amostra:', batalhas[0]);
+                return null;
+            }
+
+            async function obterRankTekken(forcar) {
+                try {
+                    const snap = await _dbPlayers().get();
+                    const d = snap.exists ? snap.data() : {};
+                    const tekkenId = normalizarTekkenId(d.tekkenId);
+                    if (!tekkenId) return { tekkenId: '', rank: null };
+                    const fresco = d.tekkenRank && d.tekkenRankUpdatedAt && (Date.now() - d.tekkenRankUpdatedAt < RANK_TTL_MS);
+                    if (fresco && !forcar) return { tekkenId, rank: d.tekkenRank };
+                    const res = await fetch(`${EWGF_API}/external/battles/${encodeURIComponent(tekkenId)}`, {
+                        headers: { Authorization: `Bearer ${_EWGF_T}` }
+                    });
+                    if (!res.ok) {
+                        console.warn('[EWGF] HTTP', res.status, await res.text().catch(() => ''));
+                        return { tekkenId, rank: d.tekkenRank || null };
+                    }
+                    const json = await res.json();
+                    console.log('[EWGF] resposta:', json);
+                    const rank = extrairRankDaResposta(json, tekkenId);
+                    if (rank) {
+                        await _dbPlayers().set({ tekkenRank: rank, tekkenRankUpdatedAt: Date.now() }, { merge: true });
+                        return { tekkenId, rank };
+                    }
+                    return { tekkenId, rank: d.tekkenRank || null };
+                } catch (e) {
+                    console.warn('[EWGF] erro:', e);
+                    return { tekkenId: '', rank: null };
+                }
+            }
+
+            window.definirTekkenId = async function() {
+                let atual = '';
+                try { const s = await _dbPlayers().get(); atual = s.exists ? (s.data().tekkenId || '') : ''; } catch (_) {}
+                const entrada = window.prompt('ID Tekken 8 (ex: 22af-4T9h-gF3Y). Deixe vazio para remover:', atual);
+                if (entrada === null) return;
+                const id = normalizarTekkenId(entrada);
+                if (id && id.length > 20) { alert('ID inválido (máx. 20 caracteres alfanuméricos).'); return; }
+                try {
+                    await _dbPlayers().set(id
+                        ? { tekkenId: id, tekkenRank: null, tekkenRankUpdatedAt: 0 }
+                        : { tekkenId: '', tekkenRank: null, tekkenRankUpdatedAt: 0 }, { merge: true });
+                } catch (e) { alert('Não foi possível salvar. Tente novamente.'); return; }
+                carregarPerfil(false);
+            };
+
             async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
                     conteudo.innerHTML = '<div class="history-empty">Player não especificado na URL.</div>';
@@ -1280,6 +1381,9 @@
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix, prefixProvided);
                     dados.characterArt = await _lerCharArt(playerId);
+                    const _tk = await obterRankTekken(forceRefresh);
+                    dados.tekkenId = _tk.tekkenId;
+                    dados.tekkenRank = _tk.rank;
                     let savedGames = [];
                     try {
                         if (typeof _lerGamesPlayed === 'function') {
@@ -1398,6 +1502,7 @@
                         eventCount: dados.characterUsageEventCount || 0,
                         setCount: dados.characterUsageSetCount || 0,
                         partial: dados.characterUsagePartial === true,
+                        tournaments: Array.isArray(dados.tournaments) ? dados.tournaments : [],
                         recentForm: dados.recentForm || []
                     });
                     performanceShareObjectUrl = URL.createObjectURL(performanceShareBlob);
