@@ -514,7 +514,7 @@ async function _salvarSf6CfnId(playerId, cfnId) {
     try {
         const playerKey = playerId == null ? '' : String(playerId).trim();
         const value = String(cfnId ?? '').trim();
-        if (!playerKey || (value && !/^\\d{1,20}$/.test(value))) return false;
+        if (!playerKey || (value && !/^\d{1,20}$/.test(value))) return false;
         await _playersCollection.doc(playerKey).set({ sf6CfnId: value }, { merge: true });
         return true;
     } catch (e) {

@@ -49,7 +49,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js?v=character-history-scan-20261003-2"></script>
-    <script src="players.js?v=sf6-cfn-20261013-1"></script>
+    <script src="players.js?v=sf6-cfn-20261013-2"></script>
     <script src="country-codes.js"></script>
     <script src="ewgf-config.js?v=20261013-2"></script>
     <script src="ewgf-rank.js?v=20261013-3"></script>
@@ -776,6 +776,12 @@
                                     }).join('')}
                                 </div>
                             `}
+                            ${jogosPlayer.includes('sf6') && linkPerfilBuckler(sf6CfnIdProfile) ? `
+                                <div class="flex flex-wrap items-center gap-2 pt-1">
+                                    <a href="${linkPerfilBuckler(sf6CfnIdProfile)}" target="_blank" rel="noopener noreferrer" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Street Fighter 6 · Perfil no Buckler (CFN ${String(sf6CfnIdProfile).replace(/\D/g, '')})
+                                    </a>
+                                </div>` : ''}
                         </div>
 
                         ${montarHtmlUsoPersonagens(characterUsage, characterUsageUnavailable, characterUsagePartial, { characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount })}
@@ -923,14 +929,14 @@
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <h3 id="sf6_cfn_title" class="text-sm font-bold text-white uppercase tracking-wider">Street Fighter 6 · CFN</h3>
-                                    <p class="text-xs text-slate-400 mt-1">Informe o CFN ID numérico do jogador.</p>
+                                    <p class="text-xs text-slate-400 mt-1">Informe o CFN ID numérico ou cole o link do perfil no Buckler.</p>
                                 </div>
                                 <button type="button" onclick="fecharSf6CfnModal()" aria-label="Fechar" class="text-slate-400 hover:text-white">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                             <label for="sf6-cfn-id" class="block text-xs font-bold text-slate-300">CFN ID</label>
-                            <input id="sf6-cfn-id" type="text" inputmode="numeric" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Digite o CFN ID numérico" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-red-500 focus:outline-none">
+                            <input id="sf6-cfn-id" type="text" maxlength="160" autocomplete="off" spellcheck="false" placeholder="Ex.: 1234567890 ou link do Buckler" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-red-500 focus:outline-none">
                             <p id="sf6-cfn-status" class="hidden text-xs text-slate-400" role="status" aria-live="polite"></p>
                             <div class="flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
                                 <button type="button" onclick="removerSf6CfnId()" class="text-xs text-slate-400 hover:text-white px-2 py-2">Remover CFN</button>
@@ -1339,6 +1345,20 @@
                 atualizarInterfaceVarreduraPersonagens();
             };
 
+            // Aceita só o ID numérico ou o link do perfil do Buckler (.../profile/1234567890[/play]).
+            function normalizarCfnId(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return '';
+                if (/^\d{1,20}$/.test(raw)) return raw;
+                const match = raw.match(/\/profile\/(\d{1,20})(?:[/?#]|$)/i);
+                return match ? match[1] : '';
+            }
+
+            function linkPerfilBuckler(cfnId) {
+                const id = String(cfnId || '').replace(/\D/g, '').slice(0, 20);
+                return id ? `https://www.streetfighter.com/6/buckler/en/profile/${id}` : '';
+            }
+
             function definirStatusSf6Cfn(message, isError = false) {
                 const status = document.getElementById('sf6-cfn-status');
                 if (!status) return;
@@ -1366,9 +1386,10 @@
             window.salvarSf6CfnId = async function() {
                 const input = document.getElementById('sf6-cfn-id');
                 const saveButton = document.getElementById('sf6-cfn-save');
-                const normalizedId = String(input?.value || '').trim();
-                if (normalizedId && !/^\\d{1,20}$/.test(normalizedId)) {
-                    definirStatusSf6Cfn('O CFN ID deve conter apenas números.', true);
+                const rawCfn = String(input?.value || '').trim();
+                const normalizedId = normalizarCfnId(rawCfn);
+                if (rawCfn && !normalizedId) {
+                    definirStatusSf6Cfn('Informe o CFN ID numérico ou o link do perfil no Buckler.', true);
                     return false;
                 }
                 if (typeof _salvarSf6CfnId !== 'function') {
@@ -1383,7 +1404,10 @@
                         return false;
                     }
                     sf6CfnIdProfile = normalizedId;
+                    if (input) input.value = normalizedId;
                     definirStatusSf6Cfn(normalizedId ? 'CFN ID salvo no perfil.' : 'CFN ID removido do perfil.');
+                    window.fecharSf6CfnModal();
+                    carregarPerfil(false);
                     return true;
                 } finally {
                     if (saveButton) saveButton.disabled = false;
