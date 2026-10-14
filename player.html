@@ -784,6 +784,13 @@
                                 </div>` : ''}
                         </div>
 
+                        ${jogosPlayer.includes('sf6') && sf6CfnIdProfile ? `
+                        <!-- CARD CFN / STREET FIGHTER 6 (dados de data/cfn/<id>.json) -->
+                        <div id="sf6-cfn-card" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Street Fighter 6 · CFN</h3>
+                            <p class="text-slate-500 text-sm">Carregando dados do CFN…</p>
+                        </div>` : ''}
+
                         ${montarHtmlUsoPersonagens(characterUsage, characterUsageUnavailable, characterUsagePartial, { characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount })}
 
                         <!-- RECENT FORM -->
@@ -1359,6 +1366,90 @@
                 return id ? `https://www.streetfighter.com/6/buckler/en/profile/${id}` : '';
             }
 
+            // Nomes das ligas por league_rank. Preencha depois de ver o primeiro data/cfn/<id>.json
+            // (ex.: { 36: 'Master' }). Sem mapeamento, o card mostra só LP/MR, sem inventar rank.
+            const SF6_LEAGUE_NAMES = {};
+
+            function escCfn(value) {
+                return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            }
+
+            function formatarTempoCfn(seconds) {
+                const total = Math.max(0, Math.floor(Number(seconds) || 0));
+                return `${Math.floor(total / 3600)}h${String(Math.floor((total % 3600) / 60)).padStart(2, '0')}`;
+            }
+
+            function montarHtmlCardCfn(d) {
+                const li = d.league || {};
+                const season = d.season || {};
+                const battles = Number(season.battles) || 0;
+                const wins = Number(season.wins) || 0;
+                const winrate = battles > 0 ? Math.round((wins / battles) * 100) : null;
+                const leagueName = SF6_LEAGUE_NAMES[li.rank] || '';
+                const modes = Array.isArray(d.playTimeByMode) ? d.playTimeByMode.slice(0, 4) : [];
+                const total = Number(d.playTimeSeconds) || 0;
+                const chars = Array.isArray(d.topCharacters) ? d.topCharacters : [];
+                const updated = Date.parse(d.updatedAt);
+                const stat = (value, label, extra = '') => `
+                    <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-center min-w-0">
+                        <div class="text-xl font-black text-white truncate">${value}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${label}</div>
+                        ${extra ? `<div class="text-[11px] text-slate-500 mt-0.5">${extra}</div>` : ''}
+                    </div>`;
+                return `
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Street Fighter 6 · CFN</h3>
+                        <span class="text-xs text-slate-500">${Number.isFinite(updated) ? 'atualizado ' + new Date(updated).toLocaleDateString('pt-BR') : ''}</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        ${Number(li.masterRating) > 0
+                            ? stat(Number(li.masterRating).toLocaleString('pt-BR'), 'MR', Number(li.masterRatingRanking) > 0 ? '#' + Number(li.masterRatingRanking).toLocaleString('pt-BR') : '')
+                            : ''}
+                        ${stat(Number(li.points || 0).toLocaleString('pt-BR'), 'LP', escCfn(leagueName))}
+                        ${stat(escCfn(d.main?.name || '—'), 'Main')}
+                        ${winrate !== null ? stat(winrate + '%', 'Win rate (temporada)', `${wins}W · ${battles - wins}L`) : ''}
+                    </div>
+                    ${total > 0 ? `
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span class="font-bold uppercase tracking-wider">Tempo jogado</span>
+                            <span class="text-white font-bold">${formatarTempoCfn(total)}</span>
+                        </div>
+                        ${modes.map(m => `
+                            <div class="flex items-center gap-2 text-xs text-slate-300">
+                                <span class="w-28 truncate">${escCfn(m.name || 'Outros')}</span>
+                                <div class="flex-1 h-2 rounded bg-slate-800 overflow-hidden"><div class="h-full bg-red-500" style="width:${Math.max(2, Math.round((m.seconds / total) * 100))}%"></div></div>
+                                <span class="w-12 text-right text-slate-400">${formatarTempoCfn(m.seconds)}</span>
+                            </div>`).join('')}
+                    </div>` : ''}
+                    ${chars.length ? `
+                    <div class="space-y-1.5">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Personagens (temporada)</div>
+                        <div class="flex flex-wrap gap-2">
+                            ${chars.map(c => {
+                                const wr = c.battles > 0 ? Math.round((c.wins / c.battles) * 100) : 0;
+                                return `<span class="text-xs bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200">${escCfn(c.name)} <strong class="text-white">${wr}%</strong> <span class="text-slate-500">· ${c.battles} lutas</span></span>`;
+                            }).join('')}
+                        </div>
+                    </div>` : ''}`;
+            }
+
+            async function carregarCardCfn(cfnId) {
+                const card = document.getElementById('sf6-cfn-card');
+                const id = String(cfnId || '').replace(/\D/g, '');
+                if (!card || !id) return;
+                try {
+                    const res = await fetch(`data/cfn/${id}.json`, { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    card.innerHTML = montarHtmlCardCfn(await res.json());
+                } catch (error) {
+                    console.warn('CFN: sem dados para este ID ainda:', error);
+                    card.innerHTML = `
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Street Fighter 6 · CFN</h3>
+                        <p class="text-slate-500 text-sm">Dados do CFN ainda não sincronizados para este ID. Eles são atualizados automaticamente uma vez por dia.</p>`;
+                }
+            }
+
             function definirStatusSf6Cfn(message, isError = false) {
                 const status = document.getElementById('sf6-cfn-status');
                 if (!status) return;
@@ -1613,6 +1704,7 @@
                     dadosPerfilAtual = dados;
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     if (ewgfTekkenIdProfile) void buscarRankEwgf(ewgfTekkenIdProfile, true);
+                    if (jogosPlayer.includes('sf6') && sf6CfnIdProfile) void carregarCardCfn(sf6CfnIdProfile);
                     renderizarGraficoEvolucao(dados.tournaments || []);
                     atualizarInterfaceVarreduraPersonagens();
                     if (fonte === 'cache' && dados.countryChecked !== true && !dados.countryName && !dados.countryCode) {
