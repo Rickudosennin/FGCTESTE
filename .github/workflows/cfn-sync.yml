@@ -1,0 +1,43 @@
+# Sincroniza dados do CFN (Street Fighter 6) para data/cfn/<id>.json.
+# Requer o secret BUCKLER_COOKIE e Workflow permissions = Read and write.
+# Passo a passo completo: CFN-SETUP.md
+name: CFN sync
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 1x/dia (06:00 em Brasília)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Ignorar o intervalo mínimo e atualizar todos'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cfn-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Sincronizar CFN
+        env:
+          BUCKLER_COOKIE: ${{ secrets.BUCKLER_COOKIE }}
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+        run: node scripts/cfn-sync.mjs
+      - name: Commit
+        if: always()
+        run: |
+          git config user.name "cfn-sync[bot]"
+          git config user.email "cfn-sync@users.noreply.github.com"
+          git add data/cfn
+          git diff --cached --quiet || (git commit -m "chore(cfn): atualizar dados CFN" && git push)
