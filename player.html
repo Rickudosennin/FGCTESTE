@@ -49,8 +49,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js?v=character-history-scan-20261003-2"></script>
-    <script src="players.js?v=character-history-scan-20261003-2"></script>
+    <script src="players.js?v=sf6-cfn-20261013-1"></script>
     <script src="country-codes.js"></script>
+    <script src="ewgf-config.js?v=20261013-2"></script>
+    <script src="ewgf-rank.js?v=20261013-3"></script>
     <script src="player-share.js?v=20261009-2"></script>
     <script>
         (function() {
@@ -70,6 +72,8 @@
             let jogosPlayer = [];
             let jogosPlayerDraft = [];
             let dadosPerfilAtual = null;
+            let ewgfTekkenIdProfile = '';
+            let sf6CfnIdProfile = '';
             let estadoVarreduraPersonagens = null;
             const controleVarreduraPersonagens = { running: false, paused: false, waiters: [] };
 
@@ -635,7 +639,6 @@
                     characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount
                 } = dados;
                 const charArtInfo = getCharArtInfo(characterArt);
-                const rankImgInfo = getRankImgInfo(dados.tekkenRank);
                 const sponsorLogoInfo = getSponsorLogoInfo(playerPrefix);
                 const countryFlagHtml = getCountryFlagHtml(countryName, countryCode);
 
@@ -661,14 +664,18 @@
                             <div id="player-banner" class="h-44 md:h-56 bg-cover bg-center relative" ${bannerStyle}>
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                                 <div id="player-country-flag-container" class="absolute top-3 left-3 z-20">${countryFlagHtml}</div>
-                                ${rankImgInfo ? `<img src="${encodeURI(rankImgInfo.file)}" alt="${escaparTextoPersonagem(rankImgInfo.label)}" title="${escaparTextoPersonagem(rankImgInfo.label)}" class="absolute top-3 right-3 z-20 h-16 md:h-20 w-auto object-contain drop-shadow-lg pointer-events-none select-none" decoding="async" onerror="this.remove()">` : ''}
                                 ${charArtInfo ? `<img src="${charArtInfo.file}" alt="${charArtInfo.label}" class="absolute right-2 md:right-8 bottom-0 h-full object-contain object-bottom pointer-events-none select-none">` : ''}
                             </div>
                             
                             <div class="p-6 -mt-16 relative flex flex-col items-center md:items-stretch gap-4">
                                 <div class="flex flex-col md:flex-row items-center md:items-end gap-4 text-center md:text-left min-w-0 w-full">
-                                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-xl border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl flex-shrink-0">
-                                        ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
+                                    <div class="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0">
+                                        <div class="w-full h-full rounded-xl border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-2xl">
+                                            ${avatarUrl ? `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${gamerTag}">` : `<div class="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-600">${gamerTag.charAt(0)}</div>`}
+                                        </div>
+                                        <a id="ewgf-rank-link" href="#" target="_blank" rel="noopener noreferrer" title="Rank Tekken 8 no EWGF" aria-label="Rank Tekken 8 no EWGF" class="hidden absolute -bottom-2 -right-2 z-20 rounded-lg border border-slate-700 bg-slate-950/95 p-1 shadow-xl">
+                                            <img id="ewgf-rank-logo" src="" alt="Rank Tekken 8" class="w-10 h-10 md:w-12 md:h-12 object-contain" decoding="async">
+                                        </a>
                                     </div>
                                     <div class="space-y-1 min-w-0 w-full">
                                         <h1 class="w-full min-w-0 text-xl sm:text-2xl md:text-3xl font-black tracking-wide text-white flex flex-nowrap items-center justify-center md:justify-start gap-3 whitespace-nowrap">
@@ -707,12 +714,16 @@
                                     <button onclick="abrirSeletorChar()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-images"></i> Personagem
                                     </button>
-                                    <button onclick="definirTekkenId()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
-                                        <i class="fa-solid fa-id-card"></i> ID Tekken
-                                    </button>
                                     <button onclick="abrirSeletorJogosPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-gamepad"></i> Jogos
                                     </button>
+                                    <button onclick="abrirEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-trophy"></i> TEKKEN 8 ID
+                                    </button>
+                                    ${jogosPlayer.includes('sf6') ? `
+                                    <button onclick="abrirSf6CfnModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-gamepad"></i> STREET FIGHTER 6 · CFN
+                                    </button>` : ''}
                                     <button id="share-performance-button" onclick="abrirCompartilhamentoDesempenho()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-share-nodes"></i> Compartilhar(BETA)
                                     </button>
@@ -876,6 +887,57 @@
                                         </div>
                                     </div>
                                 `).join('') || '<div class="text-slate-500 text-sm py-2">Nenhum evento registrado.</div>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL: ID EWGF / TEKKEN 8 -->
+                    <div id="ewgf_id_modal" class="fixed inset-0 z-50 hidden bg-black/70 flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-md w-full space-y-4" role="dialog" aria-modal="true" aria-labelledby="ewgf_id_title">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 id="ewgf_id_title" class="text-sm font-bold text-white uppercase tracking-wider">Tekken 8 · EWGF</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Informe o Tekken ID ou cole o link do perfil EWGF.</p>
+                                </div>
+                                <button type="button" onclick="fecharEwgfIdModal()" aria-label="Fechar" class="text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <label for="ewgf-tekken-id" class="block text-xs font-bold text-slate-300">ID do perfil EWGF</label>
+                            <input id="ewgf-tekken-id" type="text" maxlength="160" autocomplete="off" spellcheck="false" placeholder="Ex.: 3YrtMtjNqqBn ou https://ewgf.gg/player/..." class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-red-500 focus:outline-none">
+                            <p id="ewgf-rank-status" class="hidden text-xs text-slate-400" role="status" aria-live="polite"></p>
+                            <p class="text-[11px] text-slate-500">O EWGF pode apresentar atraso de até 24 horas nos dados de batalhas.</p>
+                            <div class="flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
+                                <button type="button" onclick="removerEwgfTekkenId()" class="text-xs text-slate-400 hover:text-white px-2 py-2">Remover ID</button>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="fecharEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold transition">Fechar</button>
+                                    <button type="button" id="ewgf-id-save" onclick="salvarEwgfTekkenId()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold transition">Salvar ID</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL: CFN ID / STREET FIGHTER 6 -->
+                    <div id="sf6_cfn_modal" class="fixed inset-0 z-50 hidden bg-black/70 flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-md w-full space-y-4" role="dialog" aria-modal="true" aria-labelledby="sf6_cfn_title">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 id="sf6_cfn_title" class="text-sm font-bold text-white uppercase tracking-wider">Street Fighter 6 · CFN</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Informe o CFN ID numérico do jogador.</p>
+                                </div>
+                                <button type="button" onclick="fecharSf6CfnModal()" aria-label="Fechar" class="text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <label for="sf6-cfn-id" class="block text-xs font-bold text-slate-300">CFN ID</label>
+                            <input id="sf6-cfn-id" type="text" inputmode="numeric" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Digite o CFN ID numérico" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-red-500 focus:outline-none">
+                            <p id="sf6-cfn-status" class="hidden text-xs text-slate-400" role="status" aria-live="polite"></p>
+                            <div class="flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
+                                <button type="button" onclick="removerSf6CfnId()" class="text-xs text-slate-400 hover:text-white px-2 py-2">Remover CFN</button>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="fecharSf6CfnModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold transition">Fechar</button>
+                                    <button type="button" id="sf6-cfn-save" onclick="salvarSf6CfnId()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold transition">Salvar CFN</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1277,99 +1339,204 @@
                 atualizarInterfaceVarreduraPersonagens();
             };
 
-            // ===== RANK TEKKEN 8 (EWGF) =====
-            // Token em partes (mesmo esquema do resto do projeto). Visível no client: usar chave só-leitura.
-            const _EWGF_T = ['ewgf_', '74e1bbdefcfb', '489983402f94', '2321ed83'].join('');
-            const EWGF_API = 'https://api.ewgf.gg';
-            const RANK_TTL_MS = 24 * 60 * 60 * 1000;
-            const RANK_IMG_DIR = 'imagens/tekken8/ranks/';
-
-            function _dbPlayers() {
-                return firebase.firestore().collection('players').doc(String(playerId));
+            function definirStatusSf6Cfn(message, isError = false) {
+                const status = document.getElementById('sf6-cfn-status');
+                if (!status) return;
+                status.textContent = message || '';
+                status.classList.toggle('hidden', !message);
+                status.classList.toggle('text-red-400', Boolean(message) && isError);
+                status.classList.toggle('text-slate-400', !isError);
             }
 
-            function normalizarTekkenId(v) {
-                return String(v || '').replace(/[^A-Za-z0-9]/g, '');
-            }
+            window.abrirSf6CfnModal = function() {
+                if (!jogosPlayer.includes('sf6')) return;
+                const input = document.getElementById('sf6-cfn-id');
+                const modal = document.getElementById('sf6_cfn_modal');
+                if (!input || !modal) return;
+                input.value = sf6CfnIdProfile;
+                definirStatusSf6Cfn('');
+                modal.classList.remove('hidden');
+                input.focus();
+            };
 
-            function slugRank(v) {
-                return String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
-                    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-            }
+            window.fecharSf6CfnModal = function() {
+                document.getElementById('sf6_cfn_modal')?.classList.add('hidden');
+            };
 
-            function getRankImgInfo(rank) {
-                if (!rank || (rank.name == null && rank.id == null)) return null;
-                const slug = rank.name ? slugRank(rank.name) : String(rank.id);
-                return { label: rank.name || ('Rank ' + rank.id), file: `${RANK_IMG_DIR}${slug}.png` };
-            }
+            window.salvarSf6CfnId = async function() {
+                const input = document.getElementById('sf6-cfn-id');
+                const saveButton = document.getElementById('sf6-cfn-save');
+                const normalizedId = String(input?.value || '').trim();
+                if (normalizedId && !/^\\d{1,20}$/.test(normalizedId)) {
+                    definirStatusSf6Cfn('O CFN ID deve conter apenas números.', true);
+                    return false;
+                }
+                if (typeof _salvarSf6CfnId !== 'function') {
+                    definirStatusSf6Cfn('Atualize o arquivo players.js para habilitar o salvamento.', true);
+                    return false;
+                }
+                if (saveButton) saveButton.disabled = true;
+                try {
+                    const saved = await _salvarSf6CfnId(playerId, normalizedId);
+                    if (!saved) {
+                        definirStatusSf6Cfn('Não foi possível salvar o CFN ID no perfil.', true);
+                        return false;
+                    }
+                    sf6CfnIdProfile = normalizedId;
+                    definirStatusSf6Cfn(normalizedId ? 'CFN ID salvo no perfil.' : 'CFN ID removido do perfil.');
+                    return true;
+                } finally {
+                    if (saveButton) saveButton.disabled = false;
+                }
+            };
 
-            // Extrai rank atual do payload de /external/battles/{id}.
-            // Campos exatos NÃO confirmados -> varre chaves tipo *rank* no lado do player.
-            function extrairRankDaResposta(json, tekkenId) {
-                const lista = Array.isArray(json) ? json : (json?.data ?? json?.battles ?? []);
-                if (!Array.isArray(lista) || !lista.length) return null;
-                const batalhas = [...lista].sort((a, b) =>
-                    (Number(b.battleAt ?? b.battle_at ?? b.date) || 0) - (Number(a.battleAt ?? a.battle_at ?? a.date) || 0));
-                const idLow = tekkenId.toLowerCase();
-                for (const b of batalhas) {
-                    for (const [k, v] of Object.entries(b)) {
-                        if (typeof v === 'string' && v.toLowerCase() === idLow) {
-                            const prefixo = k.replace(/(tekken)?_?id$/i, '');
-                            const rk = Object.keys(b).find(x => x !== k && x.startsWith(prefixo) && /rank/i.test(x) && !/power|rating|delta/i.test(x));
-                            if (rk && b[rk] != null) {
-                                return typeof b[rk] === 'object'
-                                    ? { id: b[rk].id ?? null, name: b[rk].name ?? null }
-                                    : (isNaN(b[rk]) ? { id: null, name: String(b[rk]) } : { id: Number(b[rk]), name: null });
-                            }
-                        }
+            window.removerSf6CfnId = async function() {
+                const input = document.getElementById('sf6-cfn-id');
+                if (input) input.value = '';
+                await window.salvarSf6CfnId();
+            };
+
+            function normalizarTekkenIdEwgf(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return '';
+                let candidate = raw;
+                if (/ewgf\.gg|^https?:\/\/|^www\./i.test(candidate)) {
+                    try {
+                        const url = new URL(candidate.includes('://') ? candidate : `https://${candidate}`);
+                        const parts = url.pathname.split('/').filter(Boolean);
+                        candidate = parts[parts.length - 1] || '';
+                    } catch (_) {
+                        return '';
                     }
                 }
-                console.warn('[EWGF] rank não encontrado no payload. Amostra:', batalhas[0]);
-                return null;
+                candidate = candidate.replace(/-/g, '');
+                return /^[A-Za-z0-9]{1,20}$/.test(candidate) ? candidate : '';
             }
 
-            async function obterRankTekken(forcar) {
+            function definirStatusEwgfRank(message, isError = false) {
+                const status = document.getElementById('ewgf-rank-status');
+                if (!status) return;
+                status.textContent = message || '';
+                status.classList.toggle('hidden', !message);
+                status.classList.toggle('text-red-400', Boolean(message) && isError);
+                status.classList.toggle('text-slate-400', !isError);
+            }
+
+            async function buscarRankEwgf(tekkenId, silencioso = true) {
+                document.getElementById('ewgf-rank-link')?.classList.add('hidden');
+                if (!String(window.FGC_EWGF_CONFIG?.apiToken || '').trim()) {
+                    if (!silencioso) definirStatusEwgfRank('Preencha a chave EWGF em ewgf-config.js para carregar o rank.', true);
+                    return false;
+                }
+
                 try {
-                    const snap = await _dbPlayers().get();
-                    const d = snap.exists ? snap.data() : {};
-                    const tekkenId = normalizarTekkenId(d.tekkenId);
-                    if (!tekkenId) return { tekkenId: '', rank: null };
-                    const fresco = d.tekkenRank && d.tekkenRankUpdatedAt && (Date.now() - d.tekkenRankUpdatedAt < RANK_TTL_MS);
-                    if (fresco && !forcar) return { tekkenId, rank: d.tekkenRank };
-                    const res = await fetch(`${EWGF_API}/external/battles/${encodeURIComponent(tekkenId)}`, {
-                        headers: { Authorization: `Bearer ${_EWGF_T}` }
-                    });
-                    if (!res.ok) {
-                        console.warn('[EWGF] HTTP', res.status, await res.text().catch(() => ''));
-                        return { tekkenId, rank: d.tekkenRank || null };
+                    if (!window.FGCEWGF?.fetchRank) {
+                        if (!silencioso) definirStatusEwgfRank('O módulo ewgf-rank.js não foi carregado.', true);
+                        return false;
                     }
-                    const json = await res.json();
-                    console.log('[EWGF] resposta:', json);
-                    const rank = extrairRankDaResposta(json, tekkenId);
-                    if (rank) {
-                        await _dbPlayers().set({ tekkenRank: rank, tekkenRankUpdatedAt: Date.now() }, { merge: true });
-                        return { tekkenId, rank };
+                    const payload = await window.FGCEWGF.fetchRank(tekkenId);
+
+                    const asset = String(payload?.rankAsset || '');
+                    if (!/^[a-z0-9]+$/i.test(asset)) {
+                        document.getElementById('ewgf-rank-link')?.classList.add('hidden');
+                        if (!silencioso) definirStatusEwgfRank('A EWGF ainda não retornou um rank para esse ID.', true);
+                        return false;
                     }
-                    return { tekkenId, rank: d.tekkenRank || null };
-                } catch (e) {
-                    console.warn('[EWGF] erro:', e);
-                    return { tekkenId: '', rank: null };
+
+                    const link = document.getElementById('ewgf-rank-link');
+                    const image = document.getElementById('ewgf-rank-logo');
+                    if (!link || !image) return false;
+                    const rankName = String(payload?.rankName || 'Rank Tekken 8');
+                    image.alt = `Rank Tekken 8: ${rankName}`;
+                    image.onerror = () => {
+                        link.classList.add('hidden');
+                        if (!silencioso) definirStatusEwgfRank('Não foi possível carregar o arquivo local do rank.', true);
+                    };
+                    image.onload = () => link.classList.remove('hidden');
+                    image.src = `imagens/tekken8/full/ranks/T_UI_CMN_RNK_L_${asset}.webp`;
+                    link.href = `https://ewgf.gg/player/${encodeURIComponent(tekkenId)}`;
+                    link.title = rankName;
+                    link.setAttribute('aria-label', `Rank Tekken 8: ${rankName}`);
+                    if (!silencioso) {
+                        const delayMessage = payload?.tier === 'free' ? ' Dados do plano gratuito podem atrasar até 24 horas.' : '';
+                        definirStatusEwgfRank(`Logo do rank carregada.${delayMessage}`);
+                    }
+                    return true;
+                } catch (error) {
+                    console.error('Erro ao consultar o rank EWGF:', error);
+                    const messages = {
+                        rate_limit_exceeded: 'Limite de consultas da EWGF atingido. Tente novamente mais tarde.',
+                        player_not_found: 'Esse Tekken ID não foi encontrado na EWGF.',
+                        invalid_tekken_id: 'Tekken ID inválido. Confira o ID ou o link informado.',
+                        invalid_api_key_format: 'A chave EWGF está em formato inválido.',
+                        invalid_api_key: 'A chave EWGF configurada em ewgf-config.js é inválida.',
+                        api_key_revoked: 'A chave EWGF foi revogada.',
+                        token_not_configured: 'Preencha a chave EWGF em ewgf-config.js.',
+                        request_timeout: 'A consulta à EWGF excedeu o tempo limite.',
+                        network_or_cors_error: 'Não foi possível acessar a API EWGF pela rede ou CORS.'
+                    };
+                    if (!silencioso) definirStatusEwgfRank(messages[error?.code] || 'Não foi possível consultar o rank na EWGF.', true);
+                    return false;
                 }
             }
 
-            window.definirTekkenId = async function() {
-                let atual = '';
-                try { const s = await _dbPlayers().get(); atual = s.exists ? (s.data().tekkenId || '') : ''; } catch (_) {}
-                const entrada = window.prompt('ID Tekken 8 (ex: 22af-4T9h-gF3Y). Deixe vazio para remover:', atual);
-                if (entrada === null) return;
-                const id = normalizarTekkenId(entrada);
-                if (id && id.length > 20) { alert('ID inválido (máx. 20 caracteres alfanuméricos).'); return; }
+            window.abrirEwgfIdModal = function() {
+                const input = document.getElementById('ewgf-tekken-id');
+                const modal = document.getElementById('ewgf_id_modal');
+                if (!input || !modal) return;
+                input.value = ewgfTekkenIdProfile;
+                definirStatusEwgfRank('');
+                modal.classList.remove('hidden');
+                if (!window.FGC_EWGF_CONFIG?.apiToken) {
+                    definirStatusEwgfRank('O ID pode ser salvo agora; preencha a chave EWGF em ewgf-config.js para buscar o rank.', true);
+                }
+                input.focus();
+            };
+
+            window.fecharEwgfIdModal = function() {
+                document.getElementById('ewgf_id_modal')?.classList.add('hidden');
+            };
+
+            window.removerEwgfTekkenId = function() {
+                const input = document.getElementById('ewgf-tekken-id');
+                if (input) input.value = '';
+                return window.salvarEwgfTekkenId();
+            };
+
+            window.salvarEwgfTekkenId = async function() {
+                const input = document.getElementById('ewgf-tekken-id');
+                const saveButton = document.getElementById('ewgf-id-save');
+                const raw = String(input?.value || '').trim();
+                const normalizedId = normalizarTekkenIdEwgf(raw);
+                if (raw && !normalizedId) {
+                    definirStatusEwgfRank('Informe um ID alfanumérico válido de até 20 caracteres ou o link do perfil EWGF.', true);
+                    return false;
+                }
+                if (typeof _salvarEwgfTekkenId !== 'function') {
+                    definirStatusEwgfRank('Não foi possível gravar o ID. Atualize o arquivo players.js.', true);
+                    return false;
+                }
+
+                if (saveButton) saveButton.disabled = true;
                 try {
-                    await _dbPlayers().set(id
-                        ? { tekkenId: id, tekkenRank: null, tekkenRankUpdatedAt: 0 }
-                        : { tekkenId: '', tekkenRank: null, tekkenRankUpdatedAt: 0 }, { merge: true });
-                } catch (e) { alert('Não foi possível salvar. Tente novamente.'); return; }
-                carregarPerfil(false);
+                    const saved = await _salvarEwgfTekkenId(playerId, normalizedId);
+                    if (!saved) {
+                        definirStatusEwgfRank('Não foi possível salvar o ID no perfil.', true);
+                        return false;
+                    }
+                    ewgfTekkenIdProfile = normalizedId;
+                    if (input) input.value = normalizedId;
+                    if (!normalizedId) {
+                        document.getElementById('ewgf-rank-link')?.classList.add('hidden');
+                        definirStatusEwgfRank('ID EWGF removido do perfil.');
+                        return true;
+                    }
+                    definirStatusEwgfRank('ID salvo. Consultando o rank…');
+                    await buscarRankEwgf(normalizedId, false);
+                    return true;
+                } finally {
+                    if (saveButton) saveButton.disabled = false;
+                }
             };
 
             async function carregarPerfil(forceRefresh = false) {
@@ -1381,9 +1548,9 @@
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix, prefixProvided);
                     dados.characterArt = await _lerCharArt(playerId);
-                    const _tk = await obterRankTekken(forceRefresh);
-                    dados.tekkenId = _tk.tekkenId;
-                    dados.tekkenRank = _tk.rank;
+                    const ewgfTekkenIdPromise = typeof _lerEwgfTekkenId === 'function'
+                        ? _lerEwgfTekkenId(playerId)
+                        : Promise.resolve('');
                     let savedGames = [];
                     try {
                         if (typeof _lerGamesPlayed === 'function') {
@@ -1393,6 +1560,18 @@
                         console.warn('Não foi possível carregar os jogos do player:', gamesError);
                     }
                     jogosPlayer = Array.isArray(savedGames) ? [...new Set(savedGames.filter(key => GAMES_PLAYED_MAP[key]))] : [];
+                    try {
+                        ewgfTekkenIdProfile = await ewgfTekkenIdPromise;
+                    } catch (ewgfReadError) {
+                        console.warn('Não foi possível carregar o Tekken ID da EWGF:', ewgfReadError);
+                        ewgfTekkenIdProfile = '';
+                    }
+                    try {
+                        sf6CfnIdProfile = typeof _lerSf6CfnId === 'function' ? await _lerSf6CfnId(playerId) : '';
+                    } catch (sf6ReadError) {
+                        console.warn('Não foi possível carregar o CFN ID do Street Fighter 6:', sf6ReadError);
+                        sf6CfnIdProfile = '';
+                    }
                     estadoVarreduraPersonagens = carregarEstadoVarreduraLocal();
                     let sharedHistory = null;
                     try {
@@ -1409,6 +1588,7 @@
                     if (historyToApply) aplicarHistoricoCompleto(dados, historyToApply);
                     dadosPerfilAtual = dados;
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
+                    if (ewgfTekkenIdProfile) void buscarRankEwgf(ewgfTekkenIdProfile, true);
                     renderizarGraficoEvolucao(dados.tournaments || []);
                     atualizarInterfaceVarreduraPersonagens();
                     if (fonte === 'cache' && dados.countryChecked !== true && !dados.countryName && !dados.countryCode) {
@@ -1577,6 +1757,10 @@
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape' && !document.getElementById('performance-share-modal').classList.contains('hidden')) {
                     window.fecharCompartilhamentoDesempenho();
+                }
+                const ewgfModal = document.getElementById('ewgf_id_modal');
+                if (event.key === 'Escape' && ewgfModal && !ewgfModal.classList.contains('hidden')) {
+                    window.fecharEwgfIdModal();
                 }
             });
 

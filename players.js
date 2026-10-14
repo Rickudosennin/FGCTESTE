@@ -479,6 +479,64 @@ async function _lerGamesPlayed(playerId) {
     }
 }
 
+// ==================== ID EWGF / TEKKEN (Firestore, campo separado) ====================
+// Mantém o ID fora de `dados`, que é sobrescrito quando o cache Start.gg atualiza.
+async function _salvarEwgfTekkenId(playerId, tekkenId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        const value = String(tekkenId ?? '').trim();
+        if (!playerKey || (value && !/^[A-Za-z0-9]{1,20}$/.test(value))) return false;
+        await _playersCollection.doc(playerKey).set({ ewgfTekkenId: value }, { merge: true });
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar ID EWGF do player:', e);
+        return false;
+    }
+}
+
+async function _lerEwgfTekkenId(playerId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey) return '';
+        const doc = await _playersCollection.doc(playerKey).get();
+        if (!doc.exists) return '';
+        const value = doc.data().ewgfTekkenId;
+        return typeof value === 'string' ? value.trim() : '';
+    } catch (e) {
+        console.error('Erro ao ler ID EWGF do player:', e);
+        return '';
+    }
+}
+
+// ==================== CFN ID / STREET FIGHTER 6 (Firestore, campo separado) ====================
+// Campo separado para não ser sobrescrito pelo cache dos dados do Start.gg.
+async function _salvarSf6CfnId(playerId, cfnId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        const value = String(cfnId ?? '').trim();
+        if (!playerKey || (value && !/^\\d{1,20}$/.test(value))) return false;
+        await _playersCollection.doc(playerKey).set({ sf6CfnId: value }, { merge: true });
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar CFN ID do player:', e);
+        return false;
+    }
+}
+
+async function _lerSf6CfnId(playerId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey) return '';
+        const doc = await _playersCollection.doc(playerKey).get();
+        if (!doc.exists) return '';
+        const value = doc.data().sf6CfnId;
+        return typeof value === 'string' ? value.trim() : (typeof value === 'number' ? String(value) : '');
+    } catch (e) {
+        console.error('Erro ao ler CFN ID do player:', e);
+        return '';
+    }
+}
+
 // ==================== HISTÓRICO COMPLETO DE PERSONAGENS (Start.gg) ====================
 const _CHAR_HISTORY_INDEX_PAGE_SIZE = 100;
 const _CHAR_HISTORY_EVENT_PAGE_SIZE = 25;
