@@ -347,18 +347,32 @@ main { flex: 1; }
     padding: 0 4px;
 }
 .wise-banner-row {
+    box-sizing: border-box;
+    width: 100%;
     flex-direction: row;
-    justify-content: center;
+    align-items: center;
+    justify-content: flex-start;
     gap: 16px;
+    padding: 12px 16px;
     text-align: left;
 }
-.wise-banner-row .wise-banner-qr { width: 96px; height: 96px; }
+.wise-banner-row:hover { transform: none; }
+.wise-banner-row .wise-banner-qr {
+    width: 88px;
+    height: 88px;
+    border-radius: 8px;
+}
 .wise-banner-info {
     display: flex;
+    flex: 1;
+    min-width: 0;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 4px;
 }
+.wise-banner-row .wise-banner-title { font-size: 20px; }
+.wise-banner-row .wise-banner-text { font-size: 12px; }
+.wise-banner-row .wise-banner-btn { margin-top: 4px; padding: 7px 14px; font-size: 11px; }
 @media (min-width: 1600px) {
     .mobile-banner-wise { display: none; }
 }
