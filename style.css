@@ -256,8 +256,8 @@ main { flex: 1; }
     .rr-table thead th { padding: 8px 10px; font-size: 11px; }
 }
 
-/* ========== BANNER LATERAL EXITLAG (DESKTOP) ========== */
-.side-banner-right {
+/* ========== BANNERS LATERAIS (DESKTOP): WISE + EXITLAG ========== */
+.side-banners-right {
     display: none;
     position: fixed;
     top: 50%;
@@ -265,6 +265,11 @@ main { flex: 1; }
     transform: translateY(-50%);
     width: 260px;
     z-index: 30;
+    flex-direction: column;
+    gap: 16px;
+}
+.side-banner-right {
+    display: block;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 0 25px rgba(220, 38, 38, 0.35);
@@ -272,7 +277,7 @@ main { flex: 1; }
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .side-banner-right:hover {
-    transform: translateY(-50%) scale(1.03);
+    transform: scale(1.03);
     box-shadow: 0 0 35px rgba(220, 38, 38, 0.55);
 }
 .side-banner-right img {
@@ -281,7 +286,81 @@ main { flex: 1; }
     height: auto;
 }
 @media (min-width: 1600px) {
-    .side-banner-right { display: block; }
+    .side-banners-right { display: flex; }
+}
+
+/* ========== BANNER DOAÇÃO WISE ========== */
+.wise-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    text-align: center;
+    background: #9fe870;
+    color: #163300;
+    border-radius: 12px;
+    border: 2px solid #163300;
+    box-shadow: 0 0 20px rgba(159, 232, 112, 0.35);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.wise-banner:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 30px rgba(159, 232, 112, 0.6);
+}
+.wise-banner:active { transform: scale(0.98); }
+.wise-banner-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.wise-banner-qr {
+    display: block;
+    width: 140px;
+    height: 140px;
+    border-radius: 10px;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+.wise-banner-text { font-size: 12px; font-weight: 600; }
+.wise-banner-btn {
+    margin-top: 2px;
+    background: #163300;
+    color: #9fe870;
+    font-weight: 900;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    border-radius: 999px;
+}
+
+/* ========== BANNER DOAÇÃO WISE (MOBILE/TABLET) ========== */
+.mobile-banner-wise {
+    display: block;
+    max-width: 56rem;
+    margin: 0 auto 16px auto;
+    padding: 0 4px;
+}
+.wise-banner-row {
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+    text-align: left;
+}
+.wise-banner-row .wise-banner-qr { width: 96px; height: 96px; }
+.wise-banner-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+@media (min-width: 1600px) {
+    .mobile-banner-wise { display: none; }
 }
 
 /* ========== BANNER EXITLAG (MOBILE/TABLET) ========== */
