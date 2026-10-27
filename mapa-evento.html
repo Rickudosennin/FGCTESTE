@@ -14,11 +14,14 @@ body { margin: 0; background: var(--bg); color: var(--txt); font-family: system-
 .leaflet-popup-content { color: #111; font-size: 14px; }
 .leaflet-popup-content b { font-size: 16px; display: block; margin-bottom: 4px; }
 .leaflet-popup-content a { color: var(--blue); font-weight: bold; text-decoration: none; }
+.leaflet-control-layers { color: #111; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; }
 .overlay-info { position: absolute; top: 15px; left: 15px; z-index: 1000; background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid #33353e; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-width: 320px; }
 .overlay-info h2 { margin: 0 0 8px 0; font-size: 16px; color: #fff; }
 .overlay-info p { margin: 0 0 12px 0; font-size: 13px; color: #aaa; }
 .btn-voltar { background: #33353e; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; transition: 0.2s; }
 .btn-voltar:hover { background: #4a4d5a; }
+/* Ajusta a posição do controle de camadas no mapa de eventos para não sobrepor o botão de voltar em telas pequenas */
+@media(max-width:600px) { .overlay-info { top: auto; bottom: 20px; } }
 </style>
 </head>
 <body>
@@ -49,8 +52,20 @@ const textoEndereco = endereco ? `${endereco} - ${cidade}/${uf}` : `${cidade}/${
 document.getElementById('evento-endereco').innerText = "📍 " + textoEndereco;
 
 const map = L.map("map").setView([-14.2, -51.9], 4);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4w1g_1_3040de64ae82136aecda67bf", {
-  attribution: "&copy; OpenStreetMap &copy; CARTO", maxZoom: 19
+
+// Definição das 3 opções de mapa
+const camadaEscura = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4w1g_1_3040de64ae82136aecda67bf", { attribution: "&copy; CARTO", maxZoom: 19 });
+const camadaPadrao = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap", maxZoom: 19 });
+const camadaSatelite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { attribution: "&copy; Esri", maxZoom: 19 });
+
+// Adiciona a camada escura como padrão ao abrir
+camadaEscura.addTo(map);
+
+// Cria o controle de seleção
+L.control.layers({
+  "Mapa Escuro": camadaEscura,
+  "Mapa Padrão": camadaPadrao,
+  "Satélite": camadaSatelite
 }).addTo(map);
 
 const iconEvento = L.divIcon({ className: "", html: `<div class="pin-evento"></div>`, iconSize: [22, 22] });
@@ -58,17 +73,14 @@ const iconEvento = L.divIcon({ className: "", html: `<div class="pin-evento"></d
 function adicionarPino(lat, lng) {
   map.setView([lat, lng], 16);
   const popupHtml = `<b>${esc(nome)}</b>📍 ${esc(textoEndereco)}<br><br><a href="${esc(url)}" target="_blank">Ver no Start.gg</a>`;
-  const m = L.marker([lat, lng], {icon: iconEvento}).addTo(map).bindPopup(popupHtml).openPopup();
+  L.marker([lat, lng], {icon: iconEvento}).addTo(map).bindPopup(popupHtml).openPopup();
 }
 
 async function carregarMapa() {
-  // Se a API do Start.gg já enviou Latitude/Longitude prontas
   if (pLat && pLng && pLat !== "null" && pLng !== "null") {
     adicionarPino(parseFloat(pLat), parseFloat(pLng));
     return;
   }
-
-  // Se não tem Lat/Lng, vamos tentar geocodificar o Endereço Exato + Cidade via Nominatim
   if (endereco || cidade) {
     const buscaStr = `${endereco ? endereco + ', ' : ''}${cidade}, Brasil`;
     try {

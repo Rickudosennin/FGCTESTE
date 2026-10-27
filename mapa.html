@@ -22,6 +22,8 @@ input,select{background:var(--card);color:var(--txt);border:1px solid #33353e;bo
 .pin{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #000;background:var(--red)}
 footer{padding:8px 12px;font-size:11px;color:var(--mut)}
 .leaflet-popup-content{color:#111}
+/* Ajusta o texto do controle de camadas para ficar legível (preto) */
+.leaflet-control-layers { color: #111; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500; }
 @media(max-width:700px){body{flex-direction:column-reverse}aside{width:100%;height:40vh}}
 </style>
 </head>
@@ -48,8 +50,21 @@ const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">
 const icon = () => L.divIcon({className:"",html:`<div class="pin"></div>`,iconSize:[18,18]});
 
 const map = L.map("map").setView([-14.2,-51.9],4);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4w1g_1_3040de64ae82136aecda67bf",{
-  attribution:"&copy; OpenStreetMap &copy; CARTO",maxZoom:18}).addTo(map);
+
+// Definição das 3 opções de mapa
+const camadaEscura = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4w1g_1_3040de64ae82136aecda67bf", { attribution:"&copy; OpenStreetMap &copy; CARTO", maxZoom: 19 });
+const camadaPadrao = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution:"&copy; OpenStreetMap", maxZoom: 19 });
+const camadaSatelite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { attribution:"&copy; Esri", maxZoom: 19 });
+
+// Adiciona a camada escura como padrão ao abrir
+camadaEscura.addTo(map);
+
+// Cria o controle de seleção e adiciona no mapa
+L.control.layers({
+  "Mapa Escuro": camadaEscura,
+  "Mapa Padrão": camadaPadrao,
+  "Satélite": camadaSatelite
+}).addTo(map);
 
 const gLocals = L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:30}).addTo(map);
 const markers = new Map();
