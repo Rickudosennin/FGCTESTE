@@ -18,8 +18,7 @@ input,select{background:var(--card);color:var(--txt);border:1px solid #33353e;bo
 label{font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}
 #lista{overflow:auto;flex:1;padding:0 12px 12px}
 .item{background:var(--card);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;border-left:3px solid var(--red)}
-.item.ev{border-left-color:var(--blue)}
-.item small{color:var(--mut);display:block}
+.item small{color:var(--mut);display:block;margin-top:2px}
 #map{flex:1}
 .pin{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #000}
 .pin.l{background:var(--red)} .pin.e{background:var(--blue);width:18px;height:18px}
@@ -54,7 +53,7 @@ let EVENTOS = [
     nome: "Battle Coliseum 2026",
     cidade: "São Paulo",
     uf: "SP",
-    enderecoExato: "Av. Olavo Fontoura, 1209", // Preencha quando a API fornecer venueAddress
+    enderecoExato: "Av. Olavo Fontoura, 1209",
     lat: -23.5505,
     lng: -46.6333,
     data: "20/11/2026",
@@ -75,7 +74,7 @@ const gEventos = L.layerGroup().addTo(map);
 const markers = new Map();
 
 function popupLocal(l){
-  return `<b>${esc(l.nome)}</b><br>${esc(l.cidade)} - ${esc(l.uf)}`
+  return `<b>${esc(l.nome)}</b><br>${l.enderecoExato ? esc(l.enderecoExato) + '<br>' : ''}${esc(l.cidade)} - ${esc(l.uf)}`
     +(l.aprox?`<br><i>posição aproximada</i>`:"")
     +(l.link?`<br><a href="${esc(l.link)}" target="_blank" rel="noopener">Link</a>`:"");
 }
@@ -87,7 +86,6 @@ function popupEvento(e){
     +`<br><a href="${esc(e.url)}" target="_blank">Página do torneio</a>`;
 }
 
-// Geocodifica o endereço exato se houver, com cache no localStorage
 async function geocodeEndereco(endereco, cidade, uf) {
   if (!endereco && !cidade) return null;
   const busca = `${endereco ? endereco + ', ' : ''}${cidade || ''}${uf ? ' - ' + uf : ''}, Brasil`;
@@ -122,7 +120,6 @@ async function init(){
       markers.set("l" + l.id, {marker: m, data: l, tipo: "l"});
     });
 
-    // Geocodifica endereço exato do evento se presente
     for (const e of EVENTOS) {
       if (e.enderecoExato) {
         const coordsExatas = await geocodeEndereco(e.enderecoExato, e.cidade, e.uf);
@@ -160,7 +157,6 @@ function render(){
   gLocals.clearLayers(); gEventos.clearLayers();
   const lista = document.getElementById("lista"); lista.innerHTML = "";
   
-  // Ordenação Alfabética A-Z
   const itensOrdenados = filtrados().sort((a, b) => 
     a[1].data.nome.localeCompare(b[1].data.nome, 'pt-BR')
   );
@@ -168,10 +164,15 @@ function render(){
   itensOrdenados.forEach(([k,v]) => {
     (v.tipo === "l" ? gLocals : gEventos).addLayer(v.marker);
     const el = document.createElement("div");
-    el.className = "item" + (v.tipo === "e" ? " ev" : "");
-    el.innerHTML = `<b>${esc(v.data.nome)}</b><small>${esc(v.data.cidade)} - ${esc(v.data.uf)}${v.tipo === "e" ? " · evento " + esc(v.data.data) : ""}</small>`;
+    el.className = "item";
+    
+    // Monta o texto de endereço
+    const endExato = v.data.enderecoExato ? `${esc(v.data.enderecoExato)} - ` : '';
+    const localizacao = `${endExato}${esc(v.data.cidade)} - ${esc(v.data.uf)}`;
+
+    el.innerHTML = `<b>${esc(v.data.nome)}</b><small>📍 ${localizacao}</small>`;
     el.onclick = () => {
-      map.setView([v.data.lat, v.data.lng], 14);
+      map.setView([v.data.lat, v.data.lng], 15);
       gLocals.zoomToShowLayer?.(v.marker, () => v.marker.openPopup()); 
       if(v.tipo === "e") v.marker.openPopup();
     };
@@ -190,7 +191,7 @@ function aplicarQuery(){
   }
   if(evento && markers.has("e" + evento)){
     const {marker, data} = markers.get("e" + evento);
-    map.setView([data.lat, data.lng], 14); marker.openPopup(); return;
+    map.setView([data.lat, data.lng], 15); marker.openPopup(); return;
   }
   if(cidade){
     const pts = [...markers.values()].filter(v => norm(v.data.cidade) === norm(cidade)).map(v => [v.data.lat, v.data.lng]);
