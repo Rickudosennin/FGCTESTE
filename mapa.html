@@ -67,8 +67,8 @@ const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">
 const icon = cls => L.divIcon({className:"",html:`<div class="pin ${cls}"></div>`,iconSize:[18,18]});
 
 const map = L.map("map").setView([-14.235, -51.925], 4);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
-  attribution:"&copy; OpenStreetMap &copy; CARTO", maxZoom:18}).addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4w1g_1_3040de64ae82136aecda67bf",{
+  attribution:"&copy; OpenStreetMap &copy; CARTO",maxZoom:18}).addTo(map);
 
 const gLocals = L.markerClusterGroup({showCoverageOnHover:false, maxClusterRadius:30}).addTo(map);
 const gEventos = L.layerGroup().addTo(map);
