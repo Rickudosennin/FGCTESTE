@@ -572,8 +572,6 @@ async function pesquisar() {
         
         status.classList.add("hidden"); atualizarPainelDisponibilidade(nodes);
         
-        const mapaEventos = []; // Array que alimentará o mapa
-
         nodes.forEach((t, i) => {
             const dataEventoProximo = proximaDataEvento(t);
             const eventoAtual = (t.events && t.events.length > 0) ? t.events.reduce((a, b) => Math.abs((a.startAt||t.startAt) - dataEventoProximo) <= Math.abs((b.startAt||t.startAt) - dataEventoProximo) ? a : b) : null;
@@ -605,7 +603,18 @@ async function pesquisar() {
                 eventsListHTML = `<div class="mt-2 pt-2 border-t border-white/10"><p class="text-[10px] font-black text-slate-500 uppercase mb-1">Eventos</p>${eventLinks}</div>`;
             }
 
-            const mapaBtnHTML = typeVal === "offline" ? `<a href="mapa.html?cidade=${encodeURIComponent(t.city || t.addrState || '')}&evento=${encodeURIComponent(extrairSlugTorneio(t.url) || '')}" target="_blank" class="block text-center btn-calendar text-slate-300 font-bold py-2 rounded-lg transition uppercase text-[10px] tracking-wider"><i class="fa-solid fa-map-location-dot mr-1"></i> Ver no Mapa</a>` : '';
+            // Monta os parâmetros URL para o mapa exclusivo do evento
+            const paramsMapa = new URLSearchParams({
+                nome: t.name,
+                cidade: t.city || t.addrState || '',
+                uf: t.addrState || '',
+                endereco: t.venueAddress || '',
+                lat: t.lat || '',
+                lng: t.lng || '',
+                url: "https://start.gg" + t.url
+            }).toString();
+
+            const mapaBtnHTML = typeVal === "offline" ? `<a href="mapa-evento.html?${paramsMapa}" target="_blank" class="block text-center btn-calendar text-slate-300 font-bold py-2 rounded-lg transition uppercase text-[10px] tracking-wider"><i class="fa-solid fa-map-location-dot mr-1"></i> Ver no Mapa</a>` : '';
 
             const card = document.createElement("div"); card.className = "glass-card rounded-xl flex flex-col justify-between overflow-hidden"; card.style.animationDelay = `${Math.min(i * 0.08, 0.8)}s`;
             let encHTML = dEnc ? `<div class="mt-1"><p class="text-[10px] text-slate-400 font-bold uppercase italic">Inscrições encerram em: ${dEnc.toLocaleDateString('pt-BR')} às ${dEnc.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</p><p id="${timerId}" class="text-[10px] timer-red uppercase italic">Calculando...</p></div>` : "";
@@ -615,25 +624,7 @@ async function pesquisar() {
             const checkInData = eventoAtual ? { checkInEnabled: eventoAtual.checkInEnabled, checkInDuration: eventoAtual.checkInDuration, checkInBuffer: eventoAtual.checkInBuffer } : null;
             const eventState = eventoAtual?.state || null;
             if (regCloseEfetivo || (checkInData && checkInData.checkInEnabled)) { iniciarTimer(timerId, regCloseEfetivo, checkInData, eventoAtual?.startAt || t.startAt, eventState); }
-            
-            // Popula os eventos que vão para o mapa
-            if (typeVal === "offline") {
-                mapaEventos.push({
-                    slug: extrairSlugTorneio(t.url),
-                    nome: t.name,
-                    cidade: t.city || t.addrState || '',
-                    uf: t.addrState || '',
-                    enderecoExato: t.venueAddress || '',
-                    lat: t.lat || null,
-                    lng: t.lng || null,
-                    data: new Date(dataEventoProximo*1000).toLocaleDateString('pt-BR'),
-                    url: "https://start.gg" + t.url
-                });
-            }
         });
-
-        // Grava no localStorage para o mapa.html ler instantaneamente
-        localStorage.setItem('fgchub_mapa_eventos', JSON.stringify(mapaEventos));
 
     } catch (e) { status.classList.add("hidden"); }
 }

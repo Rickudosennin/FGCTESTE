@@ -8,20 +8,18 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
 <style>
-:root{--bg:#16171b;--card:#1f2026;--txt:#eee;--mut:#9aa0ab;--red:#d32323;--blue:#2f6fe4}
+:root{--bg:#16171b;--card:#1f2026;--txt:#eee;--mut:#9aa0ab;--red:#d32323;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,sans-serif;display:flex;height:100vh}
 aside{width:320px;display:flex;flex-direction:column;border-right:1px solid #2c2e36}
 header{padding:12px;display:grid;gap:8px}
 h1{font-size:18px;margin:0}
 input,select{background:var(--card);color:var(--txt);border:1px solid #33353e;border-radius:6px;padding:8px}
-label{font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}
 #lista{overflow:auto;flex:1;padding:0 12px 12px}
 .item{background:var(--card);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;border-left:3px solid var(--red)}
 .item small{color:var(--mut);display:block;margin-top:2px}
 #map{flex:1}
-.pin{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #000}
-.pin.l{background:var(--red)} .pin.e{background:var(--blue);width:18px;height:18px}
+.pin{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #000;background:var(--red)}
 footer{padding:8px 12px;font-size:11px;color:var(--mut)}
 .leaflet-popup-content{color:#111}
 @media(max-width:700px){body{flex-direction:column-reverse}aside{width:100%;height:40vh}}
@@ -36,8 +34,6 @@ footer{padding:8px 12px;font-size:11px;color:var(--mut)}
     </div>
     <input id="busca" placeholder="Buscar local ou cidade">
     <select id="uf"><option value="">Todas as UFs</option></select>
-    <label><input type="checkbox" id="tLocals" checked> Locals</label>
-    <label><input type="checkbox" id="tEventos" checked> Eventos offline</label>
   </header>
   <div id="lista"></div>
   <footer>Créditos: Kinomoto / Odakechi / CarolTheQueen — "Locals no Brasil".</footer>
@@ -47,94 +43,36 @@ footer{padding:8px 12px;font-size:11px;color:var(--mut)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
-// Puxa 100% automático do cache gerado pela busca no HUB (Script.js)
-let EVENTOS = JSON.parse(localStorage.getItem('fgchub_mapa_eventos') || '[]');
-
 const norm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const icon = cls => L.divIcon({className:"",html:`<div class="pin ${cls}"></div>`,iconSize:[18,18]});
+const icon = () => L.divIcon({className:"",html:`<div class="pin"></div>`,iconSize:[18,18]});
 
 const map = L.map("map").setView([-14.2,-51.9],4);
 L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4w1g_1_3040de64ae82136aecda67bf",{
   attribution:"&copy; OpenStreetMap &copy; CARTO",maxZoom:18}).addTo(map);
 
 const gLocals = L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:30}).addTo(map);
-const gEventos = L.layerGroup().addTo(map);
 const markers = new Map();
 
 function popupLocal(l){
-  return `<b>${esc(l.nome)}</b><br>${l.enderecoExato ? esc(l.enderecoExato) + '<br>' : ''}${esc(l.cidade)} - ${esc(l.uf)}`
+  return `<b>${esc(l.nome)}</b><br>${esc(l.cidade)} - ${esc(l.uf)}`
     +(l.aprox?`<br><i>posição aproximada</i>`:"")
     +(l.link?`<br><a href="${esc(l.link)}" target="_blank" rel="noopener">Link</a>`:"");
 }
 
-function popupEvento(e){
-  return `<b>${esc(e.nome)}</b><br>${esc(e.data)}`
-    +(e.enderecoExato ? `<br>📍 <i>${esc(e.enderecoExato)}</i>` : "")
-    +`<br>📍 ${esc(e.cidade)} - ${esc(e.uf)}`
-    +`<br><a href="${esc(e.url)}" target="_blank">Página do torneio</a>`;
-}
-
-// Transformar e procurar no geolocalizador se vier vazio
-async function geocodeEndereco(endereco, cidade, uf) {
-  if (!endereco && !cidade) return null;
-  const busca = `${endereco ? endereco + ', ' : ''}${cidade || ''}${uf ? ' - ' + uf : ''}, Brasil`;
-  const cacheKey = "geo_" + norm(busca);
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) return JSON.parse(cached);
-
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&country=Brazil&q=${encodeURIComponent(busca)}`);
-    const data = await res.json();
-    if (data && data.length > 0) {
-      const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      localStorage.setItem(cacheKey, JSON.stringify(coords));
-      return coords;
-    }
-  } catch(e) { console.warn("Erro ao geocodar endereço:", busca, e); }
-  return null;
-}
-
-async function init(){
-  try {
-    const res = await fetch("locals.json");
-    const d = await res.json();
-    
-    const ufs = [...new Set(d.map(l => l.uf))].sort();
-    document.getElementById("uf").innerHTML += ufs.map(u => `<option>${u}</option>`).join("");
-    
-    d.forEach(l => {
-      const m = L.marker([l.lat, l.lng], {icon: icon("l")}).bindPopup(popupLocal(l));
-      markers.set("l" + l.id, {marker: m, data: l, tipo: "l"});
-    });
-
-    for (const e of EVENTOS) {
-      if (e.enderecoExato) {
-        const coordsExatas = await geocodeEndereco(e.enderecoExato, e.cidade, e.uf);
-        if (coordsExatas) {
-          e.lat = coordsExatas.lat;
-          e.lng = coordsExatas.lng;
-        }
-      }
-      if (e.lat && e.lng) {
-        const m = L.marker([e.lat, e.lng], {icon: icon("e"), zIndexOffset: 1000}).bindPopup(popupEvento(e));
-        markers.set("e" + e.slug, {marker: m, data: e, tipo: "e"});
-      }
-    }
-
-    render();
-    aplicarQuery();
-  } catch(err) {
-    console.error("Erro na inicialização:", err);
-  }
-}
+fetch("locals.json").then(r=>r.json()).then(d=>{
+  const ufs = [...new Set(d.map(l=>l.uf))].sort();
+  document.getElementById("uf").innerHTML += ufs.map(u=>`<option>${u}</option>`).join("");
+  d.forEach(l=>{
+    const m = L.marker([l.lat, l.lng], {icon: icon()}).bindPopup(popupLocal(l));
+    markers.set("l" + l.id, {marker: m, data: l});
+  });
+  render(); aplicarQuery();
+});
 
 function filtrados(){
   const q = norm(document.getElementById("busca").value), uf = document.getElementById("uf").value;
-  const tl = document.getElementById("tLocals").checked, te = document.getElementById("tEventos").checked;
-  return [...markers.entries()].filter(([k,v]) => {
-    if(v.tipo === "l" && !tl) return false;
-    if(v.tipo === "e" && !te) return false;
+  return [...markers.entries()].filter(([k,v])=>{
     if(uf && v.data.uf !== uf) return false;
     if(q && !norm(v.data.nome + " " + v.data.cidade).includes(q)) return false;
     return true;
@@ -142,47 +80,28 @@ function filtrados(){
 }
 
 function render(){
-  gLocals.clearLayers(); gEventos.clearLayers();
+  gLocals.clearLayers();
   const lista = document.getElementById("lista"); lista.innerHTML = "";
-  
-  const itensOrdenados = filtrados().sort((a, b) => 
-    a[1].data.nome.localeCompare(b[1].data.nome, 'pt-BR')
-  );
+  const itensOrdenados = filtrados().sort((a, b) => a[1].data.nome.localeCompare(b[1].data.nome, 'pt-BR'));
 
-  itensOrdenados.forEach(([k,v]) => {
-    (v.tipo === "l" ? gLocals : gEventos).addLayer(v.marker);
+  itensOrdenados.forEach(([k,v])=>{
+    gLocals.addLayer(v.marker);
     const el = document.createElement("div");
-    
-    // Mantém padronizado sem barra azul
     el.className = "item";
-    
-    // Monta o texto de endereço com ou sem local exato
-    const endExato = v.data.enderecoExato ? `${esc(v.data.enderecoExato)} - ` : '';
-    const localizacao = `${endExato}${esc(v.data.cidade)} - ${esc(v.data.uf)}`;
-    
-    // Removida a flag 'evento 20/11' para não gerar o texto solto indesejado
-    el.innerHTML = `<b>${esc(v.data.nome)}</b><small>📍 ${localizacao}</small>`;
-    el.onclick = () => {
-      map.setView([v.data.lat, v.data.lng], 15);
-      gLocals.zoomToShowLayer?.(v.marker, () => v.marker.openPopup()); 
-      if(v.tipo === "e") v.marker.openPopup();
-    };
+    el.innerHTML = `<b>${esc(v.data.nome)}</b><small>📍 ${esc(v.data.cidade)} - ${esc(v.data.uf)}</small>`;
+    el.onclick = () => { map.setView([v.data.lat, v.data.lng], 12); gLocals.zoomToShowLayer(v.marker, ()=>v.marker.openPopup()); };
     lista.appendChild(el);
   });
 }
 
-["busca","uf","tLocals","tEventos"].forEach(id => document.getElementById(id).addEventListener("input", render));
+["busca","uf"].forEach(id => document.getElementById(id).addEventListener("input", render));
 
 function aplicarQuery(){
   const p = new URLSearchParams(location.search);
-  const cidade = p.get("cidade"), evento = p.get("evento"), local = p.get("local");
+  const cidade = p.get("cidade"), local = p.get("local");
   if(local && markers.has("l" + local)){
     const {marker, data} = markers.get("l" + local);
     map.setView([data.lat, data.lng], 12); gLocals.zoomToShowLayer(marker, () => marker.openPopup()); return;
-  }
-  if(evento && markers.has("e" + evento)){
-    const {marker, data} = markers.get("e" + evento);
-    map.setView([data.lat, data.lng], 15); marker.openPopup(); return;
   }
   if(cidade){
     const pts = [...markers.values()].filter(v => norm(v.data.cidade) === norm(cidade)).map(v => [v.data.lat, v.data.lng]);
@@ -190,8 +109,6 @@ function aplicarQuery(){
     document.getElementById("busca").value = cidade; render();
   }
 }
-
-init();
 </script>
 </body>
 </html>
