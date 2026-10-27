@@ -47,19 +47,8 @@ footer{padding:8px 12px;font-size:11px;color:var(--mut)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
-let EVENTOS = [
-  {
-    slug: "battle-coliseum-2026",
-    nome: "Battle Coliseum 2026",
-    cidade: "São Paulo",
-    uf: "SP",
-    enderecoExato: "Av. Olavo Fontoura, 1209",
-    lat: -23.5505,
-    lng: -46.6333,
-    data: "20/11/2026",
-    url: "#"
-  }
-];
+// Puxa 100% automático do cache gerado pela busca no HUB (Script.js)
+let EVENTOS = JSON.parse(localStorage.getItem('fgchub_mapa_eventos') || '[]');
 
 const norm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -86,6 +75,7 @@ function popupEvento(e){
     +`<br><a href="${esc(e.url)}" target="_blank">Página do torneio</a>`;
 }
 
+// Transformar e procurar no geolocalizador se vier vazio
 async function geocodeEndereco(endereco, cidade, uf) {
   if (!endereco && !cidade) return null;
   const busca = `${endereco ? endereco + ', ' : ''}${cidade || ''}${uf ? ' - ' + uf : ''}, Brasil`;
@@ -101,9 +91,7 @@ async function geocodeEndereco(endereco, cidade, uf) {
       localStorage.setItem(cacheKey, JSON.stringify(coords));
       return coords;
     }
-  } catch(e) {
-    console.warn("Erro ao geocodar endereço:", busca, e);
-  }
+  } catch(e) { console.warn("Erro ao geocodar endereço:", busca, e); }
   return null;
 }
 
@@ -164,12 +152,15 @@ function render(){
   itensOrdenados.forEach(([k,v]) => {
     (v.tipo === "l" ? gLocals : gEventos).addLayer(v.marker);
     const el = document.createElement("div");
+    
+    // Mantém padronizado sem barra azul
     el.className = "item";
     
-    // Monta o texto de endereço
+    // Monta o texto de endereço com ou sem local exato
     const endExato = v.data.enderecoExato ? `${esc(v.data.enderecoExato)} - ` : '';
     const localizacao = `${endExato}${esc(v.data.cidade)} - ${esc(v.data.uf)}`;
-
+    
+    // Removida a flag 'evento 20/11' para não gerar o texto solto indesejado
     el.innerHTML = `<b>${esc(v.data.nome)}</b><small>📍 ${localizacao}</small>`;
     el.onclick = () => {
       map.setView([v.data.lat, v.data.lng], 15);
