@@ -294,4 +294,111 @@
             <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             <input type="text" id="attendees_search_input" placeholder="Buscar por prefixo ou nick (ex: WASF, KZ)..." oninput="_onAttendeesSearchInput(this.value)" aria-label="Buscar inscrito por prefixo ou nick">
         </div>
-        <div id="attendees_search_global_hint" class="attendees-search-hint" style="display
+        <div id="attendees_search_global_hint" class="attendees-search-hint" style="display:none;"></div>
+        <div class="sidebar-content" id="attendees_content"><div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando inscritos...</p></div></div>
+    </div>
+
+    <div class="overlay" id="ranking_overlay" onclick="fecharRanking()"></div>
+    <div class="sidebar-base ranking-sidebar" id="ranking_sidebar" role="dialog" aria-modal="true" aria-label="Classificação da liga">
+        <div class="sidebar-header">
+            <div class="header-left"><h2>🏆 CLASSIFICAÇÃO</h2><span class="league-name" id="ranking_league_name">Carregando...</span></div>
+            <button class="btn-close" onclick="fecharRanking()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button>
+        </div>
+        <div class="sidebar-content" id="ranking_content">
+            <div class="loading-attendees"><div class="spinner-purple"></div><p style="margin-top:15px;color:#aaa;">Carregando ranking...</p></div>
+        </div>
+        <div class="ranking-footer-link"><a id="ranking_external_link" href="#" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver ranking completo</a></div>
+    </div>
+
+    <div class="overlay" id="bracket_overlay" onclick="fecharBracket()"></div>
+    <div class="sidebar-base bracket-sidebar" id="bracket_sidebar" role="dialog" aria-modal="true" aria-label="Chaves do torneio">
+        <div class="sidebar-header">
+            <div class="header-left">
+                <h2>🎮 BRACKET</h2>
+                <select class="event-select" id="bracketEventSelect" style="display:none;" onchange="onBracketEventChange()" aria-label="Selecionar evento">
+                    <option value="">Selecione um evento</option>
+                </select>
+                <select class="event-select" id="bracketPoolSelect" style="display:none;" onchange="onBracketPoolChange()" aria-label="Selecionar grupo">
+                    </select>
+            </div>
+            <button class="btn-close" onclick="fecharBracket()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button>
+        </div>
+        <div class="sidebar-content" id="bracket_content">
+            <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;color:#aaa;">Carregando chaves...</p></div>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto w-full" id="conteudo">
+        <header class="text-center mb-10 fade-in-up">
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight uppercase italic">FGC TOURNAMENT <span class="text-red-600">HUB</span></h1>
+            <p class="text-slate-400 font-medium">Busca avançada de torneios</p>
+            <!-- Botão de busca de player (texto) -->
+            <a href="buscar.html" class="inline-block mt-3 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
+                <i class="fa-solid fa-user-plus mr-1"></i> Buscar Player
+            </a>
+            <a href="h2h.html" class="inline-block mt-3 ml-2 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
+                <i class="fa-solid fa-arrow-right-arrow-left mr-1"></i> Head to Head
+            </a>
+            <a href="mapa.html" class="inline-block mt-3 ml-2 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
+                <i class="fa-solid fa-map-location-dot mr-1"></i> Mapa da FGC
+            </a>
+        </header>
+        <div class="glass-card p-6 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in-up" style="animation-delay: 0.1s;">
+            <div><label for="campo_jogo" class="block text-xs font-bold uppercase text-red-500 mb-2">Jogo</label><select id="campo_jogo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="">Carregando jogos...</option></select></div>
+            <div><label for="campo_tipo" class="block text-xs font-bold uppercase text-red-500 mb-2">Formato</label><select id="campo_tipo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="online">Online</option><option value="offline">Presencial (Offline)</option></select></div>
+            <div><label for="campo_local" class="block text-xs font-bold uppercase text-red-500 mb-2">Região / País</label><select id="campo_local" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option></select></div>
+            <div class="flex items-end"><button onclick="pesquisar()" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">PESQUISAR</button></div>
+        </div>
+        <div id="painel_disponibilidade" class="hidden glass-card p-6 rounded-xl mb-10 border-slate-800 bg-black/40"><h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-green-500" aria-hidden="true"></i> Sugestão de Datas (Próximos 14 dias)</h2><div id="grid_dias" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3"></div></div>
+        <div id="status" class="hidden text-center py-10" role="status" aria-live="polite"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600" aria-hidden="true"></div><p class="mt-2 text-red-500 font-bold uppercase text-sm">Sincronizando cronogramas...</p></div>
+        <div id="resultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" role="region" aria-label="Resultados da busca de torneios" aria-live="polite"></div>
+    </main>
+
+    <div class="mobile-banner-wise">
+        <a href="https://wise.com/pay/me/paulop1393" target="_blank" rel="noopener noreferrer" class="wise-banner wise-banner-row" aria-label="Apoie o FGC HUB com uma doação via Wise">
+            <img src="images/wise-qr.png" alt="QR Code de doação via Wise" class="wise-banner-qr" width="96" height="96">
+            <span class="wise-banner-info">
+                <span class="wise-banner-title">Apoie o FGC HUB</span>
+                <span class="wise-banner-text">Aceitamos vários tipos de moedas</span>
+                <span class="wise-banner-btn"><i class="fa-solid fa-heart" aria-hidden="true"></i> Doar via Wise</span>
+            </span>
+        </a>
+    </div>
+
+    <div class="mobile-banner-exitlag">
+        <a href="https://www.exitlag.com/refer/WASF" target="_blank" rel="noopener noreferrer" aria-label="Promoção de aniversário ExitLag: 90 dias grátis e 1 ano com 50% de desconto">
+            <img src="images/exitlag-bday-banner-mobile.png" alt="B-Day ExitLag: 90 dias de ExitLag grátis, +1 ano por 50% off">
+        </a>
+    </div>
+
+    <footer class="max-w-5xl mx-auto w-full mt-10 border-t border-slate-800 pt-8 pb-4">
+        <div class="flex flex-col md:flex-row justify-around items-center gap-6 text-sm text-slate-400">
+            <div class="text-center md:text-left"><p class="uppercase text-[10px] font-bold tracking-widest text-red-500 mb-1">Programador e Desenvolvedor</p><div class="flex items-center justify-center md:justify-start gap-2"><span class="font-bold text-white">CAIONP20</span><a href="https://x.com/caio20silva" target="_blank" class="hover:text-red-500 transition-colors" aria-label="Perfil de CAIONP20 no X"><i class="fab fa-x-twitter text-lg" aria-hidden="true"></i></a></div></div>
+            <div class="text-center md:text-left"><p class="uppercase text-[10px] font-bold tracking-widest text-red-500 mb-1">Programador e Designer</p><div class="flex items-center justify-center md:justify-start gap-2"><span class="font-bold text-white">WASF | Rickudosennin</span><a href="https://x.com/Pcesaroficial" target="_blank" class="hover:text-red-500 transition-colors" aria-label="Perfil de WASF | Rickudosennin no X"><i class="fab fa-x-twitter text-lg" aria-hidden="true"></i></a></div></div>
+        </div>
+        <p class="text-center text-[10px] text-slate-600 mt-8 uppercase tracking-widest">Powered by Start.gg</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="players.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="script.js"></script>
+
+    <!-- VLibras - Tradução automática para Libras (gov.br) -->
+    <div vw class="enabled">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+            <div class="vw-plugin-top-wrapper"></div>
+        </div>
+    </div>
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+        new window.VLibras.Widget({
+            rootPath: 'https://vlibras.gov.br/app',
+            position: 'L'
+        });
+    </script>
+</body>
+</html>
