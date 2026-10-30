@@ -389,9 +389,9 @@ html[data-theme="halloween"] .highlights h3 { border-left-color: var(--hw-orange
 html[data-theme="halloween"] #theme-select { background-color: #1c0a2e; color: #ffb347; border-color: var(--hw-line); }
 
 /* acessibilidade: sem animação */
+/* "reduzir movimento" do sistema NÃO desliga o tema (decisão do site); só o relâmpago, que pisca forte */
 @media (prefers-reduced-motion: reduce) {
-    #hw-back *, #hw-front *, html[data-theme="halloween"] * { animation: none !important; }
-    .hw-bat { display: none; }
+    #hw-back .hw-flash { display: none; }
 }
 @media (max-width: 640px) {
     .hw-bat:nth-child(n+5) { display: none; }
@@ -441,4 +441,3 @@ html[data-theme="halloween"] #theme-select { background-color: #1c0a2e; color: #
 }
 .hw-meow.hw-say { animation: hwMeow 1.4s ease-out 1; }
 @keyframes hwMeow { 0% { opacity: 0; transform: translate(-50%, 6px); } 15%, 70% { opacity: 1; transform: translate(-50%, -2px); } 100% { opacity: 0; transform: translate(-50%, -8px); } }
-@media (prefers-reduced-motion: reduce) { .hw-cat { animation: none !important; } }
