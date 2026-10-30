@@ -235,6 +235,11 @@ html[data-theme="halloween"] .profile-gamertag {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 8px rgba(255,122,0,.55));
+    /* folga p/ o itálico não ser cortado pelo clip do gradiente */
+    padding: 0 .14em 0 .1em;
+    margin: 0 -.06em 0 -.1em;
     animation: hwFlicker 5s infinite;
 }
 @keyframes hwFlicker {
@@ -368,12 +373,12 @@ html[data-theme="halloween"] .highlights h3 { border-left-color: var(--hw-orange
 }
 
 /* aranhas penduradas */
-.hw-spider { position: absolute; top: 0; left: var(--sx); display: flex; flex-direction: column; align-items: center; animation: hwSpider 7s ease-in-out infinite; }
-.hw-spider i { display: block; width: 1px; height: 14vh; background: linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.2)); }
+.hw-spider { position: absolute; top: 0; left: var(--sx); display: flex; flex-direction: column; align-items: center; --h1: 6vh; --h2: 22vh; }
+.hw-spider i { display: block; width: 1px; height: var(--h1); background: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.25)); animation: hwThread 7s ease-in-out infinite; }
 .hw-spider span { font-size: clamp(18px, 2.2vw, 28px); line-height: 1; margin-top: -2px; filter: drop-shadow(0 0 6px rgba(0,0,0,.8)); }
-.hw-spider-b { animation-duration: 9s; animation-delay: -3s; }
-.hw-spider-b i { height: 8vh; }
-@keyframes hwSpider { 0%, 100% { transform: translateY(-10vh); } 50% { transform: translateY(6vh); } }
+.hw-spider-b { --h1: 3vh; --h2: 12vh; }
+.hw-spider-b i { animation-duration: 9s; animation-delay: -3s; }
+@keyframes hwThread { 0%, 100% { height: var(--h1); } 50% { height: var(--h2); } }
 
 /* abóboras */
 .hw-pumpkins { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-evenly; align-items: flex-end; padding: 0 2vw; }
