@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="buscar-style.css">
+    <!-- Temas -->
+    <link rel="stylesheet" href="themes.css">
+    <script src="theme.js"></script>
+    <script src="halloween.js"></script>
 </head>
 <body class="p-4 md:p-10 bg-slate-950 text-slate-100 overflow-x-hidden">
 
@@ -49,7 +53,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js?v=character-history-scan-20261003-2"></script>
-    <script src="players.js?v=sf6-cfn-20261013-2"></script>
+    <script src="players.js?v=ewgf-rank-20261013-1"></script>
     <script src="country-codes.js"></script>
     <script src="ewgf-config.js?v=20261013-2"></script>
     <script src="ewgf-rank.js?v=20261013-3"></script>
@@ -73,7 +77,6 @@
             let jogosPlayerDraft = [];
             let dadosPerfilAtual = null;
             let ewgfTekkenIdProfile = '';
-            let sf6CfnIdProfile = '';
             let estadoVarreduraPersonagens = null;
             const controleVarreduraPersonagens = { running: false, paused: false, waiters: [] };
 
@@ -720,10 +723,6 @@
                                     <button onclick="abrirEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-trophy"></i> TEKKEN 8 ID
                                     </button>
-                                    ${jogosPlayer.includes('sf6') ? `
-                                    <button onclick="abrirSf6CfnModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
-                                        <i class="fa-solid fa-gamepad"></i> STREET FIGHTER 6 · CFN
-                                    </button>` : ''}
                                     <button id="share-performance-button" onclick="abrirCompartilhamentoDesempenho()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-share-nodes"></i> Compartilhar(BETA)
                                     </button>
@@ -776,20 +775,7 @@
                                     }).join('')}
                                 </div>
                             `}
-                            ${jogosPlayer.includes('sf6') && linkPerfilBuckler(sf6CfnIdProfile) ? `
-                                <div class="flex flex-wrap items-center gap-2 pt-1">
-                                    <a href="${linkPerfilBuckler(sf6CfnIdProfile)}" target="_blank" rel="noopener noreferrer" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition inline-flex items-center gap-1.5">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Street Fighter 6 · Perfil no Buckler (CFN ${String(sf6CfnIdProfile).replace(/\D/g, '')})
-                                    </a>
-                                </div>` : ''}
                         </div>
-
-                        ${jogosPlayer.includes('sf6') && sf6CfnIdProfile ? `
-                        <!-- CARD CFN / STREET FIGHTER 6 (dados de data/cfn/<id>.json) -->
-                        <div id="sf6-cfn-card" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Street Fighter 6 · CFN</h3>
-                            <p class="text-slate-500 text-sm">Carregando dados do CFN…</p>
-                        </div>` : ''}
 
                         ${montarHtmlUsoPersonagens(characterUsage, characterUsageUnavailable, characterUsagePartial, { characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount })}
 
@@ -925,31 +911,6 @@
                                 <div class="flex gap-2">
                                     <button type="button" onclick="fecharEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold transition">Fechar</button>
                                     <button type="button" id="ewgf-id-save" onclick="salvarEwgfTekkenId()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold transition">Salvar ID</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- MODAL: CFN ID / STREET FIGHTER 6 -->
-                    <div id="sf6_cfn_modal" class="fixed inset-0 z-50 hidden bg-black/70 flex items-center justify-center p-4">
-                        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-md w-full space-y-4" role="dialog" aria-modal="true" aria-labelledby="sf6_cfn_title">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <h3 id="sf6_cfn_title" class="text-sm font-bold text-white uppercase tracking-wider">Street Fighter 6 · CFN</h3>
-                                    <p class="text-xs text-slate-400 mt-1">Informe o CFN ID numérico ou cole o link do perfil no Buckler.</p>
-                                </div>
-                                <button type="button" onclick="fecharSf6CfnModal()" aria-label="Fechar" class="text-slate-400 hover:text-white">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                            <label for="sf6-cfn-id" class="block text-xs font-bold text-slate-300">CFN ID</label>
-                            <input id="sf6-cfn-id" type="text" maxlength="160" autocomplete="off" spellcheck="false" placeholder="Ex.: 1234567890 ou link do Buckler" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-red-500 focus:outline-none">
-                            <p id="sf6-cfn-status" class="hidden text-xs text-slate-400" role="status" aria-live="polite"></p>
-                            <div class="flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
-                                <button type="button" onclick="removerSf6CfnId()" class="text-xs text-slate-400 hover:text-white px-2 py-2">Remover CFN</button>
-                                <div class="flex gap-2">
-                                    <button type="button" onclick="fecharSf6CfnModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold transition">Fechar</button>
-                                    <button type="button" id="sf6-cfn-save" onclick="salvarSf6CfnId()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold transition">Salvar CFN</button>
                                 </div>
                             </div>
                         </div>
@@ -1352,165 +1313,6 @@
                 atualizarInterfaceVarreduraPersonagens();
             };
 
-            // Aceita só o ID numérico ou o link do perfil do Buckler (.../profile/1234567890[/play]).
-            function normalizarCfnId(value) {
-                const raw = String(value || '').trim();
-                if (!raw) return '';
-                if (/^\d{1,20}$/.test(raw)) return raw;
-                const match = raw.match(/\/profile\/(\d{1,20})(?:[/?#]|$)/i);
-                return match ? match[1] : '';
-            }
-
-            function linkPerfilBuckler(cfnId) {
-                const id = String(cfnId || '').replace(/\D/g, '').slice(0, 20);
-                return id ? `https://www.streetfighter.com/6/buckler/en/profile/${id}` : '';
-            }
-
-            // Nomes das ligas por league_rank. Preencha depois de ver o primeiro data/cfn/<id>.json
-            // (ex.: { 36: 'Master' }). Sem mapeamento, o card mostra só LP/MR, sem inventar rank.
-            const SF6_LEAGUE_NAMES = {};
-
-            function escCfn(value) {
-                return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-            }
-
-            function formatarTempoCfn(seconds) {
-                const total = Math.max(0, Math.floor(Number(seconds) || 0));
-                return `${Math.floor(total / 3600)}h${String(Math.floor((total % 3600) / 60)).padStart(2, '0')}`;
-            }
-
-            function montarHtmlCardCfn(d) {
-                const li = d.league || {};
-                const season = d.season || {};
-                const battles = Number(season.battles) || 0;
-                const wins = Number(season.wins) || 0;
-                const winrate = battles > 0 ? Math.round((wins / battles) * 100) : null;
-                const leagueName = SF6_LEAGUE_NAMES[li.rank] || '';
-                const modes = Array.isArray(d.playTimeByMode) ? d.playTimeByMode.slice(0, 4) : [];
-                const total = Number(d.playTimeSeconds) || 0;
-                const chars = Array.isArray(d.topCharacters) ? d.topCharacters : [];
-                const updated = Date.parse(d.updatedAt);
-                const stat = (value, label, extra = '') => `
-                    <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-center min-w-0">
-                        <div class="text-xl font-black text-white truncate">${value}</div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${label}</div>
-                        ${extra ? `<div class="text-[11px] text-slate-500 mt-0.5">${extra}</div>` : ''}
-                    </div>`;
-                return `
-                    <div class="flex items-center justify-between gap-3">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Street Fighter 6 · CFN</h3>
-                        <span class="text-xs text-slate-500">${Number.isFinite(updated) ? 'atualizado ' + new Date(updated).toLocaleDateString('pt-BR') : ''}</span>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        ${Number(li.masterRating) > 0
-                            ? stat(Number(li.masterRating).toLocaleString('pt-BR'), 'MR', Number(li.masterRatingRanking) > 0 ? '#' + Number(li.masterRatingRanking).toLocaleString('pt-BR') : '')
-                            : ''}
-                        ${stat(Number(li.points || 0).toLocaleString('pt-BR'), 'LP', escCfn(leagueName))}
-                        ${stat(escCfn(d.main?.name || '—'), 'Main')}
-                        ${winrate !== null ? stat(winrate + '%', 'Win rate (temporada)', `${wins}W · ${battles - wins}L`) : ''}
-                    </div>
-                    ${total > 0 ? `
-                    <div class="space-y-1.5">
-                        <div class="flex items-center justify-between text-xs text-slate-400">
-                            <span class="font-bold uppercase tracking-wider">Tempo jogado</span>
-                            <span class="text-white font-bold">${formatarTempoCfn(total)}</span>
-                        </div>
-                        ${modes.map(m => `
-                            <div class="flex items-center gap-2 text-xs text-slate-300">
-                                <span class="w-28 truncate">${escCfn(m.name || 'Outros')}</span>
-                                <div class="flex-1 h-2 rounded bg-slate-800 overflow-hidden"><div class="h-full bg-red-500" style="width:${Math.max(2, Math.round((m.seconds / total) * 100))}%"></div></div>
-                                <span class="w-12 text-right text-slate-400">${formatarTempoCfn(m.seconds)}</span>
-                            </div>`).join('')}
-                    </div>` : ''}
-                    ${chars.length ? `
-                    <div class="space-y-1.5">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Personagens (temporada)</div>
-                        <div class="flex flex-wrap gap-2">
-                            ${chars.map(c => {
-                                const wr = c.battles > 0 ? Math.round((c.wins / c.battles) * 100) : 0;
-                                return `<span class="text-xs bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200">${escCfn(c.name)} <strong class="text-white">${wr}%</strong> <span class="text-slate-500">· ${c.battles} lutas</span></span>`;
-                            }).join('')}
-                        </div>
-                    </div>` : ''}`;
-            }
-
-            async function carregarCardCfn(cfnId) {
-                const card = document.getElementById('sf6-cfn-card');
-                const id = String(cfnId || '').replace(/\D/g, '');
-                if (!card || !id) return;
-                try {
-                    const res = await fetch(`data/cfn/${id}.json`, { cache: 'no-cache' });
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    card.innerHTML = montarHtmlCardCfn(await res.json());
-                } catch (error) {
-                    console.warn('CFN: sem dados para este ID ainda:', error);
-                    card.innerHTML = `
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Street Fighter 6 · CFN</h3>
-                        <p class="text-slate-500 text-sm">Dados do CFN ainda não sincronizados para este ID. Eles são atualizados automaticamente uma vez por dia.</p>`;
-                }
-            }
-
-            function definirStatusSf6Cfn(message, isError = false) {
-                const status = document.getElementById('sf6-cfn-status');
-                if (!status) return;
-                status.textContent = message || '';
-                status.classList.toggle('hidden', !message);
-                status.classList.toggle('text-red-400', Boolean(message) && isError);
-                status.classList.toggle('text-slate-400', !isError);
-            }
-
-            window.abrirSf6CfnModal = function() {
-                if (!jogosPlayer.includes('sf6')) return;
-                const input = document.getElementById('sf6-cfn-id');
-                const modal = document.getElementById('sf6_cfn_modal');
-                if (!input || !modal) return;
-                input.value = sf6CfnIdProfile;
-                definirStatusSf6Cfn('');
-                modal.classList.remove('hidden');
-                input.focus();
-            };
-
-            window.fecharSf6CfnModal = function() {
-                document.getElementById('sf6_cfn_modal')?.classList.add('hidden');
-            };
-
-            window.salvarSf6CfnId = async function() {
-                const input = document.getElementById('sf6-cfn-id');
-                const saveButton = document.getElementById('sf6-cfn-save');
-                const rawCfn = String(input?.value || '').trim();
-                const normalizedId = normalizarCfnId(rawCfn);
-                if (rawCfn && !normalizedId) {
-                    definirStatusSf6Cfn('Informe o CFN ID numérico ou o link do perfil no Buckler.', true);
-                    return false;
-                }
-                if (typeof _salvarSf6CfnId !== 'function') {
-                    definirStatusSf6Cfn('Atualize o arquivo players.js para habilitar o salvamento.', true);
-                    return false;
-                }
-                if (saveButton) saveButton.disabled = true;
-                try {
-                    const saved = await _salvarSf6CfnId(playerId, normalizedId);
-                    if (!saved) {
-                        definirStatusSf6Cfn('Não foi possível salvar o CFN ID no perfil.', true);
-                        return false;
-                    }
-                    sf6CfnIdProfile = normalizedId;
-                    if (input) input.value = normalizedId;
-                    definirStatusSf6Cfn(normalizedId ? 'CFN ID salvo no perfil.' : 'CFN ID removido do perfil.');
-                    window.fecharSf6CfnModal();
-                    carregarPerfil(false);
-                    return true;
-                } finally {
-                    if (saveButton) saveButton.disabled = false;
-                }
-            };
-
-            window.removerSf6CfnId = async function() {
-                const input = document.getElementById('sf6-cfn-id');
-                if (input) input.value = '';
-                await window.salvarSf6CfnId();
-            };
-
             function normalizarTekkenIdEwgf(value) {
                 const raw = String(value || '').trim();
                 if (!raw) return '';
@@ -1681,12 +1483,6 @@
                         console.warn('Não foi possível carregar o Tekken ID da EWGF:', ewgfReadError);
                         ewgfTekkenIdProfile = '';
                     }
-                    try {
-                        sf6CfnIdProfile = typeof _lerSf6CfnId === 'function' ? await _lerSf6CfnId(playerId) : '';
-                    } catch (sf6ReadError) {
-                        console.warn('Não foi possível carregar o CFN ID do Street Fighter 6:', sf6ReadError);
-                        sf6CfnIdProfile = '';
-                    }
                     estadoVarreduraPersonagens = carregarEstadoVarreduraLocal();
                     let sharedHistory = null;
                     try {
@@ -1704,7 +1500,6 @@
                     dadosPerfilAtual = dados;
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     if (ewgfTekkenIdProfile) void buscarRankEwgf(ewgfTekkenIdProfile, true);
-                    if (jogosPlayer.includes('sf6') && sf6CfnIdProfile) void carregarCardCfn(sf6CfnIdProfile);
                     renderizarGraficoEvolucao(dados.tournaments || []);
                     atualizarInterfaceVarreduraPersonagens();
                     if (fonte === 'cache' && dados.countryChecked !== true && !dados.countryName && !dados.countryCode) {

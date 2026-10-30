@@ -31,6 +31,10 @@
     <meta name="adopt-website-id" content="db9ef961-4169-45c6-8d00-5a568f9a1c22" />
     <script src="//tag.goadopt.io/injector.js?website_code=db9ef961-4169-45c6-8d00-5a568f9a1c22" 
             class="adopt-injector"></script>
+    <!-- Temas -->
+    <link rel="stylesheet" href="themes.css">
+    <script src="theme.js"></script>
+    <script src="halloween.js"></script>
 </head>
 <body class="p-4 md:p-10">
 
@@ -74,7 +78,7 @@
     <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.3.2</span>
     <h3 class="text-white font-bold text-sm uppercase mt-1">Seletor de Tipos de Mapa</h3>
     <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
-        <li>• <span class="text-green-400 font-bold">Camadas de Mapa:</span> Adicionado controlo nativo para alternar o estilo de visualização nos mapas.</li>
+        <li>• <span class="text-green-400 font-bold">Camadas de Mapa:</span> Adicionado controle nativo para alternar o estilo de visualização nos mapas.</li>
         <li>• <span class="text-green-400 font-bold">Mapa do Card (Exato):</span> O mapa individual do torneio (via card) mostra exatamente o local do evento.</li>
         <li>• <span class="text-green-400 font-bold">Mapa Geral de Eventos (Aproximado):</span> O mapa geral foca na localização aproximada por cidade/região.</li>
         <li>• <span class="text-green-400 font-bold">Opções de Estilo:</span> Alternância rápida entre <strong>Mapa Escuro</strong>, <strong>Mapa Padrão</strong> e <strong>Satélite</strong> no canto superior direito de ambos os mapas.</li>
@@ -354,6 +358,7 @@
             <a href="mapa.html" class="inline-block mt-3 ml-2 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
                 <i class="fa-solid fa-map-location-dot mr-1"></i> Mapa da FGC
             </a>
+            <span id="theme-switcher" class="ml-2 mt-3 inline-block align-middle"></span>
         </header>
         <div class="glass-card p-6 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in-up" style="animation-delay: 0.1s;">
             <div><label for="campo_jogo" class="block text-xs font-bold uppercase text-red-500 mb-2">Jogo</label><select id="campo_jogo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="">Carregando jogos...</option></select></div>

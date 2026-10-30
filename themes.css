@@ -1,0 +1,399 @@
+/* =========================================================
+   FGC HUB — TEMAS (aditivo)
+   - Tema "original" = sem data-theme no <html> → nada aqui se aplica.
+   - Tema "cromo"    = html[data-theme="cromo"] → preto + prata metálica.
+   Carregar DEPOIS de style.css / buscar-style.css / h2h-style.css.
+   Cores semânticas (verde = vitória/disponível, vermelho = ao vivo/derrota)
+   NÃO são alteradas.
+   ========================================================= */
+
+/* ---------- Seletor de tema (vale p/ todos os temas) ---------- */
+#theme-switcher { display: inline-block; vertical-align: middle; }
+#theme-select {
+    background-color: #1a1a1c;
+    color: #e4e4e7;
+    border: 1px solid #3f3f46;
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    cursor: pointer;
+    outline: none;
+}
+#theme-select:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 2px; }
+
+/* =========================================================
+   TEMA CROMO
+   ========================================================= */
+html[data-theme="cromo"] {
+    --cr-bg: #070707;
+    --cr-bg-2: #121212;
+    --cr-silver: #c9c9cf;
+    --cr-silver-hi: #f4f4f5;
+    --cr-silver-lo: #8a8a92;
+    --cr-line: rgba(201, 201, 207, .55);
+    --cr-line-soft: rgba(201, 201, 207, .22);
+    --cr-glow: rgba(255, 255, 255, .10);
+    --cr-chrome: linear-gradient(135deg, #ffffff 0%, #c9c9cf 40%, #6e6e76 70%, #e4e4e7 100%);
+    --cr-metal-btn: linear-gradient(180deg, #3a3a40 0%, #1c1c20 100%);
+}
+
+/* ----- Fundo ----- */
+html[data-theme="cromo"],
+html[data-theme="cromo"] body {
+    background-color: var(--cr-bg);
+}
+html[data-theme="cromo"] body {
+    background-image:
+        radial-gradient(1200px 500px at 85% -10%, rgba(255,255,255,.10), transparent 60%),
+        radial-gradient(900px 420px at 0% 0%, rgba(255,255,255,.05), transparent 60%),
+        linear-gradient(180deg, #0b0b0c 0%, #070707 45%, #0e0e10 100%);
+    background-attachment: fixed;
+    color: #e4e4e7;
+}
+/* player.html usa bg-slate-950 / bg-slate-900 do Tailwind */
+html[data-theme="cromo"] .bg-slate-950 { background-color: var(--cr-bg); }
+html[data-theme="cromo"] .bg-slate-900 { background-color: #101012; }
+
+/* ----- Cards de vidro ----- */
+html[data-theme="cromo"] .glass-card {
+    background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%), rgba(18,18,20,.92);
+    border: 1px solid var(--cr-line);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 18px var(--cr-glow);
+}
+html[data-theme="cromo"] #resultados .glass-card:hover {
+    border-color: var(--cr-silver-hi);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 20px 45px rgba(0,0,0,.65), 0 0 30px rgba(255,255,255,.18);
+}
+html[data-theme="cromo"] #resultados .glass-card:hover h3 { color: #ffffff; }
+html[data-theme="cromo"] #resultados .glass-card::after {
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.22) 50%, transparent 100%);
+}
+
+/* ----- Título principal (HUB) e títulos com gradiente ----- */
+html[data-theme="cromo"] h1 { text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+html[data-theme="cromo"] h1 .text-red-600 {
+    background: var(--cr-chrome);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+html[data-theme="cromo"] .profile-gamertag {
+    background: var(--cr-chrome);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ----- Tailwind: vermelho de marca → prata ----- */
+html[data-theme="cromo"] .text-red-400 { color: #e4e4e7; }
+html[data-theme="cromo"] .text-red-500 { color: var(--cr-silver); }
+html[data-theme="cromo"] .text-red-600 { color: var(--cr-silver-hi); }
+html[data-theme="cromo"] .hover\:text-red-400:hover,
+html[data-theme="cromo"] .hover\:text-red-500:hover { color: #ffffff; }
+
+html[data-theme="cromo"] .border-red-500,
+html[data-theme="cromo"] .border-red-600 { border-color: var(--cr-line); }
+html[data-theme="cromo"] .hover\:border-red-500:hover { border-color: var(--cr-silver-hi); }
+html[data-theme="cromo"] .focus\:border-red-500:focus { border-color: var(--cr-silver-hi); }
+
+/* botões bg-red-600 / bg-red-700 → metal escuro com borda prata */
+html[data-theme="cromo"] .bg-red-600,
+html[data-theme="cromo"] .bg-red-700 {
+    background: var(--cr-metal-btn);
+    border: 1px solid var(--cr-line);
+    color: #f4f4f5;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+html[data-theme="cromo"] .hover\:bg-red-600:hover,
+html[data-theme="cromo"] .hover\:bg-red-700:hover {
+    background: linear-gradient(180deg, #d4d4d8 0%, #8a8a92 100%);
+    color: #0a0a0a;
+    border-color: #ffffff;
+}
+/* badge bg-red-900 (script.js) */
+html[data-theme="cromo"] .bg-red-900 { background-color: #2a2a2e; border: 1px solid var(--cr-line-soft); }
+html[data-theme="cromo"] .text-red-100 { color: #e4e4e7; }
+
+/* ----- Botões do style.css ----- */
+html[data-theme="cromo"] .btn-primary {
+    background: var(--cr-metal-btn);
+    border: 1px solid var(--cr-line);
+    color: #f4f4f5;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+html[data-theme="cromo"] .btn-primary:hover {
+    background: linear-gradient(180deg, #d4d4d8 0%, #8a8a92 100%);
+    color: #0a0a0a;
+    box-shadow: 0 0 20px rgba(255,255,255,.25);
+}
+
+/* ----- Sidebar de inscritos ----- */
+html[data-theme="cromo"] .attendees-sidebar { border-left: 2px solid var(--cr-line); }
+html[data-theme="cromo"] .attendees-sidebar .sidebar-header { border-bottom: 1px solid var(--cr-line); }
+html[data-theme="cromo"] .attendees-sidebar .count,
+html[data-theme="cromo"] .attendee-number,
+html[data-theme="cromo"] .history-title,
+html[data-theme="cromo"] .history-char-title,
+html[data-theme="cromo"] .attendee-name.clickable:hover { color: var(--cr-silver); }
+html[data-theme="cromo"] .attendees-sidebar .btn-close { background: var(--cr-metal-btn); border: 1px solid var(--cr-line); color: #f4f4f5; }
+html[data-theme="cromo"] .attendees-sidebar .btn-close:hover { background: #d4d4d8; color: #0a0a0a; box-shadow: 0 0 15px rgba(255,255,255,.3); }
+html[data-theme="cromo"] .attendees-sidebar .sidebar-content::-webkit-scrollbar-thumb { background: var(--cr-silver-lo); }
+html[data-theme="cromo"] .attendees-sidebar .spinner { border-top-color: var(--cr-silver-hi); }
+html[data-theme="cromo"] .attendee-item:hover { background: rgba(255,255,255,.06); border-color: var(--cr-line-soft); }
+html[data-theme="cromo"] .attendees-icon-left:hover { background: #d4d4d8; border-color: #ffffff; color: #0a0a0a; box-shadow: 0 0 15px rgba(255,255,255,.3); }
+html[data-theme="cromo"] .player-history { border-color: var(--cr-line-soft); }
+html[data-theme="cromo"] .legend-bar { background: rgba(255,255,255,.05); border-color: var(--cr-line-soft); }
+
+/* ----- Barra de status da API, banners, skip-link, foco ----- */
+html[data-theme="cromo"] .api-status-bar { border-color: var(--cr-line-soft); }
+html[data-theme="cromo"] .side-banner-right,
+html[data-theme="cromo"] .mobile-banner-exitlag img {
+    border-color: var(--cr-line);
+    box-shadow: 0 0 22px rgba(255,255,255,.12);
+}
+html[data-theme="cromo"] .side-banner-right:hover { box-shadow: 0 0 32px rgba(255,255,255,.25); }
+html[data-theme="cromo"] .skip-link { background: #e4e4e7; color: #0a0a0a; }
+html[data-theme="cromo"] a:focus-visible,
+html[data-theme="cromo"] button:focus-visible,
+html[data-theme="cromo"] select:focus-visible,
+html[data-theme="cromo"] [tabindex]:focus-visible,
+html[data-theme="cromo"] .event-select:focus-visible { outline-color: var(--cr-silver-hi); }
+
+/* ----- Perfil do player (buscar-style.css / player.html) ----- */
+html[data-theme="cromo"] .player-profile {
+    background: linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.015)), rgba(10,10,12,.96);
+    border: 1px solid var(--cr-line);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 40px rgba(255,255,255,.07);
+}
+html[data-theme="cromo"] .profile-avatar { border-color: var(--cr-silver); box-shadow: 0 0 20px rgba(255,255,255,.25); }
+html[data-theme="cromo"] .profile-header { border-bottom-color: var(--cr-line-soft); }
+html[data-theme="cromo"] .tab-btn.active { border-bottom-color: var(--cr-silver-hi); }
+html[data-theme="cromo"] .highlights h3 { border-left-color: var(--cr-silver); }
+
+/* ----- Head to Head (variáveis da página) ----- */
+html[data-theme="cromo"] .h2h-title {
+    text-shadow: 0 0 10px rgba(255,255,255,.18), 0 2px 8px rgba(0,0,0,.9);
+}
+
+/* =========================================================
+   TEMA HALLOWEEN  (html[data-theme="halloween"])
+   Decoração animada vem de halloween.js (#hw-back / #hw-front)
+   ========================================================= */
+html[data-theme="halloween"] {
+    --hw-bg: #0b0612;
+    --hw-orange: #ff7a00;
+    --hw-orange-hi: #ffb347;
+    --hw-purple: #7b2cbf;
+    --hw-purple-lo: #2a0f45;
+    --hw-green: #9be564;
+    --hw-line: rgba(255, 122, 0, .65);
+    --hw-line-soft: rgba(255, 122, 0, .28);
+    --hw-btn: linear-gradient(135deg, #ff7a00 0%, #c2410c 55%, #7b2cbf 100%);
+    background-color: var(--hw-bg);
+    background-image:
+        radial-gradient(900px 500px at 82% -8%, rgba(255,160,40,.16), transparent 60%),
+        radial-gradient(1000px 600px at 0% 100%, rgba(123,44,191,.22), transparent 60%),
+        linear-gradient(180deg, #0b0612 0%, #14091f 55%, #0b0612 100%);
+    background-attachment: fixed;
+}
+/* body transparente → decoração com z-index:-1 aparece atrás do conteúdo */
+html[data-theme="halloween"] body,
+html[data-theme="halloween"] .bg-slate-950 { background: transparent; color: #f3e8ff; }
+html[data-theme="halloween"] .bg-slate-900 { background-color: rgba(26, 12, 40, .85); }
+
+/* ----- Cards ----- */
+html[data-theme="halloween"] .glass-card {
+    background: linear-gradient(160deg, rgba(123,44,191,.16) 0%, rgba(255,122,0,.05) 100%), rgba(18, 8, 28, .92);
+    border: 1px solid var(--hw-line);
+    box-shadow: inset 0 1px 0 rgba(255,180,80,.18), 0 0 20px rgba(255,122,0,.18);
+    animation: hwGlow 4.5s ease-in-out infinite;
+}
+html[data-theme="halloween"] #resultados .glass-card { animation-name: cardPopIn, hwGlow; animation-duration: .6s, 4.5s; animation-iteration-count: 1, infinite; animation-timing-function: cubic-bezier(.34,1.56,.64,1), ease-in-out; animation-fill-mode: both, none; }
+html[data-theme="halloween"] #resultados .glass-card:hover {
+    border-color: var(--hw-orange-hi);
+    box-shadow: 0 20px 45px rgba(0,0,0,.7), 0 0 34px rgba(255,122,0,.55), 0 0 60px rgba(123,44,191,.35);
+    transform: translateY(-10px) scale(1.035) rotate(-.6deg);
+}
+html[data-theme="halloween"] #resultados .glass-card:hover h3 { color: var(--hw-orange-hi); }
+html[data-theme="halloween"] #resultados .glass-card::after {
+    background: linear-gradient(120deg, transparent 0%, rgba(255,160,40,.3) 50%, transparent 100%);
+}
+@keyframes hwGlow {
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,180,80,.18), 0 0 14px rgba(255,122,0,.15); }
+    50%      { box-shadow: inset 0 1px 0 rgba(255,180,80,.3),  0 0 28px rgba(255,122,0,.42), 0 0 46px rgba(123,44,191,.22); }
+}
+
+/* ----- Título ----- */
+html[data-theme="halloween"] h1 { text-shadow: 0 0 14px rgba(255,122,0,.45), 0 2px 8px rgba(0,0,0,.9); }
+html[data-theme="halloween"] h1 .text-red-600,
+html[data-theme="halloween"] .profile-gamertag {
+    background: linear-gradient(135deg, #ffb347 0%, #ff7a00 45%, #b45cff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: hwFlicker 5s infinite;
+}
+@keyframes hwFlicker {
+    0%, 100% { opacity: 1; }
+    42% { opacity: 1; } 43% { opacity: .55; } 44% { opacity: 1; }
+    46% { opacity: .7; } 47% { opacity: 1; }
+    80% { opacity: 1; } 81% { opacity: .6; } 82% { opacity: 1; }
+}
+html[data-theme="halloween"] .h2h-title { text-shadow: 0 0 12px rgba(255,122,0,.5), 0 2px 8px rgba(0,0,0,.9); }
+
+/* ----- Tailwind: vermelho de marca → laranja ----- */
+html[data-theme="halloween"] .text-red-400 { color: var(--hw-orange-hi); }
+html[data-theme="halloween"] .text-red-500 { color: var(--hw-orange); }
+html[data-theme="halloween"] .text-red-600 { color: var(--hw-orange); }
+html[data-theme="halloween"] .hover\:text-red-400:hover,
+html[data-theme="halloween"] .hover\:text-red-500:hover { color: var(--hw-orange-hi); }
+html[data-theme="halloween"] .border-red-500,
+html[data-theme="halloween"] .border-red-600 { border-color: var(--hw-line); }
+html[data-theme="halloween"] .hover\:border-red-500:hover,
+html[data-theme="halloween"] .focus\:border-red-500:focus { border-color: var(--hw-orange-hi); }
+
+html[data-theme="halloween"] .bg-red-600,
+html[data-theme="halloween"] .bg-red-700,
+html[data-theme="halloween"] .btn-primary {
+    background: var(--hw-btn);
+    border: 1px solid var(--hw-line);
+    color: #fff;
+    box-shadow: 0 0 14px rgba(255,122,0,.3);
+}
+html[data-theme="halloween"] .hover\:bg-red-600:hover,
+html[data-theme="halloween"] .hover\:bg-red-700:hover,
+html[data-theme="halloween"] .btn-primary:hover {
+    background: linear-gradient(135deg, #ffb347 0%, #ff7a00 60%, #9d4edd 100%);
+    color: #1a0b00;
+    box-shadow: 0 0 26px rgba(255,122,0,.65);
+    transform: translateY(-1px) scale(1.02);
+}
+html[data-theme="halloween"] .bg-red-900 { background-color: #3a1a05; border: 1px solid var(--hw-line-soft); }
+html[data-theme="halloween"] .text-red-100 { color: #ffe4c4; }
+
+/* ----- Sidebar, perfil, etc. ----- */
+html[data-theme="halloween"] .attendees-sidebar { border-left: 2px solid var(--hw-line); }
+html[data-theme="halloween"] .attendees-sidebar .sidebar-header { border-bottom: 1px solid var(--hw-line); }
+html[data-theme="halloween"] .attendees-sidebar .count,
+html[data-theme="halloween"] .attendee-number,
+html[data-theme="halloween"] .history-title,
+html[data-theme="halloween"] .history-char-title,
+html[data-theme="halloween"] .attendee-name.clickable:hover { color: var(--hw-orange); }
+html[data-theme="halloween"] .attendees-sidebar .btn-close { background: var(--hw-btn); }
+html[data-theme="halloween"] .attendees-sidebar .btn-close:hover { background: var(--hw-orange-hi); color: #1a0b00; }
+html[data-theme="halloween"] .attendees-sidebar .sidebar-content::-webkit-scrollbar-thumb { background: var(--hw-orange); }
+html[data-theme="halloween"] .attendees-sidebar .spinner { border-top-color: var(--hw-orange); }
+html[data-theme="halloween"] .attendee-item:hover { background: rgba(255,122,0,.1); border-color: var(--hw-line-soft); }
+html[data-theme="halloween"] .attendees-icon-left:hover { background: var(--hw-orange); border-color: var(--hw-orange-hi); box-shadow: 0 0 15px rgba(255,122,0,.6); }
+html[data-theme="halloween"] .player-history,
+html[data-theme="halloween"] .legend-bar { border-color: var(--hw-line-soft); }
+html[data-theme="halloween"] .legend-bar { background: rgba(255,122,0,.08); }
+html[data-theme="halloween"] .api-status-bar { border-color: var(--hw-line-soft); }
+html[data-theme="halloween"] .side-banner-right,
+html[data-theme="halloween"] .mobile-banner-exitlag img { border-color: var(--hw-line); box-shadow: 0 0 22px rgba(255,122,0,.35); }
+html[data-theme="halloween"] .skip-link { background: var(--hw-orange); color: #1a0b00; }
+html[data-theme="halloween"] a:focus-visible,
+html[data-theme="halloween"] button:focus-visible,
+html[data-theme="halloween"] select:focus-visible,
+html[data-theme="halloween"] [tabindex]:focus-visible,
+html[data-theme="halloween"] .event-select:focus-visible { outline-color: var(--hw-orange-hi); }
+html[data-theme="halloween"] .player-profile {
+    background: linear-gradient(160deg, rgba(123,44,191,.14), rgba(255,122,0,.04)), rgba(12,6,20,.96);
+    border: 1px solid var(--hw-line);
+    box-shadow: inset 0 1px 0 rgba(255,180,80,.16), 0 0 40px rgba(255,122,0,.16);
+}
+html[data-theme="halloween"] .profile-avatar { border-color: var(--hw-orange); box-shadow: 0 0 22px rgba(255,122,0,.55); animation: hwFloat 4s ease-in-out infinite; }
+html[data-theme="halloween"] .profile-header { border-bottom-color: var(--hw-line-soft); }
+html[data-theme="halloween"] .tab-btn.active { border-bottom-color: var(--hw-orange); }
+html[data-theme="halloween"] .highlights h3 { border-left-color: var(--hw-orange); }
+@keyframes hwFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* =========================================================
+   DECORAÇÃO (só existe com o tema Halloween ativo)
+   ========================================================= */
+#hw-back { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+#hw-front { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; }
+
+/* lua */
+#hw-back .hw-moon {
+    position: absolute; top: 5vh; right: 7vw; width: clamp(70px, 9vw, 130px); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff7e0 0%, #ffd98a 45%, #e8a53a 100%);
+    box-shadow: 0 0 60px 20px rgba(255,190,80,.35), 0 0 140px 50px rgba(255,140,0,.18);
+    opacity: .9; animation: hwMoon 7s ease-in-out infinite;
+}
+@keyframes hwMoon { 0%, 100% { box-shadow: 0 0 50px 16px rgba(255,190,80,.3), 0 0 120px 40px rgba(255,140,0,.14); } 50% { box-shadow: 0 0 75px 28px rgba(255,190,80,.45), 0 0 170px 62px rgba(255,140,0,.24); } }
+
+/* teias */
+#hw-back .hw-web { position: absolute; top: 0; width: clamp(90px, 14vw, 200px); aspect-ratio: 1; color: rgba(255,255,255,.28); transform-origin: 0 0; animation: hwWebSway 6s ease-in-out infinite; }
+#hw-back .hw-web-l { left: 0; }
+#hw-back .hw-web-r { right: 0; transform: scaleX(-1); animation-name: hwWebSwayR; }
+@keyframes hwWebSway  { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(2.2deg); } }
+@keyframes hwWebSwayR { 0%, 100% { transform: scaleX(-1) rotate(0); } 50% { transform: scaleX(-1) rotate(2.2deg); } }
+
+/* névoa */
+#hw-back .hw-fog { position: absolute; left: -30%; width: 160%; height: 32vh; bottom: 0; opacity: .5;
+    background: radial-gradient(ellipse at 50% 100%, rgba(170,120,230,.28) 0%, transparent 70%); animation: hwFog 28s linear infinite; }
+#hw-back .hw-fog-2 { bottom: -4vh; opacity: .35; height: 26vh; animation-duration: 42s; animation-direction: reverse; }
+@keyframes hwFog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+
+/* relâmpago */
+#hw-back .hw-flash { position: absolute; inset: 0; background: rgba(210,190,255,.0); opacity: 0; }
+#hw-back .hw-flash.hw-go { animation: hwFlash 1.1s ease-out 1; }
+@keyframes hwFlash { 0% { opacity: 0; } 6% { opacity: .5; background: rgba(220,200,255,.35); } 12% { opacity: 0; } 18% { opacity: .35; background: rgba(220,200,255,.25); } 40%, 100% { opacity: 0; } }
+
+/* morcegos: externo voa na horizontal, interno bate asa e oscila */
+.hw-bat { position: absolute; top: var(--top); left: 0; width: var(--sz); height: calc(var(--sz) * .5); color: #1d0a31;
+    filter: drop-shadow(0 0 3px rgba(255,140,20,.95)) drop-shadow(0 0 8px rgba(255,122,0,.5)); animation: hwFly var(--dur) linear infinite both; will-change: transform; }
+.hw-bat .hw-bat-in { width: 100%; height: 100%; animation: hwFlap var(--flap) ease-in-out infinite alternate, hwBob calc(var(--dur) / 5) ease-in-out infinite alternate; }
+@keyframes hwFly  { from { transform: translateX(-12vw); } to { transform: translateX(112vw); } }
+@keyframes hwFlap { from { transform: scaleY(1); } to { transform: scaleY(.45); } }
+@keyframes hwBob  { from { translate: 0 0; } to { translate: 0 var(--dy); } }
+.hw-bat.hw-burst { animation-iteration-count: 1; animation-delay: 0s !important; }
+
+/* fantasmas */
+.hw-ghost { position: absolute; left: var(--gx); bottom: -12vh; font-size: clamp(28px, 4vw, 52px); opacity: .75;
+    filter: drop-shadow(0 0 12px rgba(200,170,255,.8)); animation: hwGhost 18s ease-in-out infinite; }
+.hw-ghost-b { animation-duration: 26s; animation-delay: -9s; font-size: clamp(22px, 3vw, 40px); }
+@keyframes hwGhost {
+    0%   { transform: translate(0, 0) rotate(-6deg); opacity: 0; }
+    10%  { opacity: .75; }
+    35%  { transform: translate(6vw, -40vh) rotate(6deg); }
+    65%  { transform: translate(-5vw, -75vh) rotate(-6deg); }
+    90%  { opacity: .75; }
+    100% { transform: translate(3vw, -118vh) rotate(4deg); opacity: 0; }
+}
+
+/* aranhas penduradas */
+.hw-spider { position: absolute; top: 0; left: var(--sx); display: flex; flex-direction: column; align-items: center; animation: hwSpider 7s ease-in-out infinite; }
+.hw-spider i { display: block; width: 1px; height: 14vh; background: linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.2)); }
+.hw-spider span { font-size: clamp(18px, 2.2vw, 28px); line-height: 1; margin-top: -2px; filter: drop-shadow(0 0 6px rgba(0,0,0,.8)); }
+.hw-spider-b { animation-duration: 9s; animation-delay: -3s; }
+.hw-spider-b i { height: 8vh; }
+@keyframes hwSpider { 0%, 100% { transform: translateY(-10vh); } 50% { transform: translateY(6vh); } }
+
+/* abóboras */
+.hw-pumpkins { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-evenly; align-items: flex-end; padding: 0 2vw; }
+.hw-pumpkin { pointer-events: auto; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; line-height: 1; font-size: var(--s);
+    filter: drop-shadow(0 0 10px rgba(255,122,0,.85)); transform-origin: 50% 100%;
+    animation: hwBounce 2.6s ease-in-out var(--d) infinite, hwPumpGlow 2.2s ease-in-out var(--d) infinite; -webkit-tap-highlight-color: transparent; }
+.hw-pumpkin.hw-pop { animation: hwPop .6s ease-out 1, hwPumpGlow 2.2s ease-in-out var(--d) infinite; }
+@keyframes hwBounce { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
+@keyframes hwPumpGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(255,122,0,.7)); } 50% { filter: drop-shadow(0 0 20px rgba(255,170,40,1)); } }
+@keyframes hwPop { 0% { transform: scale(1); } 30% { transform: scale(1.45) rotate(-12deg); } 60% { transform: scale(.9) rotate(8deg); } 100% { transform: scale(1); } }
+
+/* seletor de tema na cor do tema */
+html[data-theme="halloween"] #theme-select { background-color: #1c0a2e; color: #ffb347; border-color: var(--hw-line); }
+
+/* acessibilidade: sem animação */
+@media (prefers-reduced-motion: reduce) {
+    #hw-back *, #hw-front *, html[data-theme="halloween"] * { animation: none !important; }
+    .hw-bat { display: none; }
+}
+@media (max-width: 640px) {
+    .hw-bat:nth-child(n+5) { display: none; }
+    .hw-spider-b, .hw-ghost-b { display: none; }
+}
