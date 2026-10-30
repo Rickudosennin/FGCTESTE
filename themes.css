@@ -397,3 +397,48 @@ html[data-theme="halloween"] #theme-select { background-color: #1c0a2e; color: #
     .hw-bat:nth-child(n+5) { display: none; }
     .hw-spider-b, .hw-ghost-b { display: none; }
 }
+
+/* =========================================================
+   GATO PRETO (anda na borda de cima do painel de busca da index)
+   ========================================================= */
+.hw-cat-host { position: relative; }
+.hw-cat {
+    position: absolute; bottom: calc(100% - 3px); left: 0; z-index: 3;
+    width: clamp(54px, 6vw, 84px); aspect-ratio: 100 / 64; cursor: pointer;
+    filter: drop-shadow(0 0 3px rgba(255,140,20,.75)) drop-shadow(0 0 9px rgba(255,122,0,.35));
+    animation: hwCatWalk 26s linear infinite; will-change: left;
+}
+.hw-cat-flip { width: 100%; height: 100%; animation: hwCatFlip 26s step-end infinite; }
+.hw-cat-flip svg { overflow: visible; }
+/* vai (esq→dir), pausa, volta (dir→esq), pausa */
+@keyframes hwCatWalk {
+    0%   { left: 0; }
+    3%   { left: 0; }
+    47%  { left: calc(100% - clamp(54px, 6vw, 84px)); }
+    53%  { left: calc(100% - clamp(54px, 6vw, 84px)); }
+    97%  { left: 0; }
+    100% { left: 0; }
+}
+@keyframes hwCatFlip {
+    0%, 49.99% { transform: scaleX(1); }
+    50%, 99.99% { transform: scaleX(-1); }
+}
+/* patinhas */
+.hw-cat .hw-leg { transform-box: fill-box; transform-origin: 50% 0; animation: hwLeg .5s ease-in-out infinite alternate; }
+.hw-cat .hw-leg-b { animation-direction: alternate-reverse; }
+@keyframes hwLeg { from { transform: rotate(-24deg); } to { transform: rotate(24deg); } }
+/* rabo */
+.hw-cat .hw-cat-tail { transform-box: fill-box; transform-origin: 90% 90%; animation: hwTail 1.6s ease-in-out infinite alternate; }
+@keyframes hwTail { from { transform: rotate(-14deg); } to { transform: rotate(16deg); } }
+/* piscar */
+.hw-cat .hw-cat-eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: hwBlink 5s infinite; }
+@keyframes hwBlink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+/* balão ao clicar */
+.hw-meow {
+    position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, 4px); white-space: nowrap;
+    background: #fff4e0; color: #1a0b00; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 9999px;
+    opacity: 0; pointer-events: none;
+}
+.hw-meow.hw-say { animation: hwMeow 1.4s ease-out 1; }
+@keyframes hwMeow { 0% { opacity: 0; transform: translate(-50%, 6px); } 15%, 70% { opacity: 1; transform: translate(-50%, -2px); } 100% { opacity: 0; transform: translate(-50%, -8px); } }
+@media (prefers-reduced-motion: reduce) { .hw-cat { animation: none !important; } }

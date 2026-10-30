@@ -40,6 +40,46 @@
     return wrap;
   }
 
+
+  var CAT_SVG =
+    '<svg viewBox="0 0 100 64" width="100%" height="100%" aria-hidden="true">' +
+    '<g class="hw-cat-tail"><path d="M22 38 C4 38 2 20 12 9" fill="none" stroke="#0a0a0c" stroke-width="7" stroke-linecap="round"/></g>' +
+    '<g class="hw-leg hw-leg-b"><line x1="32" y1="44" x2="32" y2="60" stroke="#0a0a0c" stroke-width="7" stroke-linecap="round"/></g>' +
+    '<g class="hw-leg hw-leg-a"><line x1="62" y1="44" x2="62" y2="60" stroke="#0a0a0c" stroke-width="7" stroke-linecap="round"/></g>' +
+    '<ellipse cx="46" cy="36" rx="27" ry="13" fill="#0a0a0c"/>' +
+    '<g class="hw-leg hw-leg-a"><line x1="42" y1="44" x2="42" y2="61" stroke="#0a0a0c" stroke-width="7" stroke-linecap="round"/></g>' +
+    '<g class="hw-leg hw-leg-b"><line x1="72" y1="44" x2="72" y2="61" stroke="#0a0a0c" stroke-width="7" stroke-linecap="round"/></g>' +
+    '<circle cx="79" cy="26" r="11.5" fill="#0a0a0c"/>' +
+    '<polygon points="69,20 71,6 80,16" fill="#0a0a0c"/><polygon points="79,16 87,6 89,21" fill="#0a0a0c"/>' +
+    '<g class="hw-cat-eyes"><ellipse cx="76" cy="25" rx="2.6" ry="3.2" fill="#c8ff3d"/><ellipse cx="85" cy="25" rx="2.6" ry="3.2" fill="#c8ff3d"/>' +
+    '<rect x="75.3" y="22.5" width="1.4" height="5" rx=".7" fill="#0a0a0c"/><rect x="84.3" y="22.5" width="1.4" height="5" rx=".7" fill="#0a0a0c"/></g>' +
+    '</svg>';
+
+  function addCat() {
+    var campo = document.getElementById('campo_jogo');
+    var host = campo && campo.closest('.glass-card');
+    if (!host || host.querySelector('.hw-cat')) return;
+    host.classList.add('hw-cat-host');
+    var cat = el('div', 'hw-cat');
+    var flip = el('div', 'hw-cat-flip', CAT_SVG);
+    var bubble = el('div', 'hw-meow', 'miau! 🐾');
+    cat.appendChild(bubble);
+    cat.appendChild(flip);
+    cat.addEventListener('click', function () {
+      bubble.classList.remove('hw-say');
+      void bubble.offsetWidth;
+      bubble.classList.add('hw-say');
+    });
+    host.appendChild(cat);
+  }
+
+  function removeCat() {
+    var c = document.querySelector('.hw-cat');
+    if (c) c.remove();
+    var h = document.querySelector('.hw-cat-host');
+    if (h) h.classList.remove('hw-cat-host');
+  }
+
   function mount() {
     if (document.getElementById('hw-back')) return;
     if (!document.body) return;
@@ -104,6 +144,7 @@
     front.appendChild(row);
 
     document.body.appendChild(front);
+    addCat();
 
     /* relâmpago aleatório */
     (function storm() {
@@ -121,6 +162,7 @@
   }
 
   function unmount() {
+    removeCat();
     ['hw-back', 'hw-front'].forEach(function (id) {
       var n = document.getElementById(id);
       if (n) n.remove();

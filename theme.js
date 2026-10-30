@@ -1,6 +1,9 @@
 /* FGC HUB - seletor de temas (aditivo; não altera código existente) */
 (function () {
   var KEY = 'fgchub-theme';
+  // Tema fixo no momento. Para liberar a troca: FORCE = null e SHOW_SELECTOR = true.
+  var FORCE = 'halloween';
+  var SHOW_SELECTOR = false;
   var THEMES = [
     { id: 'original', nome: 'Original' },
     { id: 'cromo', nome: 'Cromo' },
@@ -22,10 +25,10 @@
   }
 
   // aplica já no <head> (evita flash)
-  aplicar(salvo() || 'original');
+  aplicar(FORCE || salvo() || 'original');
 
   function montarSeletor() {
-    if (document.getElementById('theme-select')) return;
+    if (!SHOW_SELECTOR || document.getElementById('theme-select')) return;
     var sel = document.createElement('select');
     sel.id = 'theme-select';
     sel.setAttribute('aria-label', 'Tema do site');
