@@ -82,8 +82,25 @@
         ctx.textAlign = 'left';
     }
 
-    function loadImage(url, timeoutMs = 4500) {
-        if (!url || typeof url !== 'string') return Promise.resolve(null);
+    function imageCandidates(url) {
+        const source = String(url || '').trim();
+        if (!source) return [];
+        if (/^(data:|blob:)/i.test(source)) return [source];
+
+        try {
+            const parsed = new URL(source, window.location.href);
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return [];
+            if (parsed.origin === window.location.origin) return [parsed.href];
+
+            const proxy = new URL('https://images.weserv.nl/');
+            proxy.searchParams.set('url', parsed.href);
+            return [proxy.href, parsed.href];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function loadImageSource(url, timeoutMs) {
         return new Promise(resolve => {
             const image = new Image();
             let finished = false;
@@ -100,6 +117,14 @@
             image.src = url;
             if (image.complete && image.naturalWidth > 0) finish(image);
         });
+    }
+
+    async function loadImage(url, timeoutMs = 8000) {
+        for (const candidate of imageCandidates(url)) {
+            const image = await loadImageSource(candidate, timeoutMs);
+            if (image) return image;
+        }
+        return null;
     }
 
     function drawImageCover(ctx, image, x, y, width, height, radius = 18) {
@@ -162,7 +187,7 @@
         ctx.fillStyle = COLORS.red;
         ctx.fillRect(80, 62, 7, 46);
         fitText(ctx, 'FGC HUB', 106, 91, 280, 30, COLORS.text, 900, 25);
-        fitText(ctx, 'PLAYER PERFORMANCE', 108, 122, 390, 16, COLORS.muted, 700, 14);
+        fitText(ctx, 'PLAYER COMPETITIVE PERFORMANCE', 108, 122, 390, 16, COLORS.muted, 700, 14);
         ctx.strokeStyle = 'rgba(148,163,184,0.22)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -186,7 +211,7 @@
         ctx.stroke();
 
         const tag = data.displayName || data.gamerTag || 'Player';
-        fitText(ctx, tag, 218, 218, 400, 41, COLORS.text, 900, 26);
+        fitText(ctx, tag, 218, 218, 400, 41, COLORS.text, 900, 16);
         fitText(ctx, data.realName || 'Competidor FGC', 220, 248, 385, 18, COLORS.muted, 500, 15);
 
         let meta = data.countryCode ? String(data.countryCode).toUpperCase() : 'FGC HUB';
@@ -194,8 +219,7 @@
         fitText(ctx, meta, 220, 275, 395, 13, COLORS.dim, 600, 12);
     }
 
-    function drawMainCharacter(ctx, data, images) {
-        const x = 80, y = 315, width = 560, height = 370;
+    function drawMainCharacter(ctx, data, images, x = 80, y = 315, width = 560, height = 370) {
         panel(ctx, x, y, width, height, 22, '#0c1321');
         const artX = x + 16, artY = y + 14, artW = width - 32, artH = height - 28;
         if (images.mainCharacter) {
@@ -229,23 +253,152 @@
         ctx.fillStyle = COLORS.red;
         roundedRect(ctx, x + 18, y + 18, 5, height - 36, 3);
         ctx.fill();
-        fitText(ctx, value, x + 40, y + 59, width - 60, 38, accent, 900, 25);
-        fitText(ctx, label.toUpperCase(), x + 40, y + 88, width - 60, 13, COLORS.muted, 800, 11);
+        fitText(ctx, value, x + 40, y + height * 0.56, width - 60, 34, accent, 900, 23);
+        fitText(ctx, label.toUpperCase(), x + 40, y + height - 10, width - 60, 12, COLORS.muted, 800, 10);
     }
 
-    function drawRecentForm(ctx, placements) {
-        fitText(ctx, 'FORMA RECENTE', 82, 980, 260, 13, COLORS.muted, 800, 12);
-        const values = (Array.isArray(placements) ? placements : []).slice(0, 6);
-        if (!values.length) {
-            fitText(ctx, 'Sem resultados recentes disponíveis', 82, 1020, 450, 15, COLORS.dim, 500, 14);
-            return;
+    function parseTournamentPlacement(event) {
+        const value = Number.parseInt(String(event?.placement ?? '').replace(/[^\d]/g, ''), 10);
+        return Number.isFinite(value) && value > 0 ? value : null;
+    }
+
+    function shortDateLabel(value, fallbackIndex) {
+        const match = String(value || '').match(/^(\d{1,2})\/(\d{1,2})/);
+        return match ? `${match[1]}/${match[2]}` : `#${fallbackIndex + 1}`;
+    }
+
+    function drawTournamentHistory(ctx, data, images) {
+        const x = 680, y = 295, width = 1160, height = 745;
+        panel(ctx, x, y, width, height, 22, '#0e1625');
+        fitText(ctx, 'HISTÓRICO DE TORNEIOS', x + 24, y + 34, 520, 18, COLORS.text, 900, 15);
+
+        const events = (Array.isArray(data.tournaments) ? data.tournaments : []).slice(0, 15);
+        ctx.textAlign = 'right';
+        ctx.font = '600 13px Arial, sans-serif';
+        ctx.fillStyle = COLORS.dim;
+        ctx.fillText(`Até 15 eventos recentes · ${events.length} carregados`, x + width - 24, y + 34);
+        ctx.textAlign = 'left';
+
+        const chartX = x + 22, chartY = y + 50, chartWidth = width - 44, chartHeight = 246;
+        panel(ctx, chartX, chartY, chartWidth, chartHeight, 15, '#111b2b');
+        fitText(ctx, 'EVOLUÇÃO DE COLOCAÇÃO', chartX + 18, chartY + 27, 360, 13, COLORS.muted, 800, 11);
+        fitText(ctx, '1º lugar no topo', chartX + chartWidth - 165, chartY + 27, 145, 11, COLORS.dim, 600, 10);
+
+        const chronological = [...events].reverse();
+        const plotX = chartX + 68, plotY = chartY + 54;
+        const plotWidth = chartWidth - 94, plotHeight = 120;
+        const ranked = chronological.map((event, index) => ({ event, index, place: parseTournamentPlacement(event) }))
+            .filter(item => item.place !== null);
+        const maxPlace = Math.max(5, ...ranked.map(item => item.place));
+
+        for (let line = 0; line < 3; line++) {
+            const ratio = line / 2;
+            const gridY = plotY + plotHeight * ratio;
+            const placeLabel = Math.round(1 + (maxPlace - 1) * ratio);
+            ctx.beginPath();
+            ctx.moveTo(plotX, gridY);
+            ctx.lineTo(plotX + plotWidth, gridY);
+            ctx.strokeStyle = 'rgba(148,163,184,0.18)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            fitText(ctx, `${placeLabel}º`, chartX + 17, gridY + 4, 38, 10, COLORS.dim, 600, 9);
         }
-        values.forEach((item, index) => {
-            const value = String(item?.placement ?? '—');
-            const x = 82 + index * 88;
-            panel(ctx, x, 994, 74, 43, 12, '#121b2b');
-            centeredText(ctx, value, x + 37, 1023, 62, 19, COLORS.text, 800);
+
+        if (ranked.length) {
+            const slotCount = Math.max(1, chronological.length);
+            const points = ranked.map(item => ({
+                ...item,
+                x: plotX + (slotCount === 1 ? plotWidth / 2 : item.index / (slotCount - 1) * plotWidth),
+                y: plotY + ((item.place - 1) / Math.max(1, maxPlace - 1)) * plotHeight
+            }));
+            if (points.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, plotY + plotHeight);
+                points.forEach(point => ctx.lineTo(point.x, point.y));
+                ctx.lineTo(points[points.length - 1].x, plotY + plotHeight);
+                ctx.closePath();
+                const fill = ctx.createLinearGradient(0, plotY, 0, plotY + plotHeight);
+                fill.addColorStop(0, 'rgba(239,68,68,0.22)');
+                fill.addColorStop(1, 'rgba(239,68,68,0.01)');
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            ctx.beginPath();
+            points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+            ctx.strokeStyle = COLORS.redLight;
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            points.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = COLORS.redLight;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            });
+        } else {
+            centeredText(ctx, 'Sem colocações disponíveis para montar o gráfico.', plotX + plotWidth / 2, plotY + 66, plotWidth - 40, 15, COLORS.dim, 600);
+        }
+
+        const slotWidth = plotWidth / Math.max(1, chronological.length);
+        chronological.forEach((event, index) => {
+            if (chronological.length > 11 && index % 2 !== 0 && index !== chronological.length - 1) return;
+            const label = shortDateLabel(event.date, index);
+            centeredText(ctx, label, plotX + (chronological.length === 1 ? plotWidth / 2 : index * plotWidth / (chronological.length - 1)), chartY + 198, Math.min(58, slotWidth + 4), 9, COLORS.dim, 600);
         });
+        fitText(ctx, 'MAIS ANTIGO', chartX + 18, chartY + 224, 100, 9, COLORS.dim, 600, 8);
+        ctx.textAlign = 'right';
+        ctx.font = '600 9px Arial, sans-serif';
+        ctx.fillStyle = COLORS.dim;
+        ctx.fillText('MAIS RECENTE', chartX + chartWidth - 18, chartY + 224);
+        ctx.textAlign = 'left';
+
+        fitText(ctx, 'ÚLTIMOS RESULTADOS', x + 24, y + 326, 330, 13, COLORS.muted, 800, 11);
+        ctx.textAlign = 'right';
+        ctx.font = '600 11px Arial, sans-serif';
+        ctx.fillStyle = COLORS.dim;
+        ctx.fillText('6 resultados mais recentes', x + width - 24, y + 326);
+        ctx.textAlign = 'left';
+
+        const recent = events.slice(0, 6);
+        if (!recent.length) {
+            centeredText(ctx, 'Nenhum resultado de torneio retornado pelo Start.gg.', x + width / 2, y + 520, width - 100, 18, COLORS.dim, 600);
+        }
+        const gapX = 14, gapY = 10;
+        const cardWidth = (width - 44 - gapX) / 2;
+        const cardHeight = 116;
+        recent.forEach((event, index) => {
+            const column = index % 2, row = Math.floor(index / 2);
+            const cardX = x + 22 + column * (cardWidth + gapX);
+            const cardY = y + 340 + row * (cardHeight + gapY);
+            panel(ctx, cardX, cardY, cardWidth, cardHeight, 14, '#111b2b');
+
+            const thumbX = cardX + 12, thumbY = cardY + 12, thumbSize = 88;
+            roundedRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 12);
+            ctx.fillStyle = '#1b283a';
+            ctx.fill();
+            if (!drawImageContain(ctx, images.events[index], thumbX + 4, thumbY + 4, thumbSize - 8, thumbSize - 8)) {
+                centeredText(ctx, 'FGC', thumbX + thumbSize / 2, thumbY + 51, thumbSize - 12, 20, '#607086', 800);
+            }
+
+            const badgeX = cardX + cardWidth - 98, badgeY = cardY + 14;
+            panel(ctx, badgeX, badgeY, 84, 86, 12, '#192539');
+            const place = parseTournamentPlacement(event);
+            centeredText(ctx, place ? `${place}º` : String(event.placement || '—'), badgeX + 42, badgeY + 39, 74, 25, place === 1 ? COLORS.yellow : COLORS.text, 900);
+            centeredText(ctx, event.attendees && event.attendees !== '?' ? `/${event.attendees}` : 'colocação', badgeX + 42, badgeY + 64, 74, 11, COLORS.dim, 600);
+
+            const textX = cardX + 114;
+            const textWidth = cardWidth - 224;
+            const tournamentName = event.name && event.name !== '—' ? event.name : (event.eventName || 'Torneio');
+            const eventName = event.eventName && event.eventName !== tournamentName ? event.eventName : 'Evento Start.gg';
+            fitText(ctx, tournamentName, textX, cardY + 32, textWidth, 16, COLORS.text, 800, 12);
+            fitText(ctx, eventName, textX, cardY + 56, textWidth, 12, COLORS.muted, 600, 10);
+            fitText(ctx, `${event.date || 'Data não informada'} · ${Number(event.wins) || 0}V–${Number(event.losses) || 0}D · ${Number(event.winrate) || 0}% WR`, textX, cardY + 86, textWidth, 11, COLORS.dim, 600, 9);
+        });
+        fitText(ctx, 'Histórico e colocações conforme os eventos retornados pelo Start.gg.', x + 24, y + height - 15, width - 48, 10, COLORS.dim, 500, 9);
     }
 
     function drawSelectedGames(ctx, games, images) {
@@ -272,86 +425,83 @@
     }
 
     function drawCharacterUsage(ctx, data) {
-        const x = 680, y = 295, width = 1160, height = 690;
-        panel(ctx, x, y, width, height, 22, '#0e1625');
-        fitText(ctx, 'PERSONAGENS MAIS USADOS', x + 24, y + 38, 520, 18, COLORS.text, 900, 15);
-
-        const metaText = data.historyComplete
-            ? `Histórico completo · ${data.eventCount || 0} eventos · ${data.setCount || 0} sets`
-            : 'Até 15 eventos recentes';
-        ctx.textAlign = 'right';
-        ctx.font = '600 13px Arial, sans-serif';
-        ctx.fillStyle = COLORS.dim;
-        ctx.fillText(metaText, x + width - 24, y + 38);
-        ctx.textAlign = 'left';
+        const x = 80, y = 710, width = 560, height = 330;
+        panel(ctx, x, y, width, height, 20, '#0e1625');
+        fitText(ctx, 'HISTÓRICO DE PERSONAGENS', x + 20, y + 31, 330, 15, COLORS.text, 900, 12);
 
         const games = Array.isArray(data.characterUsage) ? data.characterUsage : [];
-        const cardsTop = y + 62;
-        const cardsBottom = y + height - 42;
-        if (!games.length) {
-            centeredText(ctx, 'Ainda não há personagens reportados nos sets analisados.', x + width / 2, y + 360, width - 100, 24, COLORS.muted, 600);
-            fitText(ctx, 'Os percentuais consideram somente characters reportados no Start.gg.', x + 24, y + height - 17, width - 48, 12, COLORS.dim, 500, 11);
+        const shown = [...games]
+            .sort((a, b) => (Number(b.reportedSelections) || 0) - (Number(a.reportedSelections) || 0) || String(a.gameName || '').localeCompare(String(b.gameName || '')))
+            .slice(0, 4);
+        const scope = data.historyComplete
+            ? `Histórico completo · ${data.eventCount || 0} eventos`
+            : 'Até 15 eventos recentes';
+        ctx.textAlign = 'right';
+        ctx.font = '600 10px Arial, sans-serif';
+        ctx.fillStyle = COLORS.dim;
+        ctx.fillText(games.length ? `${games.length} jogos · ${scope}` : scope, x + width - 20, y + 31);
+        ctx.textAlign = 'left';
+
+        if (!shown.length) {
+            centeredText(ctx, 'Ainda não há personagens reportados nos sets analisados.', x + width / 2, y + 176, width - 60, 16, COLORS.muted, 600);
+            fitText(ctx, 'Só entram seleções reportadas no Start.gg.', x + 20, y + height - 15, width - 40, 10, COLORS.dim, 500, 9);
             return;
         }
 
-        const columns = 2;
-        const rows = Math.ceil(games.length / columns);
-        const gapX = 16;
-        const gapY = 12;
-        const cardWidth = (width - 44 - gapX) / columns;
-        const cardHeight = Math.min(178, (cardsBottom - cardsTop - gapY * (rows - 1)) / rows);
+        const columns = shown.length <= 2 ? 1 : 2;
+        const rows = Math.ceil(shown.length / columns);
+        const gapX = 10, gapY = 9;
+        const cardsTop = y + 47, cardsBottom = y + height - 34;
+        const cardWidth = (width - 40 - gapX * (columns - 1)) / columns;
+        const cardHeight = (cardsBottom - cardsTop - gapY * (rows - 1)) / rows;
 
-        games.forEach((game, index) => {
-            const column = index % columns;
-            const row = Math.floor(index / columns);
-            const cardX = x + 22 + column * (cardWidth + gapX);
+        shown.forEach((game, index) => {
+            const column = index % columns, row = Math.floor(index / columns);
+            const cardX = x + 20 + column * (cardWidth + gapX);
             const cardY = cardsTop + row * (cardHeight + gapY);
-            panel(ctx, cardX, cardY, cardWidth, cardHeight, 14, '#111b2b');
-            fitText(ctx, game.gameName || 'Jogo', cardX + 16, cardY + 26, cardWidth - 140, 15, COLORS.text, 800, 12);
+            panel(ctx, cardX, cardY, cardWidth, cardHeight, 12, '#111b2b');
+            fitText(ctx, game.gameName || 'Jogo', cardX + 10, cardY + 19, cardWidth - 88, 11, COLORS.text, 800, 9);
             const total = Math.max(0, Number(game.reportedSelections) || 0);
             ctx.textAlign = 'right';
-            ctx.font = '600 11px Arial, sans-serif';
+            ctx.font = '600 9px Arial, sans-serif';
             ctx.fillStyle = COLORS.dim;
-            ctx.fillText(`${total} reports`, cardX + cardWidth - 16, cardY + 26);
+            ctx.fillText(`${total} reports`, cardX + cardWidth - 10, cardY + 19);
             ctx.textAlign = 'left';
 
             const characters = (Array.isArray(game.topCharacters) ? game.topCharacters : []).slice(0, 3);
             if (!characters.length) {
-                fitText(ctx, 'Sem personagem reportado', cardX + 16, cardY + 66, cardWidth - 32, 13, COLORS.dim, 500, 12);
+                fitText(ctx, 'Sem personagens reportados', cardX + 10, cardY + 48, cardWidth - 20, 10, COLORS.dim, 500, 9);
                 return;
             }
 
-            const innerWidth = cardWidth - 32;
-            const rowStart = cardY + 54;
-            const rowStep = Math.min(35, Math.max(28, (cardHeight - 62) / 3));
+            const innerWidth = cardWidth - 20;
+            const rowStep = Math.min(58, (cardHeight - 48) / 3);
             characters.forEach((character, characterIndex) => {
-                const rowY = rowStart + characterIndex * rowStep;
-                const name = character.name || 'Desconhecido';
-                const percentage = Math.max(0, Math.min(100, Number(character.percentage) || 0));
+                const rowY = cardY + 37 + characterIndex * rowStep;
                 const count = Math.max(0, Number(character.count) || 0);
-                fitText(ctx, `${characterIndex + 1}. ${name}`, cardX + 16, rowY, innerWidth - 112, 13, '#e2e8f0', 700, 10);
+                const percentage = Math.max(0, Math.min(100, Number(character.percentage) || (total ? Math.round(count / total * 100) : 0)));
+                fitText(ctx, `${characterIndex + 1}. ${character.name || 'Desconhecido'}`, cardX + 10, rowY, innerWidth - 88, 10, '#e2e8f0', 700, 8);
                 ctx.textAlign = 'right';
-                ctx.font = '700 12px Arial, sans-serif';
+                ctx.font = '700 10px Arial, sans-serif';
                 ctx.fillStyle = COLORS.text;
-                ctx.fillText(`${percentage}%  (${count}/${total})`, cardX + cardWidth - 16, rowY);
+                ctx.fillText(`${percentage}% (${count}/${total})`, cardX + cardWidth - 10, rowY);
                 ctx.textAlign = 'left';
 
-                const barX = cardX + 16;
-                const barY = rowY + 8;
-                const barWidth = innerWidth;
-                roundedRect(ctx, barX, barY, barWidth, 6, 3);
+                const barX = cardX + 10, barY = rowY + 4, barWidth = innerWidth;
+                roundedRect(ctx, barX, barY, barWidth, 3, 2);
                 ctx.fillStyle = '#293548';
                 ctx.fill();
                 if (percentage > 0) {
-                    roundedRect(ctx, barX, barY, Math.max(5, barWidth * percentage / 100), 6, 3);
-                    ctx.fillStyle = index === 0 && characterIndex === 0 ? COLORS.redLight : '#d93a42';
+                    roundedRect(ctx, barX, barY, Math.max(3, barWidth * percentage / 100), 3, 2);
+                    ctx.fillStyle = characterIndex === 0 ? COLORS.redLight : '#d93a42';
                     ctx.fill();
                 }
             });
         });
 
+        const extra = Math.max(0, games.length - shown.length);
         const partialText = data.partial ? ' · contagem parcial' : '';
-        fitText(ctx, `Percentuais somente entre personagens reportados no Start.gg${partialText}.`, x + 24, y + height - 17, width - 48, 12, data.partial ? COLORS.yellow : COLORS.dim, 500, 11);
+        fitText(ctx, `Percentuais entre characters reportados${extra ? ` · +${extra} jogos` : ''}${partialText}.`, x + 20, y + height - 14, width - 40, 10, data.partial ? COLORS.yellow : COLORS.dim, 500, 9);
     }
 
     function drawFlagPill(ctx, data, images) {
@@ -372,14 +522,14 @@
 
         drawBackground(ctx);
         drawIdentity(ctx, data, images);
-        drawMainCharacter(ctx, data, images);
-        drawStat(ctx, 80, 710, 270, 112, 'Vitórias', `${data.wins} W`, COLORS.green);
-        drawStat(ctx, 370, 710, 270, 112, 'Derrotas', `${data.losses} L`, '#f87171');
+        drawMainCharacter(ctx, data, images, 80, 295, 560, 218);
+        drawStat(ctx, 80, 525, 270, 82, 'Vitórias', `${data.wins} W`, COLORS.green);
+        drawStat(ctx, 370, 525, 270, 82, 'Derrotas', `${data.losses} L`, '#f87171');
         const rateColor = data.winRate >= 60 ? COLORS.green : (data.winRate >= 40 ? COLORS.yellow : '#f87171');
-        drawStat(ctx, 80, 835, 270, 112, 'Win rate', `${data.winRate}%`, rateColor);
-        drawStat(ctx, 370, 835, 270, 112, 'Torneios', String(data.tournamentCount), COLORS.text);
-        drawRecentForm(ctx, data.recentForm);
+        drawStat(ctx, 80, 617, 270, 82, 'Win rate', `${data.winRate}%`, rateColor);
+        drawStat(ctx, 370, 617, 270, 82, 'Torneios', String(data.tournamentCount), COLORS.text);
         drawSelectedGames(ctx, data.games, images);
+        drawTournamentHistory(ctx, data, images);
         drawCharacterUsage(ctx, data);
         drawFlagPill(ctx, data, images);
 
@@ -415,24 +565,34 @@
         }
         await document.fonts?.ready;
         const games = Array.isArray(data.games) ? data.games : [];
+        const tournaments = Array.isArray(data.tournaments) ? data.tournaments : [];
+        const eventImageUrls = tournaments.slice(0, 6).map(event => event.icon || event.image || event.eventImage || event.tournamentImage || '');
         const urls = [
             data.avatarUrl,
             data.mainCharacterImage,
             data.sponsorLogoUrl,
             data.flagUrl,
-            ...games.map(game => game.logo)
+            ...games.map(game => game.logo),
+            ...eventImageUrls
         ];
-        const loaded = await Promise.all(urls.map(url => loadImage(url)));
+        const imagePromises = new Map();
+        const loaded = await Promise.all(urls.map(url => {
+            const key = typeof url === 'string' ? url.trim() : '';
+            if (!imagePromises.has(key)) imagePromises.set(key, loadImage(url));
+            return imagePromises.get(key);
+        }));
         const images = {
             avatar: loaded[0],
             mainCharacter: loaded[1],
             sponsor: loaded[2],
             flag: loaded[3],
-            games: loaded.slice(4)
+            games: loaded.slice(4, 4 + games.length),
+            events: loaded.slice(4 + games.length)
         };
         const normalized = {
             ...data,
             games,
+            tournaments,
             characterUsage: Array.isArray(data.characterUsage) ? data.characterUsage : [],
             recentForm: Array.isArray(data.recentForm) ? data.recentForm : [],
             wins: Math.max(0, Number(data.wins) || 0),

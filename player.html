@@ -12,12 +12,14 @@
     <!-- Temas -->
     <link rel="stylesheet" href="themes.css">
     <script src="theme.js"></script>
-    <script src="halloween.js"></script>
 </head>
 <body class="p-4 md:p-10 bg-slate-950 text-slate-100 overflow-x-hidden">
 
     <div class="max-w-5xl mx-auto space-y-6 w-full min-w-0">
-        <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm mb-2 inline-block transition">&larr; Voltar para a busca</a>
+        <div class="flex items-center justify-between gap-3 mb-2">
+            <a href="buscar.html" class="text-slate-400 hover:text-red-500 text-sm transition">&larr; Voltar para a busca</a>
+            <span id="theme-switcher"></span>
+        </div>
 
     <div id="perfil_conteudo" class="w-full min-w-0">
         <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>
