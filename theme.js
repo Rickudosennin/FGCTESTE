@@ -37,11 +37,20 @@
     document.head.appendChild(l);
   }
 
+  // subtítulo da home: texto próprio no Broadcast; volta ao original nos outros temas
+  function subtitulo(id) {
+    var p = document.querySelector('header > p');
+    if (!p) return;
+    if (!p.hasAttribute('data-orig')) p.setAttribute('data-orig', p.textContent);
+    p.textContent = id === 'broadcast' ? 'Torneios de Fighting Games · América do Sul' : p.getAttribute('data-orig');
+  }
+
   function pintar(id) {
     if (!valido(id)) id = 'original';
     if (id === 'original') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', id);
     carregarFontes(id);
+    subtitulo(id);
     var btns = document.querySelectorAll('.fgc-theme-toggle button');
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-theme-id') === id ? 'true' : 'false');
@@ -59,6 +68,7 @@
   var atual = pintar(ler() || 'original');
 
   function montar() {
+    subtitulo(atual);
     if (document.querySelector('.fgc-theme-toggle')) return;
 
     var wrap = document.createElement('div');
