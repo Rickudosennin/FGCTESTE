@@ -33,7 +33,9 @@
             class="adopt-injector"></script>
     <!-- Temas -->
     <link rel="stylesheet" href="themes.css">
+    <link rel="stylesheet" href="theme-evo.css">
     <script src="theme.js"></script>
+    <script src="theme-evo.js" defer></script>
 </head>
 <body class="p-4 md:p-10">
 
@@ -362,7 +364,7 @@
         <div class="glass-card p-6 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in-up" style="animation-delay: 0.1s;">
             <div><label for="campo_jogo" class="block text-xs font-bold uppercase text-red-500 mb-2">Jogo</label><select id="campo_jogo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="">Carregando jogos...</option></select></div>
             <div><label for="campo_tipo" class="block text-xs font-bold uppercase text-red-500 mb-2">Formato</label><select id="campo_tipo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="online">Online</option><option value="offline">Presencial (Offline)</option></select></div>
-            <div><label for="campo_local" class="block text-xs font-bold uppercase text-red-500 mb-2">Região / País</label><select id="campo_local" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="south-america">América do Sul</option><option value="worldwide">Mundo Inteiro</option></select></div>
+            <div><label for="campo_local" class="block text-xs font-bold uppercase text-red-500 mb-2">Região / País</label><select id="campo_local" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="south-america">America do Sul</option><option value="worldwide">Mundo Inteiro</option></select></div>
             <div class="flex items-end"><button onclick="pesquisar()" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">PESQUISAR</button></div>
         </div>
         <div id="painel_disponibilidade" class="hidden glass-card p-6 rounded-xl mb-10 border-slate-800 bg-black/40"><h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-green-500" aria-hidden="true"></i> Sugestão de Datas (Próximos 14 dias)</h2><div id="grid_dias" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3"></div></div>

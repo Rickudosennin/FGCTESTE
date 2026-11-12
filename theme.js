@@ -4,11 +4,17 @@
    - Para reativar um tema sazonal: adicionar em THEMES + carregar o .js dele. */
 (function () {
   var KEY = 'fgchub-theme';
+  var PADRAO = 'broadcast'; // tema de quem ainda não escolheu nada
   var THEMES = [
-    { id: 'original', nome: 'Padrão' },
+    { id: 'original', nome: 'Red Edition' },
     { id: 'cromo', nome: 'Cromo' },
     { id: 'broadcast', nome: 'Broadcast' }
   ];
+  // Tema sazonal Evo Brazil 2027 (visual em theme-evo.css, countdown em theme-evo.js).
+  // Some sozinho em 01/04/2027: quem tinha salvo 'evo' volta ao padrão (ler() descarta id inválido).
+  if (Date.now() < new Date('2027-04-01T00:00:00-03:00').getTime()) {
+    THEMES.push({ id: 'evo', nome: 'Evo 2027' });
+  }
   var root = document.documentElement;
 
   function valido(id) {
@@ -29,7 +35,7 @@
 
   // fontes do tema Broadcast: só baixam quando ele está ativo
   function carregarFontes(id) {
-    if (id !== 'broadcast' || document.getElementById('fgc-theme-fonts')) return;
+    if ((id !== 'broadcast' && id !== 'evo') || document.getElementById('fgc-theme-fonts')) return;
     var l = document.createElement('link');
     l.id = 'fgc-theme-fonts';
     l.rel = 'stylesheet';
@@ -42,7 +48,10 @@
     var p = document.querySelector('header > p');
     if (!p) return;
     if (!p.hasAttribute('data-orig')) p.setAttribute('data-orig', p.textContent);
-    p.textContent = id === 'broadcast' ? 'Torneios de Fighting Games · América do Sul' : p.getAttribute('data-orig');
+    var txt = p.getAttribute('data-orig');
+    if (id === 'broadcast') txt = 'Torneios de Fighting Games · Global';
+    else if (id === 'evo') txt = 'Rumo à Evo Brazil 2027 · São Paulo';
+    p.textContent = txt;
   }
 
   function pintar(id) {
@@ -65,7 +74,7 @@
   }
 
   // aplica já no <head> (evita flash)
-  var atual = pintar(ler() || 'original');
+  var atual = pintar(ler() || PADRAO);
 
   function montar() {
     subtitulo(atual);
@@ -104,7 +113,7 @@
 
   // mantém outras abas abertas em sincronia
   window.addEventListener('storage', function (e) {
-    if (e.key === KEY) pintar(e.newValue || 'original');
+    if (e.key === KEY) pintar(e.newValue || PADRAO);
   });
 
   window.FGCTheme = { escolher: escolher, temas: THEMES };
