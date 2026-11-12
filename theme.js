@@ -10,11 +10,12 @@
     { id: 'cromo', nome: 'Cromo' },
     { id: 'broadcast', nome: 'Broadcast' }
   ];
-  // Tema sazonal Evo Brazil 2027 (visual em theme-evo.css, countdown em theme-evo.js).
-  // Some sozinho em 01/04/2027: quem tinha salvo 'evo' volta ao padrão (ler() descarta id inválido).
+  
+  // Tema sazonal Evo Brazil 2027
   if (Date.now() < new Date('2027-04-01T00:00:00-03:00').getTime()) {
     THEMES.push({ id: 'evo', nome: 'Evo 2027' });
   }
+  
   var root = document.documentElement;
 
   function valido(id) {
@@ -24,7 +25,7 @@
   function ler() {
     try {
       var v = localStorage.getItem(KEY);
-      if (v && !valido(v)) { localStorage.removeItem(KEY); return null; } // ex.: 'halloween' antigo
+      if (v && !valido(v)) { localStorage.removeItem(KEY); return null; } 
       return v;
     } catch (e) { return null; }
   }
@@ -33,7 +34,7 @@
     try { localStorage.setItem(KEY, id); } catch (e) {}
   }
 
-  // fontes do tema Broadcast: só baixam quando ele está ativo
+  // fontes do layout em linha: baixam para Broadcast e Evo
   function carregarFontes(id) {
     if ((id !== 'broadcast' && id !== 'evo') || document.getElementById('fgc-theme-fonts')) return;
     var l = document.createElement('link');
@@ -43,7 +44,6 @@
     document.head.appendChild(l);
   }
 
-  // subtítulo da home: texto próprio no Broadcast; volta ao original nos outros temas
   function subtitulo(id) {
     var p = document.querySelector('header > p');
     if (!p) return;
@@ -67,13 +67,11 @@
     return id;
   }
 
-  // escolha do usuário → aplica e salva
   function escolher(id) {
     id = pintar(id);
     gravar(id);
   }
 
-  // aplica já no <head> (evita flash)
   var atual = pintar(ler() || PADRAO);
 
   function montar() {
@@ -99,7 +97,6 @@
       wrap.appendChild(b);
     });
 
-    // destino: <span id="theme-switcher"> da página; sem ele, canto fixo
     var alvo = document.getElementById('theme-switcher');
     if (alvo) alvo.appendChild(wrap);
     else {
@@ -111,7 +108,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar);
   else montar();
 
-  // mantém outras abas abertas em sincronia
   window.addEventListener('storage', function (e) {
     if (e.key === KEY) pintar(e.newValue || PADRAO);
   });
