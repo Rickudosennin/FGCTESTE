@@ -6,6 +6,7 @@
   var KEY = 'fgchub-theme';
   var PADRAO = 'broadcast'; // tema de quem ainda não escolheu nada
   var SO_SESSAO = false;    // true enquanto o Evo existir: escolha vale só na sessão (aba)
+  var EH_INDEX = /(^|\/)(index\.html)?$/.test(location.pathname);
   var THEMES = [
     { id: 'original', nome: 'Red Edition' },
     { id: 'cromo', nome: 'Cromo' },
@@ -28,6 +29,8 @@
   function ler() {
     try {
       if (SO_SESSAO) {
+        // entrar na index = sempre recomeçar em Evo (e a intro toca); troca feita antes é descartada
+        if (EH_INDEX) { sessionStorage.removeItem(KEY); return null; }
         var s = sessionStorage.getItem(KEY);
         return s && valido(s) ? s : null;
       }

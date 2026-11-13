@@ -3,7 +3,7 @@
    - Some junto com o tema (theme.js tira o Evo em 01/04/2027).
    - Não toca em nada da página: cria um bloco novo sobre ela e o remove no fim.
    - Pular: botão "Pular", tecla Esc ou clique em qualquer ponto.
-   - Quem usa "reduzir movimento" no sistema não vê a intro.
+   - "Reduzir movimento" no sistema: mesma intro, só com fade (sem animação de movimento).
    - Se a logo falhar ao carregar, a intro fecha na hora e o site abre.
    Carregar logo depois do theme.js, SEM defer (para cobrir a tela antes do site piscar). */
 (function () {
@@ -15,7 +15,6 @@
   var evoAtivo = false;
   if (T) for (var i = 0; i < T.length; i++) if (T[i].id === 'evo') evoAtivo = true;
   if (!evoAtivo) return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (document.getElementById('evo-intro')) return;
 
   var LOGO = 'imagens/logos/logoevobrazil.png';
@@ -49,7 +48,15 @@
     '@keyframes evoIBar{to{width:100%}}',
     '#evo-intro .evo-i-skip{position:absolute;right:16px;top:16px;opacity:0;animation:evoIFade .4s ease-out .5s forwards;appearance:none;cursor:pointer;min-height:44px;padding:0 18px;font:600 13px Oswald,"Roboto Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:rgba(7,9,20,.7);border:1px solid rgba(111,132,255,.72);border-radius:4px}',
     '#evo-intro .evo-i-skip:hover{border-color:#9fe870;color:#9fe870}',
-    '#evo-intro .evo-i-skip:focus-visible{outline:2px solid #a6aaff;outline-offset:2px}'
+    '#evo-intro .evo-i-skip:focus-visible{outline:2px solid #a6aaff;outline-offset:2px}',
+    /* "reduzir movimento" no sistema: mesma cena, só com fade (sem deslizar, zoom, flash, linha ou cortina) */
+    '@media (prefers-reduced-motion: reduce){',
+    '#evo-intro{clip-path:none;animation:evoIOut .6s ease-in 4.4s forwards}',
+    '#evo-intro .evo-i-sweep,#evo-intro .evo-i-flash,#evo-intro .evo-i-bar{display:none}',
+    '#evo-intro .evo-i-road{transform:none;animation:evoIFade .9s ease-out .6s forwards}',
+    '#evo-intro .evo-i-logo{transform:none;filter:drop-shadow(0 0 22px rgba(75,85,255,.65));animation:evoIFade .9s ease-out 1.3s forwards}',
+    '#evo-intro .evo-i-date{transform:none;animation:evoIFade .9s ease-out 2.2s forwards}',
+    '}'
   ].join('\n');
 
   var html = [
@@ -109,7 +116,7 @@
 
   box.addEventListener('click', pular);
   document.addEventListener('keydown', aoTeclar);
-  box.addEventListener('animationend', function (e) { if (e.animationName === 'evoIWipe') fim(); });
+  box.addEventListener('animationend', function (e) { if (e.animationName === 'evoIWipe' || e.animationName === 'evoIOut') fim(); });
   box.querySelector('.evo-i-logo').addEventListener('error', fim); // logo quebrada -> abre o site
   timer = setTimeout(fim, DURACAO_MS);                              // rede de segurança
 
