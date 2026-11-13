@@ -5,6 +5,7 @@
 (function () {
   var KEY = 'fgchub-theme';
   var PADRAO = 'broadcast'; // tema de quem ainda não escolheu nada
+  var SO_SESSAO = false;    // true enquanto o Evo existir: escolha vale só na sessão (aba)
   var THEMES = [
     { id: 'original', nome: 'Red Edition' },
     { id: 'cromo', nome: 'Cromo' },
@@ -14,6 +15,8 @@
   // Tema sazonal Evo Brazil 2027
   if (Date.now() < new Date('2027-04-01T00:00:00-03:00').getTime()) {
     THEMES.push({ id: 'evo', nome: 'Evo 2027' });
+    PADRAO = 'evo'; // padrão; após a data, volta ao Broadcast
+    SO_SESSAO = true; // toda visita nova abre em Evo (escolha antiga é ignorada); trocar vale até fechar a aba
   }
   
   var root = document.documentElement;
@@ -24,6 +27,10 @@
 
   function ler() {
     try {
+      if (SO_SESSAO) {
+        var s = sessionStorage.getItem(KEY);
+        return s && valido(s) ? s : null;
+      }
       var v = localStorage.getItem(KEY);
       if (v && !valido(v)) { localStorage.removeItem(KEY); return null; } 
       return v;
@@ -31,7 +38,7 @@
   }
 
   function gravar(id) {
-    try { localStorage.setItem(KEY, id); } catch (e) {}
+    try { (SO_SESSAO ? sessionStorage : localStorage).setItem(KEY, id); } catch (e) {}
   }
 
   // fontes do layout em linha: baixam para Broadcast e Evo
