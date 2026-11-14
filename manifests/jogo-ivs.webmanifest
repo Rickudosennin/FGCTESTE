@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-ivs",
+  "name": "Invincible Vs.",
+  "short_name": "IVS",
+  "description": "FGC HUB — Invincible Vs.",
+  "start_url": "../index.html?jogo=IVS",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-ivs-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-ivs-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-ivs-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

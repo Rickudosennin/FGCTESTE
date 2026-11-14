@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-2xko",
+  "name": "2XKO",
+  "short_name": "2XKO",
+  "description": "FGC HUB — 2XKO",
+  "start_url": "../index.html?jogo=2XKO",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-2xko-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-2xko-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-2xko-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

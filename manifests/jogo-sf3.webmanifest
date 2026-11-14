@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-sf3",
+  "name": "Street Fighter III: 3rd Strike",
+  "short_name": "SF3",
+  "description": "FGC HUB — Street Fighter III: 3rd Strike",
+  "start_url": "../index.html?jogo=SF3",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-sf3-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-sf3-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-sf3-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-mvc2",
+  "name": "Marvel vs. Capcom 2",
+  "short_name": "MVC2",
+  "description": "FGC HUB — Marvel vs. Capcom 2",
+  "start_url": "../index.html?jogo=MVC2",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-mvc2-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-mvc2-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-mvc2-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

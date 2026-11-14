@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-tekken8",
+  "name": "Tekken 8",
+  "short_name": "T8",
+  "description": "FGC HUB — Tekken 8",
+  "start_url": "../index.html?jogo=TEKKEN8",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-tekken8-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-tekken8-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-tekken8-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

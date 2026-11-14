@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-alfg",
+  "name": "Avatar Legends: The Fighting Game",
+  "short_name": "ALFG",
+  "description": "FGC HUB — Avatar Legends: The Fighting Game",
+  "start_url": "../index.html?jogo=ALFG",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-alfg-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-alfg-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-alfg-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

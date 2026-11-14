@@ -1,0 +1,33 @@
+{
+  "id": "../?app=jogo-bbcf",
+  "name": "BlazBlue: Central Fiction",
+  "short_name": "BBCF",
+  "description": "FGC HUB — BlazBlue: Central Fiction",
+  "start_url": "../index.html?jogo=BBCF",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "../icons/jogo-bbcf-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-bbcf-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/jogo-bbcf-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
