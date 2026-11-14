@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FGC HUB</title>
+<meta name="theme-color" content="#070914">
+<link rel="manifest" href="manifests/app.webmanifest">
+<link rel="apple-touch-icon" href="icons/app-apple-180.png">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="FGC HUB">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Barlow:wght@500;600&display=swap');
+:root{--bg:#070914;--panel:#10152b;--panel2:#171f3d;--line:rgba(77,105,255,.34);--lineh:rgba(111,132,255,.72);--tx:#f4f5ff;--mut:#a5accb;--ac:#4b55ff;--hi:#a6aaff;--gold:#b69cff;--disp:'Oswald','Roboto Condensed','Arial Narrow',sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--tx);font:500 15px/1.35 'Barlow',system-ui,sans-serif;padding:env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom));
+ background:radial-gradient(900px 420px at 90% -8%,rgba(75,85,255,.20),transparent 60%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Cpath d='M36 8 64 36 36 64 8 36Z' fill='none' stroke='%234b55ff' stroke-opacity='.07'/%3E%3C/svg%3E")}
+header{padding:22px 0 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+h1{margin:0;font:700 25px/1 var(--disp);font-style:italic;text-transform:uppercase;letter-spacing:.02em}
+h1 span{color:var(--hi)}
+header p{margin:6px 0 0;color:var(--mut);font-size:13px}
+#inst{display:none;background:none;border:1px solid var(--lineh);color:var(--tx);border-radius:4px;padding:7px 12px;font:600 12px var(--disp);letter-spacing:.12em;text-transform:uppercase}
+.sec{display:flex;align-items:center;gap:10px;margin:26px 0 12px;font:700 14px var(--disp);letter-spacing:.16em;text-transform:uppercase;color:var(--tx)}
+.sec::before{content:"";width:8px;height:8px;background:var(--hi);transform:rotate(45deg);flex:none}
+.sec::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent)}
+.menu{display:grid;gap:8px}
+.row{display:flex;align-items:center;gap:14px;padding:10px 14px 10px 10px;background:var(--panel);border:1px solid var(--line);border-radius:4px;color:var(--tx);text-decoration:none}
+.row .ic{width:42px;height:42px;border:1px solid var(--line);border-radius:4px;display:grid;place-items:center;color:var(--hi);background:var(--panel2);flex:none}
+.row svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.row b{font:500 18px var(--disp);letter-spacing:.06em;text-transform:uppercase;flex:1}
+.row i{color:var(--mut);font:500 22px/1 var(--disp);font-style:normal}
+.filtro{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 10px}
+.f{display:flex;align-items:center;gap:12px;padding:6px 0}
+.f+.f{border-top:1px solid var(--line)}
+.f label{width:64px;flex:none;font:500 13px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.seg{display:flex;flex:1;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{flex:1;background:none;border:0;color:var(--mut);padding:9px 4px;font:600 13px 'Barlow',sans-serif}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--ac);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.g{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:84px;padding:10px 10px 9px;background:var(--panel);border:1px solid var(--line);color:var(--tx);text-decoration:none;
+ clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);border-radius:4px 4px 0 4px}
+.g b{font:700 25px/1 var(--disp);letter-spacing:.02em;color:var(--tx);text-transform:uppercase}
+.g span{font-size:11.5px;line-height:1.2;color:var(--mut);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:8px}
+.g:active,.row:active{background:var(--panel2);border-color:var(--lineh)}
+.g:active b{color:var(--hi)}
+</style></head>
+<body>
+<header>
+  <div><h1>FGC Tournament <span>Hub</span></h1><p>Busca avançada de torneios</p></div>
+  <button id="inst">Instalar</button>
+</header>
+
+<div class="menu">
+  <a class="row" href="buscar.html"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5"/></svg></div><b>Buscar Player</b><i>&rsaquo;</i></a>
+  <a class="row" href="h2h.html"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg></div><b>Head to Head</b><i>&rsaquo;</i></a>
+  <a class="row" href="mapa.html"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg></div><b>Mapa da FGC</b><i>&rsaquo;</i></a>
+</div>
+
+<div class="sec">Filtros</div>
+<div class="filtro">
+  <div class="f"><label>Formato</label><div class="seg" id="fmt"><button data-v="online">Online</button><button data-v="offline">Presencial</button></div></div>
+  <div class="f"><label>Região</label><div class="seg" id="reg"><button data-v="south-america">América do Sul</button><button data-v="worldwide">Mundo</button></div></div>
+</div>
+
+<div class="sec">Jogos</div>
+<div class="grid" id="jogos"></div>
+
+<script>
+var GAMES=[{"v": "2XKO", "l": "2XKO", "s": "2XKO"}, {"v": "ALFG", "l": "Avatar Legends: The Fighting Game", "s": "ALFG"}, {"v": "BBCF", "l": "BlazBlue: Central Fiction", "s": "BBCF"}, {"v": "Brawlhalla", "l": "Brawlhalla", "s": "BRAWL"}, {"v": "DNF", "l": "DNF Duel", "s": "DNF"}, {"v": "DBFZ", "l": "Dragon Ball FighterZ", "s": "DBFZ"}, {"v": "FFCOTW", "l": "Fatal Fury: COTW", "s": "FF"}, {"v": "GBVSR", "l": "Granblue Fantasy Versus: Rising", "s": "GBVS"}, {"v": "GGST", "l": "Guilty Gear: Strive", "s": "GGST"}, {"v": "IVS", "l": "Invincible Vs.", "s": "IVS"}, {"v": "INJ2", "l": "Injustice 2", "s": "INJ2"}, {"v": "Marvel Tokon: Fighting Souls", "l": "Marvel Tokon: Fighting Souls", "s": "TOKON"}, {"v": "MVC2", "l": "Marvel vs. Capcom 2", "s": "MVC2"}, {"v": "MBTL", "l": "Melty Blood: Type Lumina", "s": "MBTL"}, {"v": "Mystery Game", "l": "Mystery Game", "s": "???"}, {"v": "MK1", "l": "Mortal Kombat 1", "s": "MK1"}, {"v": "MK11", "l": "Mortal Kombat 11", "s": "MK11"}, {"v": "MKX", "l": "Mortal Kombat X", "s": "MKX"}, {"v": "UMK3", "l": "Ultimate Mortal Kombat 3", "s": "UMK3"}, {"v": "MVS", "l": "MultiVersus", "s": "MVS"}, {"v": "PB", "l": "Pocket Bravery", "s": "PB"}, {"v": "ROA", "l": "Rivals of Aether", "s": "ROA"}, {"v": "ROCKET_LEAGUE", "l": "Rocket League", "s": "RL"}, {"v": "SS", "l": "Samurai Shodown", "s": "SS"}, {"v": "SG", "l": "Skullgirls 2nd Encore", "s": "SG"}, {"v": "SF6", "l": "Street Fighter 6", "s": "SF6"}, {"v": "SF3", "l": "Street Fighter III: 3rd Strike", "s": "SF3"}, {"v": "SSBM", "l": "Super Smash Bros. Melee", "s": "MELEE"}, {"v": "SSBU", "l": "Super Smash Bros. Ultimate", "s": "SSBU"}, {"v": "ST", "l": "Super Street Fighter II Turbo", "s": "SSF2T"}, {"v": "TEKKEN7", "l": "Tekken 7", "s": "T7"}, {"v": "TEKKEN8", "l": "Tekken 8", "s": "T8"}, {"v": "KOF XV", "l": "The King of Fighters XV", "s": "KOF"}, {"v": "UMVC3", "l": "Ultimate Marvel vs. Capcom 3", "s": "UMVC3"}, {"v": "UNISC", "l": "Under Night In-Birth II Sys:Celes", "s": "UNISC"}];
+function ld(k,d){try{return localStorage.getItem(k)||d}catch(e){return d}}
+function sv(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+var st={tipo:ld("fgchub_tipo","online"),local:ld("fgchub_local","south-america")};
+function marcar(id,val){[].forEach.call(document.querySelectorAll("#"+id+" button"),function(b){b.setAttribute("aria-pressed",b.dataset.v===val)})}
+function url(g){return "index.html?jogo="+encodeURIComponent(g.v)+"&tipo="+st.tipo+"&local="+st.local}
+function desenhar(){
+  document.getElementById("jogos").innerHTML=GAMES.map(function(g){
+    return '<a class="g" href="'+url(g)+'"><b>'+g.s+'</b><span>'+g.l+'</span></a>'}).join("");
+  marcar("fmt",st.tipo);marcar("reg",st.local);
+}
+document.getElementById("fmt").onclick=function(e){if(e.target.dataset.v){st.tipo=e.target.dataset.v;sv("fgchub_tipo",st.tipo);desenhar()}};
+document.getElementById("reg").onclick=function(e){if(e.target.dataset.v){st.local=e.target.dataset.v;sv("fgchub_local",st.local);desenhar()}};
+desenhar();
+var ev;addEventListener("beforeinstallprompt",function(e){e.preventDefault();ev=e;document.getElementById("inst").style.display="block"});
+document.getElementById("inst").onclick=function(){ev&&ev.prompt()};
+if("serviceWorker"in navigator)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+</script></body></html>
