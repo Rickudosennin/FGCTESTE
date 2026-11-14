@@ -1,12 +1,425 @@
-diff --git a/index.html b/index.html
-index 091a5f2..a552a15 100644
---- a/index.html
-+++ b/index.html
-@@ -405,6 +405,7 @@
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-     <script src="broadcast-card.js"></script>
-     <script src="script.js"></script>
-+    <script src="pwa.js"></script>
- 
-     <!-- VLibras - Tradução automática para Libras (gov.br) -->
-     <div vw class="enabled">
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FGC HUB | Web Edition</title>
+    <meta name="theme-color" content="#dc2626">
+    <meta name="description" content="Acesse torneios, inscritos, brackets, streams e perfis de jogadores de Fighting Games em um só lugar no FGC HUB.">
+    <link rel="canonical" href="https://fgchub.com.br/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="FGC HUB">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:title" content="FGC HUB | Torneios de Fighting Games">
+    <meta property="og:description" content="Acesse torneios, inscritos, brackets, streams e perfis de jogadores de Fighting Games em um só lugar no FGC HUB.">
+    <meta property="og:url" content="https://fgchub.com.br/">
+    <meta property="og:image" content="https://fgchub.com.br/images/fgchub-social-preview.png">
+    <meta property="og:image:secure_url" content="https://fgchub.com.br/images/fgchub-social-preview.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="FGC HUB — Ache torneios de Fighting Games">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FGC HUB | Torneios de Fighting Games">
+    <meta name="twitter:description" content="Acesse torneios, inscritos, brackets, streams e perfis de jogadores de Fighting Games em um só lugar no FGC HUB.">
+    <meta name="twitter:image" content="https://fgchub.com.br/images/fgchub-social-preview.png">
+    <meta name="twitter:image:alt" content="FGC HUB — Ache torneios de Fighting Games">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css?v=1.3.1">
+
+    <!-- ========== ADOPT (COOKIES) ========== -->
+    <meta name="adopt-website-id" content="db9ef961-4169-45c6-8d00-5a568f9a1c22" />
+    <script src="//tag.goadopt.io/injector.js?website_code=db9ef961-4169-45c6-8d00-5a568f9a1c22" 
+            class="adopt-injector"></script>
+    <!-- Temas -->
+    <link rel="stylesheet" href="themes.css">
+    <link rel="stylesheet" href="theme-evo.css?v=5">
+    <script src="theme.js"></script>
+    <script src="evo-intro.js"></script>
+    <script src="theme-evo.js" defer></script>
+</head>
+<body class="p-4 md:p-10">
+
+    <a href="#conteudo" class="skip-link">Pular para o conteúdo principal</a>
+
+    <div class="side-banners-right">
+        <a href="https://wise.com/pay/me/paulop1393" target="_blank" rel="noopener noreferrer" class="wise-banner" aria-label="Apoie o FGC HUB com uma doação via Wise">
+            <span class="wise-banner-title">Apoie o FGC HUB</span>
+            <img src="images/wise-qr.png" alt="QR Code de doação via Wise" class="wise-banner-qr" width="140" height="140">
+            <span class="wise-banner-text">Aceitamos vários tipos de moedas</span>
+            <span class="wise-banner-btn"><i class="fa-solid fa-heart" aria-hidden="true"></i> Doar via Wise</span>
+        </a>
+        <a href="https://www.exitlag.com/refer/WASF" target="_blank" rel="noopener noreferrer" class="side-banner-right" aria-label="Promoção de aniversário ExitLag: 90 dias grátis e 1 ano com 50% de desconto">
+            <img src="images/exitlag-bday-banner.png" alt="B-Day ExitLag: 90 dias de ExitLag grátis, +1 ano por 50% off">
+        </a>
+    </div>
+
+    <div class="api-status-bar">
+        <div id="api_status_dot" class="status-dot status-checking"></div>
+        <span id="api_status_text" class="text-slate-300">API: Verificando...</span>
+    </div>
+
+    <!-- ========== APENAS O BOTÃO DE CHANGELOG (SEM ÍCONE DE BUSCA) ========== -->
+    <div class="absolute top-4 right-4 md:top-10 md:right-10 z-40">
+        <button onclick="toggleChangelog()" class="text-slate-400 hover:text-red-500 transition-all p-2 rounded-full hover:bg-white/5" aria-label="Abrir changelog">
+            <i class="fa-solid fa-ellipsis-vertical text-2xl" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <div id="changelog_modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleChangelog()"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-sm glass-card border-l border-red-600 p-6 overflow-y-auto animate-slide-in" role="dialog" aria-modal="true" aria-label="Changelog">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-black text-white uppercase italic flex items-center gap-2"><i class="fa-solid fa-code-branch text-red-600" aria-hidden="true"></i> Changelog</h2>
+                <button onclick="toggleChangelog()" class="text-slate-500 hover:text-white text-2xl" aria-label="Fechar changelog">&times;</button>
+            </div>
+            <div class="space-y-6">
+
+                <!-- ========== V1.3.2 ========== -->
+<div class="border-l-2 border-green-400 pl-4">
+    <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.3.2</span>
+    <h3 class="text-white font-bold text-sm uppercase mt-1">Seletor de Tipos de Mapa</h3>
+    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+        <li>• <span class="text-green-400 font-bold">Camadas de Mapa:</span> Adicionado controle nativo para alternar o estilo de visualização nos mapas.</li>
+        <li>• <span class="text-green-400 font-bold">Mapa do Card (Exato):</span> O mapa individual do torneio (via card) mostra exatamente o local do evento.</li>
+        <li>• <span class="text-green-400 font-bold">Mapa Geral de Eventos (Aproximado):</span> O mapa geral foca na localização aproximada por cidade/região.</li>
+        <li>• <span class="text-green-400 font-bold">Opções de Estilo:</span> Alternância rápida entre <strong>Mapa Escuro</strong>, <strong>Mapa Padrão</strong> e <strong>Satélite</strong> no canto superior direito de ambos os mapas.</li>
+    </ul>
+</div>
+
+                <!-- ========== V1.3.1 ========== -->
+<div class="border-l-2 border-green-400 pl-4">
+    <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.3.1</span>
+    <h3 class="text-white font-bold text-sm uppercase mt-1">Apoie o FGC HUB</h3>
+    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+        <li>• <span class="text-green-400 font-bold">Banner de doação:</span> Novo banner clicável com QR Code e link de doação via Wise, acima do banner do ExitLag (desktop e mobile).</li>
+    </ul>
+</div>
+
+                <!-- ========== V1.3 ========== -->
+<div class="border-l-2 border-orange-500 pl-4">
+    <span class="bg-orange-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.3</span>
+    <h3 class="text-white font-bold text-sm uppercase mt-1">Banco de Dados Compartilhado</h3>
+    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+        <li>• <span class="text-orange-400 font-bold">Cache compartilhado:</span> Perfis de players e a lista de players conhecidos agora ficam salvos em um banco de dados na nuvem, acessível para todos os visitantes do site — não fica mais só no navegador de cada um.</li>
+        <li>• <span class="text-orange-400 font-bold">Menos consultas à API:</span> Um perfil buscado por qualquer visitante já fica disponível pra todo mundo, reduzindo chamadas repetidas ao start.gg.</li>
+    </ul>
+</div>
+
+                <!-- ========== V1.2.9 ========== -->
+<div class="border-l-2 border-orange-500 pl-4">
+    <span class="bg-orange-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.9</span>
+    <h3 class="text-white font-bold text-sm uppercase mt-1">Head to Head</h3>
+    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+        <li>• <span class="text-orange-400 font-bold">Nova página "Head to Head":</span> Botão adicionado do lado do "Buscar Player" na home, mostrando o confronto direto entre dois players do start.gg.</li>
+        <li>• <span class="text-orange-400 font-bold">Busca flexível:</span> Cada campo aceita <strong>ID numérico</strong>, <strong>código/hash do perfil</strong> (ex: 9ca08de2 ou a URL completa start.gg/user/9ca08de2) ou <strong>gamertag</strong> (via base de players já conhecida pelo HUB), com detecção automática do formato.</li>
+        <li>• <span class="text-orange-400 font-bold">Últimos confrontos:</span> Lista o placar, torneio, fase e data dos confrontos mais recentes entre os dois, com um resumo geral de vitórias no topo.</li>
+        <li>• <span class="text-orange-400 font-bold">Filtro de partidas de equipe:</span> Sets de crew battle / squad strike (ex: 5x5) são ignorados automaticamente, contando só confrontos 1x1 de verdade.</li>
+        <li>• <span class="text-orange-400 font-bold">Visual:</span> Tipografia condensada e paleta vermelho/preto/verde, aplicadas nos placares e na lista de confrontos.</li>
+        <li>• <span class="text-orange-400 font-bold">Correções:</span> Ajustes de layout para não quebrar em telas de celular.</li>
+    </ul>
+</div>
+
+                <!-- ========== V1.2.8 ========== -->
+<div class="border-l-2 border-red-600 pl-4">
+    <span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.8</span>
+    <h3 class="text-white font-bold text-sm uppercase mt-1">Perfil de Player, Cache Local & Cookies</h3>
+    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+        <li>• <span class="text-red-400 font-bold">Página de perfil:</span> Nova seção <strong>"Buscar Player"</strong> com listagem de players a partir dos inscritos dos torneios.</li>
+        <li>• <span class="text-red-400 font-bold">Perfil completo:</span> Exibe avatar, winrate, recorde (W/L), <em>Recent Form</em> com bolinhas coloridas, destaques e histórico completo de torneios.</li>
+        <li>• <span class="text-red-400 font-bold">Cache local (localStorage):</span> Players e perfis são armazenados no navegador, permitindo consultas rápidas e offline parcial.</li>
+        <li>• <span class="text-red-400 font-bold">Botão "Atualizar dados":</span> Permite forçar a busca ao vivo na API, ignorando o cache.</li>
+        <li>• <span class="text-red-400 font-bold">AdOpt (Cookies):</span> Adicionado sistema de consentimento de cookies para conformidade com LGPD/GDPR.</li>
+        <li>• <span class="text-red-400 font-bold">Correções:</span> Tratamento de erros aprimorado, fallback para dados vazios e prevenção de carregamento infinito.</li>
+    </ul>
+</div>
+
+                <!-- ========== V1.2.7 ========== -->
+                <div class="border-l-2 border-green-500 pl-4">
+                    <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.7</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Acessibilidade: Libras e Leitor de Tela</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-green-400 font-bold">VLibras:</span> Widget oficial do governo adicionado, com tradução automática do conteúdo para Língua Brasileira de Sinais, posicionado no lado esquerdo da tela.</li>
+                        <li>• <span class="text-green-400 font-bold">Leitor de tela:</span> Changelog, Inscritos, Ranking e Bracket agora são anunciados como janelas (dialog), e a área de resultados avisa automaticamente quando novos torneios carregam.</li>
+                        <li>• <span class="text-green-400 font-bold">Navegação por teclado:</span> O ícone de "Ver Inscritos" nos cards agora é alcançável com Tab e ativável com Enter/Espaço, com contorno de foco visível em todos os elementos interativos.</li>
+                        <li>• <span class="text-green-400 font-bold">Link de pular navegação:</span> Adicionado atalho "Pular para o conteúdo principal" para quem navega só de teclado.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.6 ========== -->
+                <div class="border-l-2 border-green-500 pl-4">
+                    <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.6</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Bracket Adaptável para Round Robin</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-green-400 font-bold">Detecção automática:</span> A visualização de bracket agora identifica o formato de cada chave e exibe tabela de classificação (posição, bandeira, jogador, V, D) quando a fase é Round Robin.</li>
+                        <li>• <span class="text-green-400 font-bold">Sem impacto no resto:</span> Chaves de eliminação simples e dupla continuam exibindo o bracket tradicional normalmente.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.5 ========== -->
+                <div class="border-l-2 border-green-500 pl-4">
+                    <span class="bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.5</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Busca de Torneios Longos & Múltiplos Eventos</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-green-400 font-bold">Séries e etapas:</span> Torneios de longa duração (várias etapas ao longo de meses) agora aparecem na busca mesmo já tendo começado, desde que ainda tenham etapas futuras.</li>
+                        <li>• <span class="text-green-400 font-bold">Eventos do torneio:</span> Quando um torneio tem mais de um evento, o card exibe os nomes de cada evento com link direto para a página correspondente no Start.gg.</li>
+                        <li>• <span class="text-green-400 font-bold">Sem duplicidade:</span> Torneios encontrados em mais de uma busca são unificados automaticamente, sem repetir cards.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.4 ========== -->
+                <div class="border-l-2 border-blue-500 pl-4">
+                    <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.4</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Paginação de Inscritos</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-blue-400 font-bold">Sem limite de 100:</span> Quando o torneio tem mais de 100 inscritos, o botão "Carregar mais" aparece automaticamente no rodapé da lista.</li>
+                        <li>• <span class="text-blue-400 font-bold">Progressivo:</span> Cada clique carrega mais 100 players sem recarregar os já exibidos.</li>
+                        <li>• <span class="text-blue-400 font-bold">Contador real:</span> O total de inscritos exibido no topo reflete o número real do torneio, não apenas os carregados.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.3 ========== -->
+                <div class="border-l-2 border-blue-500 pl-4">
+                    <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.3</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Timer de Check-in & Status da Bracket</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-blue-400 font-bold">Check-in:</span> Timer se adapta automaticamente quando o evento possui check-in habilitado.</li>
+                        <li>• <span class="text-blue-400 font-bold">Transições:</span> Inscrições abertas → Check-in aberto → Bracket iniciando/em andamento/finalizado.</li>
+                        <li>• <span class="text-blue-400 font-bold">ActivityState:</span> Exibe status real do evento (READY, ACTIVE, COMPLETED) após o período de check-in.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.2 ========== -->
+                <div class="border-l-2 border-blue-500 pl-4">
+                    <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.2</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Bracket Pools & Filters</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-blue-400 font-bold">Filtro de Pools:</span> Menu dropdown exibe Fase e os seus respectivos Grupos (Pools) separados.</li>
+                        <li>• <span class="text-blue-400 font-bold">Layout Start.gg:</span> Conectores animados e marcação de transmissões nativos.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.1 ========== -->
+                <div class="border-l-2 border-purple-500 pl-4">
+                    <span class="bg-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.1</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Rankings de Liga</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-purple-400 font-bold">Botão RANKING:</span> Torneios vinculados a uma liga exibem badge roxo e botão direto que abre a classificação da liga em painel lateral.</li>
+                        <li>• <span class="text-purple-400 font-bold">Sidebar de Classificação:</span> Painel igual ao de inscritos, com top 3 em 🥇🥈🥉 ouro/prata/bronze, barra de pontos proporcional, bandeiras e total de pontos de cada jogador.</li>
+                        <li>• <span class="text-purple-400 font-bold">Ligas monitoradas:</span> Kombat Ranking MK1 · Kombat Zone Tekken 8 BR 2026 · Kampeonato Brasileiro MK1.</li>
+                        <li>• <span class="text-purple-400 font-bold">Auto-detecção:</span> Cruza o Event Schedule de cada liga com os resultados da pesquisa sem impacto na busca original.</li>
+                        <li>• <span class="text-purple-400 font-bold">Link externo:</span> Rodapé do painel com atalho para ver o ranking completo no start.gg.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.2.0 ========== -->
+                <div class="border-l-2 border-red-600 pl-4 opacity-70">
+                    <span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.2.0</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">WinRate Real</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Wins/Losses:</span> Clique no nome do jogador para ver o WinRate real dos últimos 10 torneios.</li>
+                        <li>• <span class="text-red-400 font-bold">Busca por Sets:</span> Calcula vitórias e derrotas diretamente dos sets de cada evento.</li>
+                        <li>• 🟢 60%+ | 🟡 40-59% | 🔴 abaixo de 40%</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.9 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.9</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Direct API Sync</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">API Key:</span> Conexão direta com start.gg via Client-Side.</li>
+                        <li>• <span class="text-red-400 font-bold">Status Badge:</span> Monitor fixo no rodapé indicando saúde da API em tempo real.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.8 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.8</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Attendees Panel & Histórico</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Lista de Inscritos:</span> Clique no ícone 👥 no canto inferior esquerdo do banner para ver todos os participantes.</li>
+                        <li>• <span class="text-red-400 font-bold">Sidebar Desktop/Mobile:</span> Painel lateral adaptável (400px no desktop, tela cheia no mobile).</li>
+                        <li>• <span class="text-red-400 font-bold">Histórico do Jogador:</span> Clique no nome para ver os últimos 10 torneios com W/L e colocação.</li>
+                        <li>• <span class="text-red-400 font-bold">Invincible Vs.:</span> Adicionado o jogo Invincible Vs. (IVS) à lista de jogos.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.7 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.7</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Live / Streams</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Live Detection:</span> Badge "LIVE" pulsante automático quando uma partida está em progresso.</li>
+                        <li>• <span class="text-red-400 font-bold">Stream Icons:</span> Identificação visual de Twitch/YT no banner do torneio.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.6 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.6</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Banner do Evento</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Layout Visual:</span> Banner do torneio exibido como fundo dinâmico com gradiente nos cards.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.5 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.5</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">TO Responsável</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Identificação:</span> Nome do organizador (Tournament Organizer) visível nos cards de torneio.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.4 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.4</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Inscritos</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Contador:</span> Quantidade de participantes inscritos exibida em cada card de torneio.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.3 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.3</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Calendário & Timer</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Timer Regressivo:</span> Contagem regressiva em tempo real até o encerramento das inscrições.</li>
+                        <li>• <span class="text-green-400 font-bold">Mapa de Disponibilidade:</span> Painel com os próximos 14 dias mostrando datas livres e ocupadas para TOs.</li>
+                    </ul>
+                </div>
+
+                <!-- ========== V1.1.2 ========== -->
+                <div class="border-l-2 border-slate-700 pl-4 opacity-70">
+                    <span class="bg-slate-700 text-white text-[10px] font-black px-2 py-0.5 rounded">V1.1.2</span>
+                    <h3 class="text-white font-bold text-sm uppercase mt-1">Integração Google Calendar</h3>
+                    <ul class="text-[11px] text-slate-400 mt-2 space-y-2">
+                        <li>• <span class="text-red-400 font-bold">Suporte direto ao Google Calendar:</span> Botão para adicionar qualquer torneio diretamente à sua agenda com um clique.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="attendees_overlay" onclick="fecharAttendees()"></div>
+    <div class="sidebar-base attendees-sidebar" id="attendees_sidebar" role="dialog" aria-modal="true" aria-label="Lista de inscritos">
+        <div class="sidebar-header"><div><h2>👥 INSCRITOS</h2><span class="count" id="attendees_count"></span></div><button class="btn-close" onclick="fecharAttendees()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button></div>
+        <div class="attendees-search-bar">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="text" id="attendees_search_input" placeholder="Buscar por prefixo ou nick (ex: WASF, KZ)..." oninput="_onAttendeesSearchInput(this.value)" aria-label="Buscar inscrito por prefixo ou nick">
+        </div>
+        <div id="attendees_search_global_hint" class="attendees-search-hint" style="display:none;"></div>
+        <div class="sidebar-content" id="attendees_content"><div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando inscritos...</p></div></div>
+    </div>
+
+    <div class="overlay" id="ranking_overlay" onclick="fecharRanking()"></div>
+    <div class="sidebar-base ranking-sidebar" id="ranking_sidebar" role="dialog" aria-modal="true" aria-label="Classificação da liga">
+        <div class="sidebar-header">
+            <div class="header-left"><h2>🏆 CLASSIFICAÇÃO</h2><span class="league-name" id="ranking_league_name">Carregando...</span></div>
+            <button class="btn-close" onclick="fecharRanking()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button>
+        </div>
+        <div class="sidebar-content" id="ranking_content">
+            <div class="loading-attendees"><div class="spinner-purple"></div><p style="margin-top:15px;color:#aaa;">Carregando ranking...</p></div>
+        </div>
+        <div class="ranking-footer-link"><a id="ranking_external_link" href="#" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver ranking completo</a></div>
+    </div>
+
+    <div class="overlay" id="bracket_overlay" onclick="fecharBracket()"></div>
+    <div class="sidebar-base bracket-sidebar" id="bracket_sidebar" role="dialog" aria-modal="true" aria-label="Chaves do torneio">
+        <div class="sidebar-header">
+            <div class="header-left">
+                <h2>🎮 BRACKET</h2>
+                <select class="event-select" id="bracketEventSelect" style="display:none;" onchange="onBracketEventChange()" aria-label="Selecionar evento">
+                    <option value="">Selecione um evento</option>
+                </select>
+                <select class="event-select" id="bracketPoolSelect" style="display:none;" onchange="onBracketPoolChange()" aria-label="Selecionar grupo">
+                    </select>
+            </div>
+            <button class="btn-close" onclick="fecharBracket()"><i class="fa-solid fa-times mr-1" aria-hidden="true"></i> VOLTAR</button>
+        </div>
+        <div class="sidebar-content" id="bracket_content">
+            <div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;color:#aaa;">Carregando chaves...</p></div>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto w-full" id="conteudo">
+        <header class="text-center mb-10 fade-in-up">
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight uppercase italic">FGC TOURNAMENT <span class="text-red-600">HUB</span></h1>
+            <p class="text-slate-400 font-medium">Busca avançada de torneios</p>
+            <!-- Botão de busca de player (texto) -->
+            <a href="buscar.html" class="inline-block mt-3 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
+                <i class="fa-solid fa-user-plus mr-1"></i> Buscar Player
+            </a>
+            <a href="h2h.html" class="inline-block mt-3 ml-2 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
+                <i class="fa-solid fa-arrow-right-arrow-left mr-1"></i> Head to Head
+            </a>
+            <a href="mapa.html" class="inline-block mt-3 ml-2 text-sm text-slate-400 hover:text-red-500 transition border border-slate-700 rounded-full px-5 py-1.5 hover:border-red-500">
+                <i class="fa-solid fa-map-location-dot mr-1"></i> Mapa da FGC
+            </a>
+            <span id="theme-switcher" class="inline-block mt-3 ml-2 align-top"></span>
+        </header>
+        <div class="glass-card p-6 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in-up" style="animation-delay: 0.1s;">
+            <div><label for="campo_jogo" class="block text-xs font-bold uppercase text-red-500 mb-2">Jogo</label><select id="campo_jogo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="">Carregando jogos...</option></select></div>
+            <div><label for="campo_tipo" class="block text-xs font-bold uppercase text-red-500 mb-2">Formato</label><select id="campo_tipo" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="online">Online</option><option value="offline">Presencial (Offline)</option></select></div>
+            <div><label for="campo_local" class="block text-xs font-bold uppercase text-red-500 mb-2">Região / País</label><select id="campo_local" class="w-full p-3 rounded-lg border border-slate-700 text-white outline-none focus:border-red-500"><option value="south-america">America do Sul</option><option value="worldwide">Mundo Inteiro</option></select></div>
+            <div class="flex items-end"><button onclick="pesquisar()" class="w-full btn-primary text-white p-3 rounded-lg font-black uppercase tracking-tighter shadow-lg">PESQUISAR</button></div>
+        </div>
+        <div id="painel_disponibilidade" class="hidden glass-card p-6 rounded-xl mb-10 border-slate-800 bg-black/40"><h2 class="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-green-500" aria-hidden="true"></i> Sugestão de Datas (Próximos 14 dias)</h2><div id="grid_dias" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3"></div></div>
+        <div id="status" class="hidden text-center py-10" role="status" aria-live="polite"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600" aria-hidden="true"></div><p class="mt-2 text-red-500 font-bold uppercase text-sm">Sincronizando cronogramas...</p></div>
+        <div id="resultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" role="region" aria-label="Resultados da busca de torneios" aria-live="polite"></div>
+    </main>
+
+    <div class="mobile-banner-wise">
+        <a href="https://wise.com/pay/me/paulop1393" target="_blank" rel="noopener noreferrer" class="wise-banner wise-banner-row" aria-label="Apoie o FGC HUB com uma doação via Wise">
+            <img src="images/wise-qr.png" alt="QR Code de doação via Wise" class="wise-banner-qr" width="96" height="96">
+            <span class="wise-banner-info">
+                <span class="wise-banner-title">Apoie o FGC HUB</span>
+                <span class="wise-banner-text">Aceitamos vários tipos de moedas</span>
+                <span class="wise-banner-btn"><i class="fa-solid fa-heart" aria-hidden="true"></i> Doar via Wise</span>
+            </span>
+        </a>
+    </div>
+
+    <div class="mobile-banner-exitlag">
+        <a href="https://www.exitlag.com/refer/WASF" target="_blank" rel="noopener noreferrer" aria-label="Promoção de aniversário ExitLag: 90 dias grátis e 1 ano com 50% de desconto">
+            <img src="images/exitlag-bday-banner-mobile.png" alt="B-Day ExitLag: 90 dias de ExitLag grátis, +1 ano por 50% off">
+        </a>
+    </div>
+
+    <footer class="max-w-5xl mx-auto w-full mt-10 border-t border-slate-800 pt-8 pb-4">
+        <div class="flex flex-col md:flex-row justify-around items-center gap-6 text-sm text-slate-400">
+            <div class="text-center md:text-left"><p class="uppercase text-[10px] font-bold tracking-widest text-red-500 mb-1">Programador e Desenvolvedor</p><div class="flex items-center justify-center md:justify-start gap-2"><span class="font-bold text-white">CAIONP20</span><a href="https://x.com/caio20silva" target="_blank" class="hover:text-red-500 transition-colors" aria-label="Perfil de CAIONP20 no X"><i class="fab fa-x-twitter text-lg" aria-hidden="true"></i></a></div></div>
+            <div class="text-center md:text-left"><p class="uppercase text-[10px] font-bold tracking-widest text-red-500 mb-1">Programador e Designer</p><div class="flex items-center justify-center md:justify-start gap-2"><span class="font-bold text-white">WASF | Rickudosennin</span><a href="https://x.com/Pcesaroficial" target="_blank" class="hover:text-red-500 transition-colors" aria-label="Perfil de WASF | Rickudosennin no X"><i class="fab fa-x-twitter text-lg" aria-hidden="true"></i></a></div></div>
+        </div>
+        <p class="text-center text-[10px] text-slate-600 mt-8 uppercase tracking-widest">Powered by Start.gg</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="players.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="broadcast-card.js"></script>
+    <script src="script.js"></script>
+    <script src="pwa.js"></script>
+
+    <!-- VLibras - Tradução automática para Libras (gov.br) -->
+    <div vw class="enabled">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+            <div class="vw-plugin-top-wrapper"></div>
+        </div>
+    </div>
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+        new window.VLibras.Widget({
+            rootPath: 'https://vlibras.gov.br/app',
+            position: 'L'
+        });
+    </script>
+</body>
+</html>
