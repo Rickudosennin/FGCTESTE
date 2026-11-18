@@ -193,7 +193,13 @@
     }
 
     function render() {
-        var d = cache[slug], m = d.modes[mode];
+        var d = cache[slug];
+        var disp = Object.keys(d.modes);
+        if (disp.indexOf(mode) < 0) mode = disp[0];
+        document.querySelectorAll('#modos button').forEach(function (b) { b.hidden = disp.indexOf(b.dataset.m) < 0; });
+        $('modos').hidden = disp.length < 2;
+        renderModes();
+        var m = d.modes[mode];
         var upd = new Date(d.updatedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
         var from = new Date(d.from + 'T12:00:00').toLocaleDateString('pt-BR');
         $('meta').innerHTML = 'Desde <b>' + from + '</b> · atualizado em <b>' + upd + '</b>';
