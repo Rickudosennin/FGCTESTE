@@ -50,14 +50,18 @@ async function gql(query, variables) {
   throw new Error('Start.gg: falhou após várias tentativas (rate limit?)');
 }
 
-const Q_TOURN = gameId => `query($page:Int!,$after:Timestamp,$before:Timestamp){
-  tournaments(query:{page:$page,perPage:40,filter:{countryCode:"BR",videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
+const Q_TOURN = (gameId, withCountry) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
+  tournaments(query:{page:$page,perPage:40,filter:{${withCountry ? 'countryCode:"BR",' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
     pageInfo{totalPages}
-    nodes{ id name isOnline startAt
+    nodes{ id name isOnline startAt${withCountry ? '' : ' timezone countryCode'}
       events(filter:{videogameId:[${gameId}]}){ id name numEntrants state }
     }
   }
 }`;
+
+// Torneio online no Start.gg quase nunca tem countryCode -> a busca com countryCode:"BR"
+// não enxerga. Segunda varredura sem país, aceitando só online com fuso horário brasileiro.
+const BR_TZ = /^America\/(Sao_Paulo|Bahia|Fortaleza|Manaus|Recife|Belem|Cuiaba|Campo_Grande|Maceio|Araguaina|Porto_Velho|Boa_Vista|Rio_Branco|Noronha|Santarem|Eirunepe)$/;
 
 function readJson(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -71,29 +75,44 @@ async function collect(game, cache) {
   const todo = [];
   const stats = { torneios: 0, eventos: 0, minEntrants: 0, jaNoCache: 0, emAndamento: 0, online: 0 };
   const STALE = 2 * 24 * 3600; // evento não finalizado e recente -> reconsulta na próxima execução
-  let page = 1, total = 1;
-  while (page <= total) {
-    console.log(`[${game.slug}] listando torneios ${page}/${total}`);
-    const d = await gql(Q_TOURN(game.gameId), { page, after, before });
-    total = d.tournaments.pageInfo.totalPages || 1;
-    for (const t of d.tournaments.nodes || []) {
-      stats.torneios++;
-      for (const e of t.events || []) {
-        stats.eventos++;
-        if ((e.numEntrants || 0) < min) { stats.minEntrants++; continue; }
-        const c = cache.events[e.id];
-        if (c && !c.recheck) { stats.jaNoCache++; continue; }
-        const recente = (t.startAt || 0) > before - STALE;
-        if (e.state !== 'COMPLETED' && recente) stats.emAndamento++; // entra, mas será reconsultado
-        if (t.isOnline === true) stats.online++;
-        todo.push({
-          id: e.id, name: e.name, entrants: e.numEntrants, tName: t.name,
-          online: t.isOnline === true, startAt: t.startAt,
-          recheck: e.state !== 'COMPLETED' && recente
-        });
+  const seen = new Set();
+  async function scan(withCountry, accept) {
+    let page = 1, total = 1;
+    while (page <= total) {
+      console.log(`[${game.slug}] listando torneios${withCountry ? '' : ' (online, sem filtro de país)'} ${page}/${total}`);
+      const d = await gql(Q_TOURN(game.gameId, withCountry), { page, after, before });
+      total = d.tournaments.pageInfo.totalPages || 1;
+      for (const t of d.tournaments.nodes || []) {
+        if (!accept(t)) continue;
+        stats.torneios++;
+        for (const e of t.events || []) {
+          if (seen.has(e.id)) continue;
+          seen.add(e.id);
+          stats.eventos++;
+          if ((e.numEntrants || 0) < min) { stats.minEntrants++; continue; }
+          const c = cache.events[e.id];
+          if (c && !c.recheck) { stats.jaNoCache++; continue; }
+          const recente = (t.startAt || 0) > before - STALE;
+          if (e.state !== 'COMPLETED' && recente) stats.emAndamento++; // entra, mas será reconsultado
+          if (t.isOnline === true) stats.online++;
+          todo.push({
+            id: e.id, name: e.name, entrants: e.numEntrants, tName: t.name,
+            online: t.isOnline === true, startAt: t.startAt,
+            recheck: e.state !== 'COMPLETED' && recente
+          });
+        }
       }
+      page++;
     }
-    page++;
+  }
+
+  await scan(true, () => true);
+  if (game.onlineSemPais !== false) {
+    try {
+      await scan(false, t => t.isOnline === true && (t.countryCode === 'BR' || BR_TZ.test(t.timezone || '')));
+    } catch (e) {
+      console.error(`[${game.slug}] AVISO: varredura online sem país falhou (${e.message}); seguindo só com countryCode BR`);
+    }
   }
 
   console.log(`[${game.slug}] diag:`, JSON.stringify(stats));
@@ -200,4 +219,4 @@ async function main() {
 }
 
 if (require.main === module) main();
-module.exports = { points, compute };
+module.exports = { points, compute, collect };
