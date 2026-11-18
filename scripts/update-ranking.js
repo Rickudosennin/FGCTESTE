@@ -50,8 +50,8 @@ async function gql(query, variables) {
   throw new Error('Start.gg: falhou após várias tentativas (rate limit?)');
 }
 
-const Q_TOURN = (gameId, withCountry, nome) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
-  tournaments(query:{page:$page,perPage:40,filter:{${withCountry ? 'countryCode:"BR",' : ''}${nome ? 'name:' + JSON.stringify(nome) + ',' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
+const Q_TOURN = (gameId, withCountry, nome, ownerId) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
+  tournaments(query:{page:$page,perPage:40,filter:{${withCountry ? 'countryCode:"BR",' : ''}${nome ? 'name:' + JSON.stringify(nome) + ',' : ''}${ownerId ? 'ownerId:' + JSON.stringify(String(ownerId)) + ',' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
     pageInfo{totalPages}
     nodes{ id name isOnline startAt${withCountry ? '' : ' timezone countryCode'}
       events(filter:{videogameId:[${gameId}]}){ id name numEntrants state }
@@ -76,11 +76,11 @@ async function collect(game, cache) {
   const stats = { torneios: 0, eventos: 0, minEntrants: 0, jaNoCache: 0, emAndamento: 0, online: 0, casouNome: 0, recusadoNaoBR: 0 };
   const STALE = 2 * 24 * 3600; // evento não finalizado e recente -> reconsulta na próxima execução
   const seen = new Set();
-  async function scan(withCountry, accept, afterTs = after, nome = null) {
+  async function scan(withCountry, accept, afterTs = after, nome = null, ownerId = null) {
     let page = 1, total = 1;
     while (page <= total) {
-      console.log(`[${game.slug}] listando torneios${nome ? ' "' + nome + '"' : withCountry ? '' : ' (online, sem filtro de país)'} ${page}/${total}`);
-      const d = await gql(Q_TOURN(game.gameId, withCountry, nome), { page, after: afterTs, before });
+      console.log(`[${game.slug}] listando torneios${ownerId ? ' do dono ' + ownerId : nome ? ' "' + nome + '"' : withCountry ? '' : ' (online, sem filtro de país)'} ${page}/${total}`);
+      const d = await gql(Q_TOURN(game.gameId, withCountry, nome, ownerId), { page, after: afterTs, before });
       total = d.tournaments.pageInfo.totalPages || 1;
       for (const t of d.tournaments.nodes || []) {
         if (!accept(t)) continue;
@@ -112,6 +112,24 @@ async function collect(game, cache) {
   const afterOnline = incremental ? Math.max(after, before - JANELA) : after;
   if (incremental) console.log(`[${game.slug}] varredura online incremental (últimos 14 dias)`);
 
+  if (game.donoSlug || game.donoId) {
+    // Torneios de um organizador específico (ex.: quem faz os Fight Nights)
+    let ownerId = game.donoId;
+    if (!ownerId) {
+      const u = await gql('query($s:String){user(slug:$s){id name}}', { s: game.donoSlug });
+      if (!u.user) throw new Error(`usuário não encontrado: ${game.donoSlug}`);
+      ownerId = u.user.id;
+      console.log(`[${game.slug}] dono: ${u.user.name} (id ${ownerId})`);
+    }
+    const nomes = (game.nomes || []).map(n => n.toLowerCase());
+    const soOnline = game.apenasOnline !== false;
+    await scan(false, t => {
+      const okNome = !nomes.length || nomes.some(n => (t.name || '').toLowerCase().includes(n));
+      const okOn = !soOnline || t.isOnline === true;
+      console.log(`[${game.slug}] torneio do dono: ${t.name} | online=${t.isOnline} | ${okNome && okOn ? 'ENTRA' : 'recusado'}`);
+      return okNome && okOn;
+    }, after, null, ownerId);
+  } else
   if (game.nomes && game.nomes.length) {
     // Série específica (ex.: Fight Night): só online, só torneios cujo nome contém o termo
     const nomes = game.nomes.map(n => n.toLowerCase());
