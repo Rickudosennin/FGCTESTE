@@ -10,10 +10,8 @@
       "modos": [
         "online"
       ],
-      "nomes": [
-        "fight night"
-      ],
-      "exigirBR": true
+      "donoSlug": "user/e246d52c",
+      "apenasOnline": true
     },
     {
       "slug": "t8",
