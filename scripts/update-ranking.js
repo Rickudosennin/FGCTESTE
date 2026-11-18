@@ -65,30 +65,38 @@ function readJson(file, fallback) {
 
 async function collect(game, cache) {
   const after = Math.floor(new Date(game.from + 'T00:00:00-03:00').getTime() / 1000);
-  const before = Math.floor(Date.now() / 1000);
+  const before = Math.floor(Date.now() / 1000) + 86400; // até o fim de hoje, como no HTML base
   const min = game.minEntrants ?? 8;
 
   const todo = [];
+  const stats = { torneios: 0, eventos: 0, minEntrants: 0, jaNoCache: 0, emAndamento: 0, online: 0 };
+  const STALE = 2 * 24 * 3600; // evento não finalizado e recente -> reconsulta na próxima execução
   let page = 1, total = 1;
   while (page <= total) {
     console.log(`[${game.slug}] listando torneios ${page}/${total}`);
     const d = await gql(Q_TOURN(game.gameId), { page, after, before });
     total = d.tournaments.pageInfo.totalPages || 1;
     for (const t of d.tournaments.nodes || []) {
+      stats.torneios++;
       for (const e of t.events || []) {
-        if ((e.numEntrants || 0) < min) continue;
-        if (cache.events[e.id]) continue;
-        // Só congela no cache eventos finalizados (evento em andamento tem standings parciais)
-        if (e.state !== 'COMPLETED') continue;
+        stats.eventos++;
+        if ((e.numEntrants || 0) < min) { stats.minEntrants++; continue; }
+        const c = cache.events[e.id];
+        if (c && !c.recheck) { stats.jaNoCache++; continue; }
+        const recente = (t.startAt || 0) > before - STALE;
+        if (e.state !== 'COMPLETED' && recente) stats.emAndamento++; // entra, mas será reconsultado
+        if (t.isOnline === true) stats.online++;
         todo.push({
           id: e.id, name: e.name, entrants: e.numEntrants, tName: t.name,
-          online: t.isOnline === true, startAt: t.startAt
+          online: t.isOnline === true, startAt: t.startAt,
+          recheck: e.state !== 'COMPLETED' && recente
         });
       }
     }
     page++;
   }
 
+  console.log(`[${game.slug}] diag:`, JSON.stringify(stats));
   const B = 5;
   for (let i = 0; i < todo.length; i += B) {
     const batch = todo.slice(i, i + B);
