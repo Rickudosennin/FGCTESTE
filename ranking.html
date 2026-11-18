@@ -19,6 +19,7 @@
             --online: #3b82f6;
         }
         * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
         html, body { margin: 0; }
         body {
             background: var(--bg);
@@ -110,7 +111,7 @@
         <div class="tabs" id="jogos" role="tablist" aria-label="Jogo"></div>
 
         <div class="toolbar">
-            <div class="seg" id="modos" role="group" aria-label="Formato">
+            <div class="seg" id="modos" role="group" aria-label="Formato" hidden>
                 <button type="button" data-m="online" aria-pressed="true">Online</button>
                 <button type="button" data-m="offline" aria-pressed="false">Offline</button>
                 <button type="button" data-m="ambos" aria-pressed="false">Ambos</button>
@@ -195,7 +196,7 @@
     function render() {
         var d = cache[slug];
         var disp = Object.keys(d.modes);
-        if (disp.indexOf(mode) < 0) mode = disp[0];
+        if (disp.indexOf(mode) < 0) { mode = disp[0]; setUrl(); }
         document.querySelectorAll('#modos button').forEach(function (b) { b.hidden = disp.indexOf(b.dataset.m) < 0; });
         $('modos').hidden = disp.length < 2;
         renderModes();
