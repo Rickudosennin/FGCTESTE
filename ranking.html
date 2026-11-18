@@ -125,7 +125,7 @@
         <table id="tabela" hidden>
             <thead><tr>
                 <th class="pos">#</th><th>Player</th>
-                <th class="r">Pontos</th><th class="r hide-s">Eventos</th><th class="r hide-s">Melhor</th>
+                <th class="r">Pontos</th><th class="r hide-s">Eventos</th><th class="r">Melhor</th>
             </tr></thead>
             <tbody id="corpo"></tbody>
         </table>
@@ -222,7 +222,7 @@
             var tr = document.createElement('tr');
             tr.className = 'p' + (o.pos <= 3 ? ' t' + o.pos : '');
             tr.innerHTML = '<td class="pos">' + o.pos + '</td><td class="tag">' + esc(o.tag) + '</td>' +
-                '<td class="r pts">' + o.pts + '</td><td class="r hide-s">' + o.n + '</td><td class="r hide-s">' + o.best + 'º</td>';
+                '<td class="r pts">' + o.pts + '</td><td class="r hide-s">' + o.n + '</td><td class="r">' + o.best + 'º</td>';
             var det = null;
             tr.onclick = function () {
                 if (det) { det.remove(); det = null; tr.classList.remove('open'); return; }

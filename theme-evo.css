@@ -123,7 +123,7 @@ html[data-theme="evo"] .bc-titulo span { font-family: var(--evo-body); font-weig
 /* Cabeçalho da Home — navegação alinhada e proporcional */
 html[data-theme="evo"] header {
     display: grid;
-    grid-template-columns: minmax(360px, 1.35fr) repeat(3, minmax(105px, .48fr)) minmax(300px, 1.2fr);
+    grid-template-columns: minmax(330px, 1.3fr) repeat(4, minmax(96px, .46fr)) minmax(270px, 1.1fr);
     column-gap: 22px;
     row-gap: 0;
     align-items: center;
