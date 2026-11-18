@@ -228,7 +228,10 @@ async function updateGame(game) {
   fs.writeFileSync(cacheFile, JSON.stringify(cache));
 
   const min = game.minEntrants ?? 8;
-  const events = Object.values(cache.events);
+  // Regra de nome vale também para eventos que já estavam no cache (de execuções sem o filtro)
+  const nomesLc = (game.nomes || []).map(n => n.toLowerCase());
+  const events = Object.values(cache.events).filter(e =>
+    !nomesLc.length || nomesLc.some(n => (e.tName || '').toLowerCase().includes(n)));
   const out = {
     slug: game.slug,
     name: game.name,
@@ -238,7 +241,7 @@ async function updateGame(game) {
     modes: Object.fromEntries((game.modos || ['online', 'offline', 'ambos']).map(m => [m, compute(events, m, min)]))
   };
   fs.writeFileSync(path.join(OUT_DIR, `${game.slug}.json`), JSON.stringify(out));
-  console.log(`[${game.slug}] OK: +${added} eventos novos, ${events.length} no cache`);
+  console.log(`[${game.slug}] OK: +${added} eventos novos, ${events.length} no ranking (${Object.keys(cache.events).length} no cache)`);
 }
 
 function writeIndex() {
