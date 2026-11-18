@@ -1,0 +1,195 @@
+#!/usr/bin/env node
+// Atualiza data/ranking/*.json a partir da API do Start.gg.
+// Uso: STARTGG_TOKEN=xxx node scripts/update-ranking.js [slug ...]
+// Sem argumentos -> atualiza todos os jogos com enabled:true em scripts/ranking-config.json
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const API = 'https://api.start.gg/gql/alpha';
+const ROOT = path.join(__dirname, '..');
+const OUT_DIR = path.join(ROOT, 'data', 'ranking');
+const CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'ranking-config.json'), 'utf8'));
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Pontuação por colocação (mesma do ranking-t8-br.html)
+function points(p) {
+  if (p === 1) return 16;
+  if (p === 2) return 12;
+  if (p === 3) return 10;
+  if (p === 4) return 8;
+  if (p >= 5 && p <= 7) return 6;
+  if (p >= 8 && p <= 12) return 4;
+  if (p >= 13 && p <= 16) return 2;
+  return 0;
+}
+
+async function gql(query, variables) {
+  const token = process.env.STARTGG_TOKEN;
+  if (!token) throw new Error('Falta STARTGG_TOKEN');
+  for (let i = 0; i < 6; i++) {
+    let r;
+    try {
+      r = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ query, variables })
+      });
+    } catch (e) {
+      await sleep(5000 * (i + 1));
+      continue;
+    }
+    if (r.status === 429 || r.status >= 500) { await sleep(5000 * (i + 1)); continue; }
+    const j = await r.json();
+    if (j.errors) throw new Error(j.errors[0].message);
+    await sleep(800);
+    return j.data;
+  }
+  throw new Error('Start.gg: falhou após várias tentativas (rate limit?)');
+}
+
+const Q_TOURN = gameId => `query($page:Int!,$after:Timestamp,$before:Timestamp){
+  tournaments(query:{page:$page,perPage:40,filter:{countryCode:"BR",videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
+    pageInfo{totalPages}
+    nodes{ id name isOnline startAt
+      events(filter:{videogameId:[${gameId}]}){ id name numEntrants state }
+    }
+  }
+}`;
+
+function readJson(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+}
+
+async function collect(game, cache) {
+  const after = Math.floor(new Date(game.from + 'T00:00:00-03:00').getTime() / 1000);
+  const before = Math.floor(Date.now() / 1000);
+  const min = game.minEntrants ?? 8;
+
+  const todo = [];
+  let page = 1, total = 1;
+  while (page <= total) {
+    console.log(`[${game.slug}] listando torneios ${page}/${total}`);
+    const d = await gql(Q_TOURN(game.gameId), { page, after, before });
+    total = d.tournaments.pageInfo.totalPages || 1;
+    for (const t of d.tournaments.nodes || []) {
+      for (const e of t.events || []) {
+        if ((e.numEntrants || 0) < min) continue;
+        if (cache.events[e.id]) continue;
+        // Só congela no cache eventos finalizados (evento em andamento tem standings parciais)
+        if (e.state !== 'COMPLETED') continue;
+        todo.push({
+          id: e.id, name: e.name, entrants: e.numEntrants, tName: t.name,
+          online: t.isOnline === true, startAt: t.startAt
+        });
+      }
+    }
+    page++;
+  }
+
+  const B = 5;
+  for (let i = 0; i < todo.length; i += B) {
+    const batch = todo.slice(i, i + B);
+    console.log(`[${game.slug}] standings ${Math.min(i + B, todo.length)}/${todo.length}`);
+    const q = 'query{' + batch.map((e, k) =>
+      `e${k}:event(id:${e.id}){id standings(query:{page:1,perPage:16}){nodes{placement entrant{participants{player{id gamerTag}}}}}}`
+    ).join('') + '}';
+    const d = await gql(q, {});
+    batch.forEach((e, k) => {
+      const nodes = (d['e' + k] && d['e' + k].standings && d['e' + k].standings.nodes) || [];
+      const rows = [];
+      let team = false;
+      for (const n of nodes) {
+        const ps = (n.entrant && n.entrant.participants) || [];
+        if (ps.length !== 1) { team = true; break; }
+        const pl = ps[0].player;
+        if (!pl || !pl.id) continue;
+        rows.push({ p: n.placement, id: pl.id, tag: pl.gamerTag });
+      }
+      e.rows = team ? [] : rows;
+      e.team = team;
+      cache.events[e.id] = e;
+    });
+  }
+  return todo.length;
+}
+
+function compute(events, mode, min) {
+  const map = new Map();
+  let evCount = 0;
+  const evs = events
+    .filter(e => !e.team && (e.entrants || 0) >= min &&
+      (mode === 'online' ? e.online : mode === 'offline' ? !e.online : true))
+    .sort((a, b) => a.startAt - b.startAt);
+  for (const e of evs) {
+    evCount++;
+    for (const r of e.rows) {
+      const pts = points(r.p);
+      if (!pts) continue;
+      let o = map.get(r.id);
+      if (!o) { o = { id: r.id, tag: r.tag, pts: 0, best: 99, list: [] }; map.set(r.id, o); }
+      o.tag = r.tag; // tag mais recente
+      o.pts += pts;
+      o.best = Math.min(o.best, r.p);
+      o.list.push({ n: e.tName + ' — ' + e.name, p: r.p, pts, e: e.entrants, d: e.startAt });
+    }
+  }
+  const arr = [...map.values()].sort((a, b) => b.pts - a.pts || a.best - b.best || a.tag.localeCompare(b.tag));
+  let pos = 0, last = null;
+  const players = arr.map((o, i) => {
+    if (o.pts !== last) { pos = i + 1; last = o.pts; }
+    o.list.sort((a, b) => b.d - a.d);
+    return { pos, id: o.id, tag: o.tag, pts: o.pts, n: o.list.length, best: o.best, list: o.list };
+  });
+  return { events: evCount, players };
+}
+
+async function updateGame(game) {
+  const cacheFile = path.join(OUT_DIR, `cache-${game.slug}.json`);
+  const cache = readJson(cacheFile, { events: {} });
+  const added = await collect(game, cache);
+  fs.writeFileSync(cacheFile, JSON.stringify(cache));
+
+  const min = game.minEntrants ?? 8;
+  const events = Object.values(cache.events);
+  const out = {
+    slug: game.slug,
+    name: game.name,
+    updatedAt: new Date().toISOString(),
+    from: game.from,
+    minEntrants: min,
+    modes: {
+      online: compute(events, 'online', min),
+      offline: compute(events, 'offline', min),
+      ambos: compute(events, 'ambos', min)
+    }
+  };
+  fs.writeFileSync(path.join(OUT_DIR, `${game.slug}.json`), JSON.stringify(out));
+  console.log(`[${game.slug}] OK: +${added} eventos novos, ${events.length} no cache`);
+}
+
+function writeIndex() {
+  const games = CONFIG.games
+    .filter(g => g.enabled)
+    .filter(g => fs.existsSync(path.join(OUT_DIR, `${g.slug}.json`)))
+    .map(g => ({ slug: g.slug, name: g.name }));
+  fs.writeFileSync(path.join(OUT_DIR, 'index.json'), JSON.stringify({ games }, null, 2));
+}
+
+async function main() {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  const only = process.argv.slice(2);
+  const games = CONFIG.games.filter(g => g.enabled && (!only.length || only.includes(g.slug)));
+  let failed = 0;
+  for (const g of games) {
+    try { await updateGame(g); }
+    catch (e) { failed++; console.error(`[${g.slug}] ERRO: ${e.message}`); }
+  }
+  writeIndex();
+  if (failed) process.exit(1);
+}
+
+if (require.main === module) main();
+module.exports = { points, compute };
