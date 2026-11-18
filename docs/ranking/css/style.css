@@ -1,0 +1,151 @@
+:root {
+  --bg: #0e1116;
+  --card: #171c24;
+  --line: #262d38;
+  --txt: #e6e9ef;
+  --mut: #8b94a3;
+  --acc: #ff4d4d;
+  --on: #2ea8ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--txt);
+  font: 15px/1.4 system-ui, Segoe UI, Roboto, sans-serif;
+  padding: 24px;
+}
+
+.wrap { max-width: 900px; margin: 0 auto; }
+
+h1 { margin: 0 0 16px; font-size: 22px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toggle button {
+  border: 0;
+  border-radius: 0;
+  padding: 10px 26px;
+  background: #0b0e13;
+  color: var(--mut);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+.toggle button.act.online {
+  background: var(--on);
+  color: #04121f;
+}
+
+.toggle button.act.offline {
+  background: var(--acc);
+  color: #fff;
+}
+
+.pts { font-size: 12px; color: var(--mut); }
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+
+th, td {
+  padding: 9px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+th {
+  font-size: 12px;
+  color: var(--mut);
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--card);
+  cursor: pointer;
+  position: sticky;
+  top: 0;
+}
+
+td.n, th.n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pos {
+  width: 44px;
+  color: var(--mut);
+}
+
+.top1 { color: #ffd54a; }
+.top2 { color: #d0d6de; }
+.top3 { color: #d9944a; }
+
+tr.p { cursor: pointer; }
+tr.p:hover { background: #1c232d; }
+
+tr.d td {
+  background: #11151b;
+  font-size: 13px;
+  color: var(--mut);
+}
+
+.rank-name {
+  font-weight: 600;
+}
+
+.detail {
+  padding: 6px 0;
+  line-height: 1.6;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-left: 6px;
+  background: var(--line);
+  color: var(--txt);
+}
+
+.badge.online { background: #1f3a5f; }
+.badge.offline { background: #2f4a2a; }
+
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  h1 { font-size: 18px; }
+  .toggle button { padding: 8px 16px; font-size: 13px; }
+}

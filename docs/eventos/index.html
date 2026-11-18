@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eventos Tekken 8 2026 — Brasil</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>Eventos Tekken 8 2026 — Brasil</h1>
+
+  <div class="card">
+    <div class="bar">
+      <select id="md">
+        <option value="">Online + Offline</option>
+        <option value="on">Só online</option>
+        <option value="off">Só offline</option>
+      </select>
+      <input id="q" placeholder="Filtrar nome / TO / cidade">
+      <button id="tx">Gerar .txt</button>
+      <button id="cv">Gerar .csv</button>
+    </div>
+    <div id="status" class="pts"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th data-k="date">Data</th>
+          <th data-k="name">Torneio</th>
+          <th data-k="to">TO</th>
+          <th data-k="loc">Local</th>
+          <th>Modo</th>
+          <th class="n" data-k="ent">Entrants T8</th>
+          <th>Link</th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
