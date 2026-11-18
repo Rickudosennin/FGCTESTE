@@ -50,8 +50,8 @@ async function gql(query, variables) {
   throw new Error('Start.gg: falhou após várias tentativas (rate limit?)');
 }
 
-const Q_TOURN = (gameId, withCountry) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
-  tournaments(query:{page:$page,perPage:40,filter:{${withCountry ? 'countryCode:"BR",' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
+const Q_TOURN = (gameId, withCountry, nome) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
+  tournaments(query:{page:$page,perPage:40,filter:{${withCountry ? 'countryCode:"BR",' : ''}${nome ? 'name:' + JSON.stringify(nome) + ',' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
     pageInfo{totalPages}
     nodes{ id name isOnline startAt${withCountry ? '' : ' timezone countryCode'}
       events(filter:{videogameId:[${gameId}]}){ id name numEntrants state }
@@ -73,14 +73,14 @@ async function collect(game, cache) {
   const min = game.minEntrants ?? 8;
 
   const todo = [];
-  const stats = { torneios: 0, eventos: 0, minEntrants: 0, jaNoCache: 0, emAndamento: 0, online: 0 };
+  const stats = { torneios: 0, eventos: 0, minEntrants: 0, jaNoCache: 0, emAndamento: 0, online: 0, casouNome: 0, recusadoNaoBR: 0 };
   const STALE = 2 * 24 * 3600; // evento não finalizado e recente -> reconsulta na próxima execução
   const seen = new Set();
-  async function scan(withCountry, accept) {
+  async function scan(withCountry, accept, afterTs = after, nome = null) {
     let page = 1, total = 1;
     while (page <= total) {
-      console.log(`[${game.slug}] listando torneios${withCountry ? '' : ' (online, sem filtro de país)'} ${page}/${total}`);
-      const d = await gql(Q_TOURN(game.gameId, withCountry), { page, after, before });
+      console.log(`[${game.slug}] listando torneios${nome ? ' "' + nome + '"' : withCountry ? '' : ' (online, sem filtro de país)'} ${page}/${total}`);
+      const d = await gql(Q_TOURN(game.gameId, withCountry, nome), { page, after: afterTs, before });
       total = d.tournaments.pageInfo.totalPages || 1;
       for (const t of d.tournaments.nodes || []) {
         if (!accept(t)) continue;
@@ -106,12 +106,42 @@ async function collect(game, cache) {
     }
   }
 
-  await scan(true, () => true);
-  if (game.onlineSemPais !== false) {
-    try {
-      await scan(false, t => t.isOnline === true && (t.countryCode === 'BR' || BR_TZ.test(t.timezone || '')));
-    } catch (e) {
-      console.error(`[${game.slug}] AVISO: varredura online sem país falhou (${e.message}); seguindo só com countryCode BR`);
+  const brOk = t => t.countryCode === 'BR' || BR_TZ.test(t.timezone || '');
+  const JANELA = 14 * 24 * 3600;
+  const incremental = !!cache.onlineScanOk;
+  const afterOnline = incremental ? Math.max(after, before - JANELA) : after;
+  if (incremental) console.log(`[${game.slug}] varredura online incremental (últimos 14 dias)`);
+
+  if (game.nomes && game.nomes.length) {
+    // Série específica (ex.: Fight Night): só online, só torneios cujo nome contém o termo
+    const nomes = game.nomes.map(n => n.toLowerCase());
+    const exigirBR = game.exigirBR !== false;
+    const accept = t => {
+      if (t.isOnline !== true) return false;
+      if (!nomes.some(n => (t.name || '').toLowerCase().includes(n))) return false;
+      stats.casouNome++;
+      if (exigirBR && !brOk(t)) { stats.recusadoNaoBR++; console.log(`[${game.slug}] recusado (fora do BR): ${t.name} | tz=${t.timezone} cc=${t.countryCode}`); return false; }
+      return true;
+    };
+    for (const n of game.nomes) {
+      try {
+        await scan(false, accept, afterOnline, n);          // filtro de nome no servidor
+      } catch (e) {
+        console.error(`[${game.slug}] filtro de nome no servidor falhou (${e.message}); varrendo sem ele (mais lento)`);
+        await scan(false, accept, afterOnline, null);
+        break;
+      }
+    }
+    cache.onlineScanOk = true;
+  } else {
+    await scan(true, () => true);
+    if (game.onlineSemPais !== false) {
+      try {
+        await scan(false, t => t.isOnline === true && brOk(t), afterOnline);
+        cache.onlineScanOk = true;
+      } catch (e) {
+        console.error(`[${game.slug}] AVISO: varredura online sem país falhou (${e.message}); seguindo só com countryCode BR`);
+      }
     }
   }
 
@@ -187,11 +217,7 @@ async function updateGame(game) {
     updatedAt: new Date().toISOString(),
     from: game.from,
     minEntrants: min,
-    modes: {
-      online: compute(events, 'online', min),
-      offline: compute(events, 'offline', min),
-      ambos: compute(events, 'ambos', min)
-    }
+    modes: Object.fromEntries((game.modos || ['online', 'offline', 'ambos']).map(m => [m, compute(events, m, min)]))
   };
   fs.writeFileSync(path.join(OUT_DIR, `${game.slug}.json`), JSON.stringify(out));
   console.log(`[${game.slug}] OK: +${added} eventos novos, ${events.length} no cache`);
