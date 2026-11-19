@@ -1,0 +1,288 @@
+/* =========================================================
+   FGC HUB — TEMA "EVO 2027" para as páginas internas (aditivo)
+   Páginas: buscar.html, h2h.html, player.html, mapa.html, mapa-evento.html
+   - A index NÃO usa este arquivo (ela tem o theme-evo.css).
+   - Só vale com html[data-theme="evo"] → Red Edition / Cromo / Broadcast intactos.
+   - Carregar DEPOIS de themes.css (que traz o estilo base do seletor de tema).
+   - Paleta: azul #4b55ff + verde #9fe870 sobre preto-azulado.
+   - Cores semânticas NÃO mudam: vermelho de erro/winrate baixo, verde de
+     winrate alto, amarelo de 1º lugar, bolinhas de colocação.
+   ========================================================= */
+html[data-theme="evo"] {
+    --evo-bg: #070914;
+    --evo-panel: #10152b;
+    --evo-panel-2: #171f3d;
+    --evo-input: #0a1022;
+    --evo-line: rgba(111, 132, 255, .34);
+    --evo-line-hi: rgba(111, 132, 255, .72);
+    --evo-text: #f4f5ff;
+    --evo-mute: #a5accb;
+    --evo-accent: #4b55ff;
+    --evo-accent-hi: #a6aaff;
+    --evo-accent-dk: #3035c8;
+    --evo-green: #9fe870;
+    --evo-green-dark: #19351b;
+    --evo-glow: rgba(75, 85, 255, .45);
+    --evo-btn: linear-gradient(105deg, #3035c8 0%, #4b55ff 58%, #5966d8 100%);
+    --evo-btn-hover: linear-gradient(105deg, #4b55ff 0%, #5966d8 100%);
+    --evo-display: 'Oswald', 'Roboto Condensed', sans-serif;
+    --evo-body: 'Barlow', system-ui, sans-serif;
+    /* variáveis do h2h-style.css (vermelho -> azul; verde -> verde Evo) */
+    --kz-red: #3035c8;
+    --kz-red-bright: #a6aaff;
+    --kz-red-hot: #a6aaff;
+    --kz-green: #9fe870;
+    --kz-muted: #a5accb;
+    --h2h-font: var(--evo-display);
+    /* variáveis do mapa.html / mapa-evento.html */
+    --bg: var(--evo-bg);
+    --card: var(--evo-panel);
+    --txt: var(--evo-text);
+    --mut: var(--evo-mute);
+    --red: var(--evo-green);
+    --blue: var(--evo-green);
+}
+
+/* ----- Base: azul-noite + malha de losangos ----- */
+html[data-theme="evo"],
+html[data-theme="evo"] body { background-color: var(--evo-bg); }
+html[data-theme="evo"] body {
+    color: var(--evo-text);
+    font-family: var(--evo-body);
+    font-size: 16px;
+    background-image:
+        radial-gradient(1100px 480px at 85% -10%, rgba(75,85,255,.22), transparent 60%),
+        radial-gradient(900px 420px at 0% 0%, rgba(159,232,112,.06), transparent 60%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Cpath d='M36 8 64 36 36 64 8 36Z' fill='none' stroke='%234b55ff' stroke-opacity='.08'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+}
+html[data-theme="evo"] .bg-slate-950 { background-color: var(--evo-bg); }
+html[data-theme="evo"] .bg-slate-900 { background-color: var(--evo-panel); }
+html[data-theme="evo"] .border-slate-700,
+html[data-theme="evo"] .border-slate-800 { border-color: var(--evo-line); }
+
+/* ----- Títulos ----- */
+html[data-theme="evo"] h1,
+html[data-theme="evo"] h2,
+html[data-theme="evo"] h3 { font-family: var(--evo-display); letter-spacing: .03em; }
+html[data-theme="evo"] h1 { text-shadow: 0 0 24px var(--evo-glow); }
+html[data-theme="evo"] h1 .text-red-600 {
+    color: var(--evo-green);
+    -webkit-text-fill-color: var(--evo-green);
+}
+html[data-theme="evo"] .h2h-title {
+    font-family: var(--evo-display);
+    text-shadow: 0 0 24px var(--evo-glow);
+}
+
+/* ----- Seletor de tema ----- */
+html[data-theme="evo"] .fgc-theme-toggle { --tt-accent: var(--evo-green); --tt-line: var(--evo-line-hi); color: var(--evo-mute); border-radius: 4px; }
+html[data-theme="evo"] .fgc-theme-toggle button { border-radius: 4px; }
+html[data-theme="evo"] .fgc-theme-toggle button:hover { color: #fff; }
+html[data-theme="evo"] .fgc-theme-toggle button[aria-pressed="true"] { background: rgba(159, 232, 112, .16); color: #fff; }
+html[data-theme="evo"] .fgc-theme-fixed { background: rgba(10, 14, 32, .92); }
+
+/* ----- Links "voltar" e textos com hover vermelho ----- */
+html[data-theme="evo"] .hover\:text-red-500:hover,
+html[data-theme="evo"] .hover\:text-red-400:hover { color: var(--evo-green); }
+
+/* ----- Detalhes decorativos vermelhos -> verde (erro e winrate ficam como estão) ----- */
+html[data-theme="evo"] i.text-red-500,
+html[data-theme="evo"] label.text-red-500 { color: var(--evo-green); }
+html[data-theme="evo"] .border-red-500,
+html[data-theme="evo"] .border-red-600,
+html[data-theme="evo"] .hover\:border-red-500:hover,
+html[data-theme="evo"] .focus\:border-red-500:focus,
+html[data-theme="evo"] .focus\:border-red-600:focus { border-color: var(--evo-green); }
+html[data-theme="evo"] .bg-red-500 { background: linear-gradient(90deg, #3035c8, #4b55ff 60%, var(--evo-green)); }
+html[data-theme="evo"] .bg-red-900 { background: var(--evo-panel-2); border: 1px solid var(--evo-line-hi); color: var(--evo-text); }
+html[data-theme="evo"] .text-red-100 { color: var(--evo-text); }
+
+/* ----- Campos ----- */
+html[data-theme="evo"] input[type="text"],
+html[data-theme="evo"] input[type="url"],
+html[data-theme="evo"] input[type="search"],
+html[data-theme="evo"] select,
+html[data-theme="evo"] textarea {
+    background-color: var(--evo-input);
+    border-color: var(--evo-line-hi);
+    color: var(--evo-text);
+    border-radius: 4px;
+}
+html[data-theme="evo"] select { background-color: var(--evo-panel-2) !important; border-color: var(--evo-line-hi) !important; }
+html[data-theme="evo"] input:focus,
+html[data-theme="evo"] select:focus,
+html[data-theme="evo"] textarea:focus { border-color: var(--evo-green) !important; outline: none; }
+html[data-theme="evo"] input::placeholder { color: var(--evo-mute); opacity: .7; }
+html[data-theme="evo"] .bg-transparent { background-color: transparent; }
+
+/* ----- Painéis ----- */
+html[data-theme="evo"] .glass-card {
+    background: linear-gradient(160deg, rgba(75,85,255,.10) 0%, rgba(75,85,255,.02) 100%), var(--evo-panel);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 6px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .24);
+}
+
+/* ----- Botões ----- */
+html[data-theme="evo"] .btn-primary,
+html[data-theme="evo"] .bg-red-600,
+html[data-theme="evo"] .bg-red-700 {
+    background: var(--evo-btn);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 4px;
+    animation: none;
+    box-shadow: none;
+}
+html[data-theme="evo"] .btn-primary:hover,
+html[data-theme="evo"] .hover\:bg-red-600:hover,
+html[data-theme="evo"] .hover\:bg-red-700:hover {
+    background: var(--evo-btn-hover);
+    border-color: var(--evo-green);
+    box-shadow: 0 0 18px var(--evo-glow);
+    opacity: 1;
+}
+html[data-theme="evo"] .btn-primary { font-family: var(--evo-display); letter-spacing: .08em; }
+
+/* ----- Foco visível ----- */
+html[data-theme="evo"] a:focus-visible,
+html[data-theme="evo"] button:focus-visible,
+html[data-theme="evo"] [tabindex]:focus-visible { outline: 2px solid var(--evo-accent-hi); outline-offset: 2px; }
+
+/* ----- Carregando ----- */
+html[data-theme="evo"] .loading-attendees .spinner { border-top-color: var(--evo-green); }
+html[data-theme="evo"] .animate-spin { border-color: var(--evo-accent-hi); }
+
+/* =========================================================
+   PERFIL DO PLAYER (player.html)
+   ========================================================= */
+html[data-theme="evo"] .player-profile {
+    background: linear-gradient(160deg, rgba(75,85,255,.10), transparent), var(--evo-panel);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 6px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
+}
+html[data-theme="evo"] .profile-banner {
+    background-image: linear-gradient(135deg, #15204a, #2a3fb8);
+    border-bottom: 2px solid var(--evo-accent);
+}
+html[data-theme="evo"] .profile-banner-overlay {
+    background: linear-gradient(180deg, rgba(75,85,255,.28) 0%, rgba(7,9,20,.9) 100%);
+}
+html[data-theme="evo"] .profile-avatar {
+    border-color: var(--evo-green);
+    box-shadow: 0 0 22px rgba(159, 232, 112, .28);
+    border-radius: 6px;
+}
+html[data-theme="evo"] .profile-header { border-bottom-color: var(--evo-line); }
+html[data-theme="evo"] .profile-gamertag {
+    font-family: var(--evo-display);
+    background: linear-gradient(135deg, #ffffff 30%, var(--evo-accent-hi));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+html[data-theme="evo"] .record-badge { border-color: var(--evo-line); color: var(--evo-mute); }
+html[data-theme="evo"] .stat-card {
+    background: linear-gradient(160deg, rgba(75,85,255,.10), transparent), var(--evo-panel);
+    border-color: var(--evo-line);
+    border-radius: 6px;
+}
+html[data-theme="evo"] .stat-card .label { color: var(--evo-mute); }
+html[data-theme="evo"] .recent-form h3,
+html[data-theme="evo"] .highlights h3 { border-left-color: var(--evo-green); color: var(--evo-mute); }
+html[data-theme="evo"] .form-icon,
+html[data-theme="evo"] .form-dot.dot-other { border-color: var(--evo-line); }
+html[data-theme="evo"] .profile-tabs { border-top-color: var(--evo-line); }
+html[data-theme="evo"] .tab-header { border-bottom-color: var(--evo-line); }
+html[data-theme="evo"] .tab-btn { font-family: var(--evo-display); letter-spacing: .08em; color: var(--evo-mute); }
+html[data-theme="evo"] .tab-btn:hover { color: #fff; }
+html[data-theme="evo"] .tab-btn.active { color: #fff; border-bottom-color: var(--evo-green); }
+html[data-theme="evo"] .highlight-item,
+html[data-theme="evo"] .event-row { border-bottom-color: var(--evo-line); }
+html[data-theme="evo"] .event-record,
+html[data-theme="evo"] .event-date,
+html[data-theme="evo"] .highlight-item .date { color: var(--evo-mute); }
+
+/* =========================================================
+   HEAD TO HEAD (h2h.html)
+   ========================================================= */
+html[data-theme="evo"] .h2h-score-lead { text-shadow: 0 0 14px rgba(159, 232, 112, .5), 0 2px 4px rgba(0, 0, 0, .8); }
+html[data-theme="evo"] .h2h-summary-vs { text-shadow: 0 0 10px var(--evo-glow); }
+html[data-theme="evo"] .h2h-set-row {
+    border: 1px solid var(--evo-line);
+    border-left: 4px solid var(--evo-accent);
+    border-radius: 4px;
+    background: var(--evo-panel);
+}
+html[data-theme="evo"] .h2h-set-row:nth-child(even) { border-left-color: var(--evo-accent-dk); }
+html[data-theme="evo"] .h2h-set-score.h2h-winner { text-shadow: 0 0 10px rgba(159, 232, 112, .45); }
+html[data-theme="evo"] .h2h-set-score.h2h-winner::after { background: linear-gradient(90deg, #6fc13a, var(--evo-green), #6fc13a); }
+html[data-theme="evo"] .h2h-set-score.h2h-loser::after { background: linear-gradient(90deg, var(--evo-accent-dk), var(--evo-accent), var(--evo-accent-dk)); }
+
+/* =========================================================
+   MAPA DA FGC (mapa.html) e MAPA DO EVENTO (mapa-evento.html)
+   Estas duas páginas têm CSS próprio; o que muda aqui vale só com Evo.
+   ========================================================= */
+html[data-theme="evo"] aside { background-color: #0a0e20; border-right: 1px solid var(--evo-line-hi); }
+html[data-theme="evo"] aside h1 { font-style: italic; text-transform: uppercase; letter-spacing: .04em; color: #fff; }
+html[data-theme="evo"] aside header a { color: var(--evo-mute) !important; }
+html[data-theme="evo"] aside header a:hover { color: var(--evo-green) !important; }
+html[data-theme="evo"] aside input,
+html[data-theme="evo"] aside select { background: #0d1430; border: 1px solid var(--evo-line-hi); color: var(--evo-text); border-radius: 4px; }
+html[data-theme="evo"] aside .item {
+    background: var(--evo-panel);
+    border: 1px solid var(--evo-line);
+    border-left: 3px solid var(--evo-green);
+    border-radius: 4px;
+}
+html[data-theme="evo"] aside .item:hover { border-color: var(--evo-green); }
+html[data-theme="evo"] aside .item small { color: var(--evo-mute); }
+html[data-theme="evo"] aside footer { border-top: 1px solid var(--evo-line); color: var(--evo-mute); }
+html[data-theme="evo"] .pin,
+html[data-theme="evo"] .pin-evento {
+    background: var(--evo-green);
+    border: 2px solid #fff;
+    box-shadow: 0 0 14px rgba(159, 232, 112, .6);
+}
+html[data-theme="evo"] .leaflet-popup-content-wrapper,
+html[data-theme="evo"] .leaflet-popup-tip {
+    background: var(--evo-panel);
+    color: var(--evo-text);
+    border: 1px solid var(--evo-green);
+}
+html[data-theme="evo"] .leaflet-popup-content { color: var(--evo-text); }
+html[data-theme="evo"] .leaflet-popup-content a { color: var(--evo-green); }
+html[data-theme="evo"] .leaflet-control-layers {
+    background: rgba(10, 14, 32, .92);
+    color: var(--evo-text);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 4px;
+}
+html[data-theme="evo"] .leaflet-control-layers-selector { accent-color: var(--evo-green); }
+html[data-theme="evo"] .overlay-info {
+    background: var(--evo-panel);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 6px;
+}
+html[data-theme="evo"] .overlay-info h2 { font-family: var(--evo-display); color: #fff; letter-spacing: .03em; }
+html[data-theme="evo"] .overlay-info p { color: var(--evo-mute); }
+html[data-theme="evo"] .btn-voltar {
+    background: var(--evo-btn);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 4px;
+}
+html[data-theme="evo"] .btn-voltar:hover { background: var(--evo-btn-hover); border-color: var(--evo-green); }
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme="evo"] .btn-primary,
+    html[data-theme="evo"] .bg-red-600,
+    html[data-theme="evo"] .bg-red-700 { transition: none; }
+}
+
+/* Seletor de tema dentro da lateral do mapa: compacto para caber nos 320px (vale em qualquer tema) */
+aside .fgc-theme-toggle { flex-wrap: wrap; max-width: 100%; padding-left: 2px; }
+aside .fgc-theme-toggle .fgc-theme-ico { display: none; }
+aside .fgc-theme-toggle button { padding: 5px 6px; font-size: 11px; }

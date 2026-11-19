@@ -508,3 +508,103 @@ html[data-theme="evo"] .mobile-banner-wise .wise-banner:hover {
         box-shadow: none !important;
     }
 }
+
+/* =========================================================
+   EVO 2027 — sidebars (Inscritos, Ranking, Bracket) e histórico do player (v4)
+   Só azul/verde; cores semânticas (winrate, erro, ouro/prata/bronze,
+   chaveamento) NÃO mudam.
+   ========================================================= */
+html[data-theme="evo"] .sidebar-base { background: var(--evo-bg); }
+html[data-theme="evo"] .attendees-sidebar,
+html[data-theme="evo"] .ranking-sidebar,
+html[data-theme="evo"] .bracket-sidebar {
+    border-left: 1px solid var(--evo-line-hi);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, .7), -2px 0 24px rgba(75, 85, 255, .18);
+}
+html[data-theme="evo"] .sidebar-header { background: var(--evo-panel); border-bottom: 1px solid var(--evo-line); }
+html[data-theme="evo"] .attendees-sidebar .sidebar-header,
+html[data-theme="evo"] .ranking-sidebar .sidebar-header,
+html[data-theme="evo"] .bracket-sidebar .sidebar-header { border-bottom: 1px solid var(--evo-line-hi); }
+html[data-theme="evo"] .sidebar-header h2 { font-family: var(--evo-display); font-size: 18px; letter-spacing: .08em; color: #fff; }
+html[data-theme="evo"] .attendees-sidebar .count { color: var(--evo-accent-hi); }
+
+html[data-theme="evo"] .attendees-sidebar .btn-close,
+html[data-theme="evo"] .ranking-sidebar .btn-close,
+html[data-theme="evo"] .bracket-sidebar .btn-close {
+    background: linear-gradient(105deg, #3035c8 0%, #4b55ff 58%, #5966d8 100%);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 4px;
+    color: #fff;
+    font-family: var(--evo-display);
+    letter-spacing: .06em;
+}
+html[data-theme="evo"] .attendees-sidebar .btn-close:hover,
+html[data-theme="evo"] .ranking-sidebar .btn-close:hover,
+html[data-theme="evo"] .bracket-sidebar .btn-close:hover {
+    background: linear-gradient(105deg, #4b55ff 0%, #5966d8 100%);
+    border-color: var(--evo-green);
+    box-shadow: 0 0 16px var(--evo-glow);
+}
+
+html[data-theme="evo"] .attendees-sidebar .sidebar-content::-webkit-scrollbar-track,
+html[data-theme="evo"] .ranking-sidebar .sidebar-content::-webkit-scrollbar-track,
+html[data-theme="evo"] .bracket-sidebar .sidebar-content::-webkit-scrollbar-track { background: var(--evo-bg); }
+html[data-theme="evo"] .attendees-sidebar .sidebar-content::-webkit-scrollbar-thumb,
+html[data-theme="evo"] .ranking-sidebar .sidebar-content::-webkit-scrollbar-thumb,
+html[data-theme="evo"] .bracket-sidebar .sidebar-content::-webkit-scrollbar-thumb { background: var(--evo-line-hi); }
+html[data-theme="evo"] .attendees-sidebar .spinner,
+html[data-theme="evo"] .ranking-sidebar .spinner,
+html[data-theme="evo"] .bracket-sidebar .spinner { border-top-color: var(--evo-green); }
+html[data-theme="evo"] .loading-attendees { color: var(--evo-mute); }
+
+/* busca dentro de Inscritos (sem estilo próprio em nenhum tema; aqui fica escura) */
+html[data-theme="evo"] .attendees-search-bar {
+    display: flex; align-items: center; gap: 10px;
+    margin: 12px 20px 0; padding: 0 12px;
+    background: var(--evo-panel-2);
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 4px;
+    color: var(--evo-mute);
+}
+html[data-theme="evo"] .attendees-search-bar:focus-within { border-color: var(--evo-green); }
+html[data-theme="evo"] .attendees-search-bar input {
+    flex: 1; min-width: 0; min-height: 44px; padding: 0;
+    background: transparent !important; border: 0 !important; outline: 0;
+    color: var(--evo-text); font: 400 14px var(--evo-body);
+}
+html[data-theme="evo"] .attendees-search-bar input::placeholder { color: var(--evo-mute); opacity: .75; }
+html[data-theme="evo"] .attendees-search-hint { color: var(--evo-mute); }
+
+/* linhas de inscritos / ranking */
+html[data-theme="evo"] .attendee-item,
+html[data-theme="evo"] .ranking-player-card { background: var(--evo-panel); border: 1px solid var(--evo-line); border-radius: 4px; }
+html[data-theme="evo"] .ranking-player-card.rank-1 { border-color: rgba(255,204,0,.45); }
+html[data-theme="evo"] .ranking-player-card.rank-2 { border-color: rgba(192,192,192,.4); }
+html[data-theme="evo"] .ranking-player-card.rank-3 { border-color: rgba(176,110,60,.4); }
+html[data-theme="evo"] .attendee-item:hover,
+html[data-theme="evo"] .ranking-player-card:hover {
+    background: var(--evo-panel-2);
+    border-color: var(--evo-green);
+    box-shadow: inset 3px 0 0 var(--evo-green);
+}
+html[data-theme="evo"] .attendee-number { color: var(--evo-accent-hi); }
+html[data-theme="evo"] .attendee-name.clickable:hover { color: var(--evo-green); }
+html[data-theme="evo"] .ranking-sidebar .league-name,
+html[data-theme="evo"] .ranking-player-pts { color: var(--evo-accent-hi); }
+html[data-theme="evo"] .ranking-footer-link { border-top: 1px solid var(--evo-line); background: var(--evo-panel); }
+html[data-theme="evo"] .ranking-footer-link a { color: var(--evo-text); border: 1px solid var(--evo-line-hi); border-radius: 4px; }
+html[data-theme="evo"] .ranking-footer-link a:hover { background: var(--evo-panel-2); border-color: var(--evo-green); color: var(--evo-green); }
+html[data-theme="evo"] .attendees-icon-left { border-radius: 4px; background: rgba(7, 9, 20, .85); }
+html[data-theme="evo"] .attendees-icon-left:hover { background: var(--evo-accent); border-color: var(--evo-green); box-shadow: 0 0 14px var(--evo-glow); }
+
+/* histórico do player dentro da sidebar */
+html[data-theme="evo"] .player-history { border-color: var(--evo-line); background: rgba(75, 85, 255, .04); }
+html[data-theme="evo"] .history-title,
+html[data-theme="evo"] .history-char-title { color: var(--evo-accent-hi); font-family: var(--evo-display); letter-spacing: .06em; }
+html[data-theme="evo"] .legend-bar { background: var(--evo-panel); border-color: var(--evo-line); backdrop-filter: none; }
+
+/* seletor de evento e barra de status */
+html[data-theme="evo"] .event-select { background: var(--evo-panel-2); border-color: var(--evo-line-hi); border-radius: 4px; }
+html[data-theme="evo"] .event-select:focus { border-color: var(--evo-green); }
+html[data-theme="evo"] .bracket-sidebar .sidebar-content { background: var(--evo-bg); }
+html[data-theme="evo"] .api-status-bar { border-color: var(--evo-line); }
