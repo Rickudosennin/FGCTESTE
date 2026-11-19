@@ -50,18 +50,22 @@ async function gql(query, variables) {
   throw new Error('Start.gg: falhou após várias tentativas (rate limit?)');
 }
 
-const Q_TOURN = (gameId, withCountry, nome, ownerId) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
-  tournaments(query:{page:$page,perPage:40,filter:{${withCountry ? 'countryCode:"BR",' : ''}${nome ? 'name:' + JSON.stringify(nome) + ',' : ''}${ownerId ? 'ownerId:' + JSON.stringify(String(ownerId)) + ',' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
+// Filtros e campos validados no HTML t8-eventos-2026.html (que já funciona com o token):
+//  - filtro hasOnlineEvents:true acha torneio online mesmo sem countryCode
+//  - isOnline é por EVENTO (torneio pode ser misto); owner.location.country ajuda a achar BR
+const Q_TOURN = (gameId, f = {}) => `query($page:Int!,$after:Timestamp,$before:Timestamp){
+  tournaments(query:{page:$page,perPage:50,sortBy:"startAt asc",filter:{${f.br ? 'countryCode:"BR",' : ''}${f.online ? 'hasOnlineEvents:true,' : ''}${f.nome ? 'name:' + JSON.stringify(f.nome) + ',' : ''}${f.ownerId ? 'ownerId:' + JSON.stringify(String(f.ownerId)) + ',' : ''}videogameIds:[${gameId}],afterDate:$after,beforeDate:$before}}){
     pageInfo{totalPages}
-    nodes{ id name isOnline startAt${withCountry ? '' : ' timezone countryCode'}
-      events(filter:{videogameId:[${gameId}]}){ id name numEntrants state }
+    nodes{ id name slug isOnline hasOnlineEvents startAt timezone countryCode
+      owner{ location{ country } }
+      events(filter:{videogameId:[${gameId}]}){ id name numEntrants state isOnline }
     }
   }
 }`;
 
-// Torneio online no Start.gg quase nunca tem countryCode -> a busca com countryCode:"BR"
-// não enxerga. Segunda varredura sem país, aceitando só online com fuso horário brasileiro.
 const BR_TZ = /^America\/(Sao_Paulo|Bahia|Fortaleza|Manaus|Recife|Belem|Cuiaba|Campo_Grande|Maceio|Araguaina|Porto_Velho|Boa_Vista|Rio_Branco|Noronha|Santarem|Eirunepe)$/;
+const isBR = t => t.countryCode === 'BR' || BR_TZ.test(t.timezone || '') ||
+  (t.owner && t.owner.location && t.owner.location.country === 'Brazil');
 
 function readJson(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -76,11 +80,11 @@ async function collect(game, cache) {
   const stats = { torneios: 0, eventos: 0, minEntrants: 0, jaNoCache: 0, emAndamento: 0, online: 0, casouNome: 0, recusadoNaoBR: 0 };
   const STALE = 2 * 24 * 3600; // evento não finalizado e recente -> reconsulta na próxima execução
   const seen = new Set();
-  async function scan(withCountry, accept, afterTs = after, nome = null, ownerId = null) {
+  async function scan(f, accept, afterTs = after) {
     let page = 1, total = 1;
     while (page <= total) {
-      console.log(`[${game.slug}] listando torneios${ownerId ? ' do dono ' + ownerId : nome ? ' "' + nome + '"' : withCountry ? '' : ' (online, sem filtro de país)'} ${page}/${total}`);
-      const d = await gql(Q_TOURN(game.gameId, withCountry, nome, ownerId), { page, after: afterTs, before });
+      console.log(`[${game.slug}] listando torneios${f.ownerId ? ' do dono ' + f.ownerId : f.nome ? ' "' + f.nome + '"' : f.br ? ' (countryCode BR)' : ' (hasOnlineEvents)'} ${page}/${total}`);
+      const d = await gql(Q_TOURN(game.gameId, f), { page, after: afterTs, before });
       total = d.tournaments.pageInfo.totalPages || 1;
       for (const t of d.tournaments.nodes || []) {
         if (!accept(t)) continue;
@@ -94,10 +98,11 @@ async function collect(game, cache) {
           if (c && !c.recheck) { stats.jaNoCache++; continue; }
           const recente = (t.startAt || 0) > before - STALE;
           if (e.state !== 'COMPLETED' && recente) stats.emAndamento++; // entra, mas será reconsultado
-          if (t.isOnline === true) stats.online++;
+          const evOnline = e.isOnline === true || (e.isOnline == null && t.isOnline === true);
+          if (evOnline) stats.online++;
           todo.push({
             id: e.id, name: e.name, entrants: e.numEntrants, tName: t.name,
-            online: t.isOnline === true, startAt: t.startAt,
+            online: evOnline, startAt: t.startAt,
             recheck: e.state !== 'COMPLETED' && recente
           });
         }
@@ -106,7 +111,7 @@ async function collect(game, cache) {
     }
   }
 
-  const brOk = t => t.countryCode === 'BR' || BR_TZ.test(t.timezone || '');
+  const brOk = isBR;
   const JANELA = 14 * 24 * 3600;
   const incremental = !!cache.onlineScanOk;
   const afterOnline = incremental ? Math.max(after, before - JANELA) : after;
@@ -123,19 +128,19 @@ async function collect(game, cache) {
     }
     const nomes = (game.nomes || []).map(n => n.toLowerCase());
     const soOnline = game.apenasOnline !== false;
-    await scan(false, t => {
+    await scan({ ownerId }, t => {
       const okNome = !nomes.length || nomes.some(n => (t.name || '').toLowerCase().includes(n));
-      const okOn = !soOnline || t.isOnline === true;
+      const okOn = !soOnline || t.isOnline === true || t.hasOnlineEvents === true;
       console.log(`[${game.slug}] torneio do dono: ${t.name} | online=${t.isOnline} | ${okNome && okOn ? 'ENTRA' : 'recusado'}`);
       return okNome && okOn;
-    }, after, null, ownerId);
+    }, after);
   } else
   if (game.nomes && game.nomes.length) {
     // Série específica (ex.: Fight Night): só online, só torneios cujo nome contém o termo
     const nomes = game.nomes.map(n => n.toLowerCase());
     const exigirBR = game.exigirBR !== false;
     const accept = t => {
-      if (t.isOnline !== true) return false;
+      if (!(t.isOnline === true || t.hasOnlineEvents === true)) return false;
       if (!nomes.some(n => (t.name || '').toLowerCase().includes(n))) return false;
       stats.casouNome++;
       if (exigirBR && !brOk(t)) { stats.recusadoNaoBR++; console.log(`[${game.slug}] recusado (fora do BR): ${t.name} | tz=${t.timezone} cc=${t.countryCode}`); return false; }
@@ -143,19 +148,19 @@ async function collect(game, cache) {
     };
     for (const n of game.nomes) {
       try {
-        await scan(false, accept, afterOnline, n);          // filtro de nome no servidor
+        await scan({ online: true, nome: n }, accept, afterOnline);   // filtros no servidor
       } catch (e) {
         console.error(`[${game.slug}] filtro de nome no servidor falhou (${e.message}); varrendo sem ele (mais lento)`);
-        await scan(false, accept, afterOnline, null);
+        await scan({ online: true }, accept, afterOnline);
         break;
       }
     }
     cache.onlineScanOk = true;
   } else {
-    await scan(true, () => true);
+    await scan({ br: true }, () => true);
     if (game.onlineSemPais !== false) {
       try {
-        await scan(false, t => t.isOnline === true && brOk(t), afterOnline);
+        await scan({ online: true }, t => brOk(t), afterOnline);
         cache.onlineScanOk = true;
       } catch (e) {
         console.error(`[${game.slug}] AVISO: varredura online sem país falhou (${e.message}); seguindo só com countryCode BR`);

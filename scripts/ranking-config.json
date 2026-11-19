@@ -7,10 +7,14 @@
       "from": "2026-01-01",
       "minEntrants": 8,
       "enabled": true,
-      "modos": ["online", "offline", "ambos"],
+      "modos": [
+        "online"
+      ],
       "donoSlug": "user/e246d52c",
-      "apenasOnline": false,
-      "nomes": ["fight night"]
+      "apenasOnline": true,
+      "nomes": [
+        "fight night"
+      ]
     },
     {
       "slug": "t8",
@@ -18,8 +22,7 @@
       "gameId": 49783,
       "from": "2026-01-01",
       "minEntrants": 8,
-      "enabled": false,
-      "modos": ["online", "offline", "ambos"]
+      "enabled": true
     },
     {
       "slug": "sf6",
@@ -27,8 +30,7 @@
       "gameId": 43868,
       "from": "2026-01-01",
       "minEntrants": 8,
-      "enabled": false,
-      "modos": ["online", "offline", "ambos"]
+      "enabled": false
     }
   ]
 }
