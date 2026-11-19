@@ -511,3 +511,9 @@ select:focus-visible,
 header h1 {
     animation: titleFloat 3.5s ease-in-out infinite;
 }
+
+/* Ranking próprio FGC HUB (badge e abas de formato no painel) */
+.league-badge.own { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.45); color: #4ade80; }
+.rk-modos { display: flex; gap: 6px; margin: 0 0 12px; }
+.rk-modos button { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.18); color: #aaa; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 7px 0; border-radius: 6px; cursor: pointer; }
+.rk-modos button.on { background: rgba(255,255,255,0.92); color: #111; border-color: transparent; }

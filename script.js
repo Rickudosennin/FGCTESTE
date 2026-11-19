@@ -59,7 +59,6 @@ const LIGAS_MONITORADAS = [
     { slug: 'cipher-x-tournament-1', label: 'Cipher-X Tournament MK1', rankingUrl: 'https://www.start.gg/league/cipher-x-tournament-1/standings' },
     { slug: 'ranking-cipher-x-tournament-street-fighter-66', label: 'Cipher-X Tournament SF6', rankingUrl: 'https://www.start.gg/league/ranking-cipher-x-tournament-street-fighter-66/standings' },
     { slug: 'arena-outworld-edi-o-6-2', label: 'Arena Outworld Edição 6', rankingUrl: 'https://www.start.gg/league/arena-outworld-edi-o-6-2/standings' },
-    { slug: 'ranking-brasil-tekken-8-2026', label: 'Ranking Brasil Tekken 8 2026', rankingUrl: 'https://www.start.gg/league/ranking-brasil-tekken-8-2026/standings' },
     { slug: 'kampeonato-brasileiro-de-mortal-kombat-1-temporada-2', label: 'Kampeonato Brasileiro MK1 - T2', rankingUrl: 'https://www.start.gg/league/kampeonato-brasileiro-de-mortal-kombat-1-temporada-2/standings' },
     { slug: 'kampeonato-brasileiro-de-mortal-kombat-1-ranking-anual', label: 'Kampeonato Brasileiro MK1 - Ranking Anual', rankingUrl: 'https://www.start.gg/league/kampeonato-brasileiro-de-mortal-kombat-1-ranking-anual/standings' },
     { slug: 'raven-s-championship', label: "Raven's Championship", rankingUrl: 'https://www.start.gg/league/raven-s-championship/standings' },
@@ -93,8 +92,66 @@ async function carregarTorneiosDasLigas() {
     await Promise.all(fetches);
 }
 
+
+// ==================== RANKINGS PRÓPRIOS (FGC HUB) ====================
+// Gerados pelo workflow (data/ranking/*.json). Aparecem em todo torneio do jogo correspondente,
+// somados às ligas externas (ex.: ranking de um TO específico).
+let rankingsProprios = [], _tipoPesquisa = 'online', _rkProprio = {};
+const RANKING_JOGO_PADRAO = { 't8': 49783, 't8-fn': 49783 };
+async function carregarRankingsProprios() {
+    try {
+        const r = await fetch('data/ranking/index.json', { cache: 'no-cache' });
+        if (!r.ok) return;
+        const j = await r.json();
+        rankingsProprios = (j.games || []).map(g => ({
+            slug: g.slug,
+            label: 'FGC HUB · ' + g.name,
+            gameId: g.gameId || RANKING_JOGO_PADRAO[g.slug],
+            nomes: g.nomes || (g.slug === 't8-fn' ? ['fight night'] : null)
+        })).filter(g => g.gameId);
+    } catch (e) { /* sem ranking próprio: segue só com as ligas */ }
+}
+function rankingsProprioDoTorneio(t, gameObj) {
+    if (!gameObj) return [];
+    const nome = (t.name || '').toLowerCase();
+    return rankingsProprios
+        .filter(r => r.gameId === gameObj.videogameId && (!r.nomes || r.nomes.some(n => nome.includes(n))))
+        .map(r => ({ label: r.label, slug: 'own:' + r.slug, rankingUrl: 'ranking.html?jogo=' + r.slug, own: true }));
+}
+async function abrirRankingProprio(slugComPrefixo, label, rankingUrl) {
+    const key = slugComPrefixo.slice(4);
+    const sidebar = document.getElementById('ranking_sidebar'), overlay = document.getElementById('ranking_overlay'), content = document.getElementById('ranking_content'), leagueEl = document.getElementById('ranking_league_name'), extLink = document.getElementById('ranking_external_link');
+    sidebar.classList.add('open'); overlay.classList.add('active'); document.body.style.overflow = 'hidden'; leagueEl.textContent = label;
+    extLink.href = rankingUrl; extLink.target = '_self';
+    content.innerHTML = `<div class="loading-attendees"><div class="spinner-purple"></div><p style="margin-top:15px;color:#aaa;">Carregando ranking...</p></div>`;
+    try {
+        if (!_rkProprio[key]) { const r = await fetch(`data/ranking/${key}.json`, { cache: 'no-cache' }); if (!r.ok) throw new Error('HTTP ' + r.status); _rkProprio[key] = await r.json(); }
+        const d = _rkProprio[key], modos = Object.keys(d.modes);
+        let modo = modos.includes(_tipoPesquisa) ? _tipoPesquisa : (modos.includes('ambos') ? 'ambos' : modos[0]);
+        const nomeModo = { online: 'Online', offline: 'Offline', ambos: 'Ambos' };
+        const desenhar = () => {
+            const m = d.modes[modo], players = m.players.slice(0, 25), maxPts = players.length ? players[0].pts : 1;
+            extLink.href = `${rankingUrl}&modo=${modo}`;
+            const tabs = modos.length > 1 ? `<div class="rk-modos">${modos.map(x => `<button type="button" data-m="${x}" class="${x === modo ? 'on' : ''}">${nomeModo[x] || x}</button>`).join('')}</div>` : '';
+            const upd = new Date(d.updatedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            const rows = players.map(o => {
+                const c = o.pos === 1 ? 'rank-1' : o.pos === 2 ? 'rank-2' : o.pos === 3 ? 'rank-3' : '';
+                const medal = o.pos === 1 ? '🥇' : o.pos === 2 ? '🥈' : o.pos === 3 ? '🥉' : '';
+                const w = Math.round(o.pts / maxPts * 100);
+                const tag = String(o.tag).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+                return `<div class="ranking-player-card ${c}"><div class="rank-number ${c || 'rank-other'}">${medal || '#' + o.pos}</div><div class="ranking-player-info"><div class="ranking-player-name">${tag}</div><div class="ranking-player-pts">${o.pts.toLocaleString('pt-BR')} pts · ${o.n} ${o.n === 1 ? 'evento' : 'eventos'}</div></div><div class="ranking-bar-wrap"><div class="ranking-bar-fill ${c ? '' : 'rank-other-bar'}" style="width:${w}%"></div></div></div>`;
+            }).join('');
+            content.innerHTML = tabs + (rows || `<div style="text-align:center;padding:40px;color:#aaa;">Sem dados para este formato.</div>`) + `<div style="text-align:center;padding:14px 0 4px;color:#777;font-size:11px;">${m.events} eventos · atualizado em ${upd}</div>`;
+            content.querySelectorAll('.rk-modos button').forEach(b => b.onclick = () => { modo = b.dataset.m; desenhar(); });
+        };
+        desenhar();
+    } catch (e) { content.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">Erro ao carregar ranking.</div>`; }
+}
+
 // ==================== RANKING SIDEBAR ====================
 async function abrirRanking(ligaSlug, ligaLabel, rankingUrl) {
+    if (String(ligaSlug).startsWith('own:')) return abrirRankingProprio(ligaSlug, ligaLabel, rankingUrl);
+    document.getElementById('ranking_external_link').target = '_blank';
     const sidebar = document.getElementById('ranking_sidebar'), overlay = document.getElementById('ranking_overlay'), content = document.getElementById('ranking_content'), leagueEl = document.getElementById('ranking_league_name'), extLink = document.getElementById('ranking_external_link');
     sidebar.classList.add('open'); overlay.classList.add('active'); document.body.style.overflow = 'hidden'; leagueEl.textContent = ligaLabel; extLink.href = rankingUrl;
     content.innerHTML = `<div class="loading-attendees"><div class="spinner-purple"></div><p style="margin-top:15px;color:#aaa;">Carregando ranking...</p></div>`;
@@ -482,6 +539,7 @@ function gerarLinkGoogleCalendar(t){const i=formatarDataGoogle(t.startAt),f=form
 
 async function pesquisar() {
     const gameObj = games.find(g => g.value === document.getElementById("campo_jogo").value), typeVal = document.getElementById("campo_tipo").value, localVal = document.getElementById("campo_local").value;
+    _tipoPesquisa = typeVal;
     const container = document.getElementById("resultados"), status = document.getElementById("status"); container.innerHTML = ""; status.classList.remove("hidden");
     
     // O CAMPONODE AGORA PUXA venueAddress, city, lat e lng
@@ -593,8 +651,8 @@ async function pesquisar() {
                 else if (setState === 'CALLED') { bracketBadgeHTML = `<div class="bracket-upcoming-badge">⏳ EM BREVE: ${displayText}</div>`; }
             }
 
-            const ligasInfo = verificarLigaDeTorneio(t.url);
-            const ligaBadgeHTML = ligasInfo.map(liga => `<div class="league-badge"><i class="fa-solid fa-trophy" style="font-size:8px;color:#a855f7;"></i>&nbsp;${liga.label}</div>`).join('');
+            const ligasInfo = [...rankingsProprioDoTorneio(t, gameObj), ...verificarLigaDeTorneio(t.url)];
+            const ligaBadgeHTML = ligasInfo.map(liga => `<div class="league-badge${liga.own ? ' own' : ''}"><i class="fa-solid ${liga.own ? 'fa-ranking-star' : 'fa-trophy'}" style="font-size:8px;color:${liga.own ? '#4ade80' : '#a855f7'};"></i>&nbsp;${liga.label}</div>`).join('');
             const rankingBtnHTML = ligasInfo.map(liga => `<button onclick="abrirRanking('${liga.slug}','${liga.label.replace(/'/g,"\\'")}','${liga.rankingUrl}')" class="btn-ranking w-full"><i class="fa-solid fa-ranking-star"></i> RANKING${ligasInfo.length > 1 ? `: ${liga.label}` : ''}</button>`).join('');
 
             let eventsListHTML = '';
@@ -656,4 +714,4 @@ function aplicarTiltCard(card) {
     card.addEventListener('mouseleave', () => { card.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'; card.style.transform = ''; });
 }
 
-carregarJogos(); carregarTorneiosDasLigas();
+carregarJogos(); carregarTorneiosDasLigas(); carregarRankingsProprios();
