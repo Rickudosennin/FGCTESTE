@@ -5,94 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ranking BR | FGC HUB</title>
     <meta name="description" content="Ranking brasileiro de Fighting Games, atualizado automaticamente a cada 6 horas.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="themes.css">
     <script src="theme.js"></script>
     <style>
         :root {
-            --bg: #0b0b0d;
-            --panel: #131316;
-            --line: #26262b;
-            --line-soft: #1b1b1f;
-            --text: #e7e7ea;
-            --muted: #85858f;
+            --bg: #0d0e10;
+            --panel: #15171a;
+            --panel-2: #1a1d21;
+            --line: #272a30;
+            --line-soft: #1e2126;
+            --text: #e9eaec;
+            --mute: #8d939c;
             --accent: #dc2626;
-            --online: #3b82f6;
+            --display: 'Oswald', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+            --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
         }
+        html[data-theme="broadcast"] { --bg:#101215; --panel:#181b20; --panel-2:#1f2329; --line:#2a2f37; --line-soft:#21252b; --text:#e8eaed; --mute:#9aa3ad; --accent:#dc2626; }
+        html[data-theme="evo"]       { --bg:#070914; --panel:#0e1226; --panel-2:#131937; --line:rgba(77,105,255,.30); --line-soft:rgba(77,105,255,.14); --text:#f4f5ff; --mute:#a5accb; --accent:#9fe870; }
+        html[data-theme="cromo"]     { --bg:#070707; --panel:#101010; --panel-2:#171717; --line:rgba(201,201,207,.26); --line-soft:rgba(201,201,207,.12); --text:#f4f4f5; --mute:#8a8a92; --accent:#c9c9cf; }
+
         * { box-sizing: border-box; }
         [hidden] { display: none !important; }
         html, body { margin: 0; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            min-height: 100vh;
-        }
+        body { background: var(--bg); color: var(--text); font: 15px/1.45 var(--body); min-height: 100vh; -webkit-font-smoothing: antialiased; }
         a { color: inherit; }
-        .wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 56px; }
+        .wrap { max-width: 920px; margin: 0 auto; padding: 20px 20px 64px; }
 
-        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 28px; font-size: 13px; }
-        .topbar a { color: var(--muted); text-decoration: none; white-space: nowrap; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 36px; font-size: 13px; }
+        #theme-switcher { max-width: 100%; overflow-x: auto; }
+        .topbar a { color: var(--mute); text-decoration: none; white-space: nowrap; }
         .topbar a:hover { color: var(--text); }
 
-        header.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-        h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
-        .meta { color: var(--muted); font-size: 12.5px; text-align: right; }
-        .meta b { color: var(--text); font-weight: 600; }
+        /* título */
+        .title { margin-bottom: 22px; }
+        .title h1 { margin: 0; font: 700 34px/1.05 var(--display); text-transform: uppercase; letter-spacing: .02em; }
+        .title p { margin: 8px 0 0; color: var(--mute); font-size: 14px; }
 
-        .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+        /* faixa de números */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); background: var(--panel); margin-bottom: 26px; }
+        .stat { padding: 14px 18px; border-right: 1px solid var(--line); min-width: 0; }
+        .stat:last-child { border-right: 0; }
+        .stat dt { margin: 0 0 4px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+        .stat dd { margin: 0; font: 600 24px/1.1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat dd small { font: 500 13px var(--body); color: var(--mute); margin-left: 6px; letter-spacing: 0; }
+
+        /* controles */
+        .tabs { display: flex; gap: 28px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
         .tabs::-webkit-scrollbar { display: none; }
-        .tabs button {
-            appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
-            color: var(--muted); font: inherit; font-weight: 600; padding: 12px 0; cursor: pointer; white-space: nowrap;
-        }
+        .tabs button { appearance: none; background: none; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; padding: 10px 0 11px; color: var(--mute); font: 600 15px var(--display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
         .tabs button:hover { color: var(--text); }
         .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
 
-        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; }
-        .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-        .seg button { appearance: none; background: transparent; border: 0; border-right: 1px solid var(--line); color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 600; padding: 7px 16px; cursor: pointer; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 0; }
+        .seg { display: inline-flex; border: 1px solid var(--line); }
+        .seg button { appearance: none; background: transparent; border: 0; border-right: 1px solid var(--line); padding: 7px 18px; color: var(--mute); font: 600 12.5px var(--body); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
         .seg button:last-child { border-right: 0; }
         .seg button:hover { color: var(--text); }
-        .seg button[aria-pressed="true"] { background: var(--panel); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
-        .seg button[aria-pressed="true"][data-m="online"] { box-shadow: inset 0 -2px 0 var(--online); }
+        .seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+        .search { background: transparent; border: 1px solid var(--line); color: var(--text); font: 14px var(--body); padding: 7px 10px; width: 220px; max-width: 100%; border-radius: 0; }
+        .search::placeholder { color: var(--mute); }
+        .search:focus { outline: 0; border-color: var(--mute); }
 
-        .search { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; color: var(--text); font: inherit; padding: 7px 10px; width: 200px; max-width: 100%; }
-        .search::placeholder { color: var(--muted); }
-        .search:focus { outline: 0; border-color: #3b3b42; }
-
-        .info { color: var(--muted); font-size: 12.5px; padding-bottom: 8px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-
+        /* tabela */
         table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-        thead th { position: sticky; top: 0; background: var(--bg); color: var(--muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); }
-        td { padding: 10px; border-bottom: 1px solid var(--line-soft); }
+        thead th { background: var(--bg); color: var(--mute); font: 500 11.5px var(--body); text-transform: uppercase; letter-spacing: .08em; padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); position: sticky; top: 0; }
+        td { padding: 0 12px; height: 46px; border-bottom: 1px solid var(--line-soft); }
         .r { text-align: right; }
-        .pos { width: 48px; color: var(--muted); }
+        .pos { width: 58px; font: 600 18px var(--display); color: var(--mute); }
         tr.p { cursor: pointer; }
-        tr.p:hover td { background: var(--panel); }
-        tr.p td:first-child { box-shadow: inset 2px 0 0 transparent; }
-        tr.p.t1 td:first-child, tr.p.t2 td:first-child, tr.p.t3 td:first-child { color: var(--text); font-weight: 700; }
-        tr.p.t1 td:first-child { box-shadow: inset 2px 0 0 #d4a72c; }
-        tr.p.t2 td:first-child { box-shadow: inset 2px 0 0 #9ca3af; }
-        tr.p.t3 td:first-child { box-shadow: inset 2px 0 0 #a5683a; }
-        .tag { font-weight: 600; }
-        .pts { font-weight: 700; }
-        tr.p.open td { background: var(--panel); border-bottom-color: transparent; }
+        tr.p:hover td, tr.p.open td { background: var(--panel); }
+        tr.p td:first-child { box-shadow: inset 3px 0 0 transparent; }
+        tr.p.t1 td:first-child, tr.p.t2 td:first-child, tr.p.t3 td:first-child { color: var(--text); }
+        tr.p.t1 td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+        tr.p.t2 td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+        tr.p.t3 td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+        .tag { font-weight: 600; font-size: 16px; }
+        .bar { width: 28%; }
+        .bar i { display: block; height: 4px; background: var(--line); position: relative; }
+        .bar i b { position: absolute; inset: 0 auto 0 0; background: var(--text); opacity: .75; }
+        .pts { font: 600 18px var(--display); width: 76px; }
+        .best { width: 70px; }
+        .chev { width: 28px; color: var(--mute); text-align: right; font-size: 18px; line-height: 1; }
+        .chev span { display: inline-block; transition: transform .15s; }
+        tr.p.open .chev span { transform: rotate(90deg); }
 
-        tr.d td { padding: 0 10px 12px 58px; background: var(--panel); }
-        .hist { width: 100%; font-size: 12.5px; color: var(--muted); }
-        .hist td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line-soft); background: none !important; }
-        .hist td.r { padding-right: 0; }
+        tr.d td { padding: 0 12px 14px 70px; height: auto; background: var(--panel); border-bottom: 1px solid var(--line); }
+        .hist { width: 100%; font-size: 13px; color: var(--mute); }
+        .hist td { height: 32px; vertical-align: middle; padding: 0 10px 0 0; border-bottom: 1px solid var(--line-soft); background: none !important; }
+        .hist tr:last-child td { border-bottom: 0; }
         .hist .ev { color: var(--text); }
+        .hist td.r { padding-right: 0; white-space: nowrap; }
+        .hist td:first-child { white-space: nowrap; }
+        .hist td.ev { line-height: 1.3; padding: 6px 12px 6px 0; }
 
-        .msg { padding: 40px 0; text-align: center; color: var(--muted); }
-        .rules { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+        .msg { padding: 56px 0; text-align: center; color: var(--mute); }
 
-        @media (max-width: 560px) {
-            h1 { font-size: 20px; }
-            .meta { text-align: left; }
+        /* pontuação */
+        .rules { margin-top: 34px; }
+        .rules h2 { margin: 0 0 10px; font: 500 12px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+        .scale { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--line); background: var(--panel); }
+        .scale div { padding: 9px 4px; text-align: center; border-right: 1px solid var(--line); }
+        .scale div:last-child { border-right: 0; }
+        .scale span { display: block; font-size: 11.5px; color: var(--mute); }
+        .scale b { font: 600 17px var(--display); }
+        .rules p { margin: 10px 0 0; color: var(--mute); font-size: 12.5px; }
+
+        @media (max-width: 600px) {
+            .wrap { padding: 16px 14px 48px; }
+            .title h1 { font-size: 28px; }
+            .stat { padding: 12px 12px; }
+            .stat dd { font-size: 20px; }
             .hide-s { display: none; }
-            tr.d td { padding-left: 10px; }
             .search { width: 100%; }
+            .scale { grid-template-columns: repeat(4, 1fr); }
+            .scale div { border-bottom: 1px solid var(--line); }
+            tr.d td { padding-left: 12px; }
+            td { padding: 0 8px; }
+            .pos { width: 40px; }
+            .best { width: 56px; }
+            .pts { width: 56px; }
         }
     </style>
 </head>
@@ -103,10 +136,16 @@
             <span id="theme-switcher"></span>
         </div>
 
-        <header class="head">
+        <header class="title">
             <h1>Ranking Brasil</h1>
-            <div class="meta" id="meta">Carregando…</div>
+            <p id="subtitulo">Carregando…</p>
         </header>
+
+        <dl class="stats" id="stats" hidden>
+            <div class="stat"><dt>Eventos</dt><dd id="s-eventos">–</dd></div>
+            <div class="stat"><dt>Players</dt><dd id="s-players">–</dd></div>
+            <div class="stat"><dt>Atualizado</dt><dd id="s-upd">–</dd></div>
+        </dl>
 
         <div class="tabs" id="jogos" role="tablist" aria-label="Jogo"></div>
 
@@ -116,21 +155,26 @@
                 <button type="button" data-m="offline" aria-pressed="false">Offline</button>
                 <button type="button" data-m="ambos" aria-pressed="false">Ambos</button>
             </div>
-            <input class="search" id="busca" type="search" placeholder="Filtrar player" autocomplete="off" aria-label="Filtrar player">
+            <input class="search" id="busca" type="search" placeholder="Buscar player" autocomplete="off" aria-label="Buscar player">
         </div>
-
-        <div class="info"><span id="contagem"></span><span>Clique no player para ver os eventos</span></div>
 
         <div id="msg" class="msg" hidden></div>
         <table id="tabela" hidden>
             <thead><tr>
-                <th class="pos">#</th><th>Player</th>
-                <th class="r">Pontos</th><th class="r hide-s">Eventos</th><th class="r">Melhor</th>
+                <th>#</th><th>Player</th><th class="hide-s"></th>
+                <th class="r">Pts</th><th class="r hide-s">Eventos</th><th class="r">Melhor</th><th></th>
             </tr></thead>
             <tbody id="corpo"></tbody>
         </table>
 
-        <div class="rules">Pontuação por colocação: 1º 16 · 2º 12 · 3º 10 · 4º 8 · 5º–7º 6 · 8º–12º 4 · 13º–16º 2. Somente eventos com o mínimo de inscritos indicado; eventos por equipe não contam.</div>
+        <section class="rules">
+            <h2>Pontuação por colocação</h2>
+            <div class="scale">
+                <div><span>1º</span><b>16</b></div><div><span>2º</span><b>12</b></div><div><span>3º</span><b>10</b></div>
+                <div><span>4º</span><b>8</b></div><div><span>5º–7º</span><b>6</b></div><div><span>8º–12º</span><b>4</b></div><div><span>13º–16º</span><b>2</b></div>
+            </div>
+            <p>Contam apenas eventos com o mínimo de inscritos indicado; eventos por equipe ficam de fora. Toque em um player para ver os eventos pontuados.</p>
+        </section>
     </div>
 
 <script>
@@ -139,6 +183,14 @@
     var BASE = 'data/ranking/';
     var $ = function (id) { return document.getElementById(id); };
     var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
+    // "Torneio — Evento": mostra uma vez só quando o nome do evento repete o do torneio
+    var nomeEv = function (n) {
+        var i = String(n).indexOf(' — ');
+        if (i < 0) return n;
+        var t = n.slice(0, i), e = n.slice(i + 3);
+        var a = norm(t), b = norm(e);
+        return (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) ? (t.length >= e.length ? t : e) : n;
+    };
     var norm = function (s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
     var qs = new URLSearchParams(location.search);
 
@@ -163,6 +215,7 @@
     function renderTabs() {
         var box = $('jogos');
         box.innerHTML = '';
+        box.hidden = games.length < 2;
         games.forEach(function (g) {
             var b = document.createElement('button');
             b.type = 'button';
@@ -184,13 +237,12 @@
         $('msg').textContent = t;
         $('msg').hidden = false;
         $('tabela').hidden = true;
-        $('contagem').textContent = '';
     }
 
     function load() {
         setUrl();
         var p = cache[slug] ? Promise.resolve(cache[slug]) : getJson(slug + '.json').then(function (d) { return (cache[slug] = d); });
-        p.then(render).catch(function () { showMsg('Ranking ainda não disponível para este jogo.'); });
+        p.then(render).catch(function () { $('stats').hidden = true; showMsg('Ranking ainda não disponível para este jogo.'); });
     }
 
     function render() {
@@ -201,15 +253,19 @@
         $('modos').hidden = disp.length < 2;
         renderModes();
         var m = d.modes[mode];
-        var upd = new Date(d.updatedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
         var from = new Date(d.from + 'T12:00:00').toLocaleDateString('pt-BR');
-        $('meta').innerHTML = 'Desde <b>' + from + '</b> · atualizado em <b>' + upd + '</b>';
+        var upd = new Date(d.updatedAt);
+        $('subtitulo').textContent = d.name + ' · desde ' + from + ' · mínimo de ' + d.minEntrants + ' inscritos por evento';
+        $('stats').hidden = false;
+        $('s-eventos').textContent = m.events;
+        $('s-players').textContent = m.players.length;
+        $('s-upd').innerHTML = upd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
+            '<small>' + upd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</small>';
 
         var f = norm(filtro.trim());
         var list = f ? m.players.filter(function (o) { return norm(o.tag).indexOf(f) >= 0; }) : m.players;
-
-        $('contagem').textContent = m.events + ' eventos (mín. ' + d.minEntrants + ' inscritos) · ' +
-            (f ? list.length + ' de ' + m.players.length : m.players.length) + ' players';
+        var max = m.players.length ? m.players[0].pts : 1;
 
         var body = $('corpo');
         body.innerHTML = '';
@@ -221,8 +277,14 @@
         list.forEach(function (o) {
             var tr = document.createElement('tr');
             tr.className = 'p' + (o.pos <= 3 ? ' t' + o.pos : '');
-            tr.innerHTML = '<td class="pos">' + o.pos + '</td><td class="tag">' + esc(o.tag) + '</td>' +
-                '<td class="r pts">' + o.pts + '</td><td class="r hide-s">' + o.n + '</td><td class="r">' + o.best + 'º</td>';
+            tr.innerHTML =
+                '<td class="pos">' + o.pos + '</td>' +
+                '<td class="tag">' + esc(o.tag) + '</td>' +
+                '<td class="bar hide-s"><i><b style="width:' + Math.max(2, Math.round(o.pts / max * 100)) + '%"></b></i></td>' +
+                '<td class="r pts">' + o.pts + '</td>' +
+                '<td class="r hide-s">' + o.n + '</td>' +
+                '<td class="r best">' + o.best + 'º</td>' +
+                '<td class="chev"><span>&rsaquo;</span></td>';
             var det = null;
             tr.onclick = function () {
                 if (det) { det.remove(); det = null; tr.classList.remove('open'); return; }
@@ -230,10 +292,10 @@
                 det.className = 'd';
                 var rows = o.list.map(function (x) {
                     return '<tr><td>' + new Date(x.d * 1000).toLocaleDateString('pt-BR') + '</td>' +
-                        '<td class="ev">' + esc(x.n) + '</td>' +
+                        '<td class="ev">' + esc(nomeEv(x.n)) + '</td>' +
                         '<td class="r">' + x.p + 'º de ' + x.e + '</td><td class="r">+' + x.pts + '</td></tr>';
                 }).join('');
-                det.innerHTML = '<td colspan="5"><table class="hist"><tbody>' + rows + '</tbody></table></td>';
+                det.innerHTML = '<td colspan="7"><table class="hist"><tbody>' + rows + '</tbody></table></td>';
                 tr.classList.add('open');
                 tr.after(det);
             };
@@ -254,7 +316,7 @@
 
     renderModes();
     getJson('index.json').then(function (j) { games = j.games || []; }).catch(function () { games = []; }).then(function () {
-        if (!games.length) { $('meta').textContent = ''; showMsg('Nenhum ranking disponível ainda.'); return; }
+        if (!games.length) { $('subtitulo').textContent = ''; showMsg('Nenhum ranking disponível ainda.'); return; }
         slug = games.some(function (g) { return g.slug === qs.get('jogo'); }) ? qs.get('jogo') : games[0].slug;
         renderTabs();
         load();
