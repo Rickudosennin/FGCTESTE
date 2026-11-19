@@ -2,11 +2,17 @@
   "games": [
     {
       "slug": "t8-fn",
-      "name": "Tekken 8 · Fight Night"
+      "name": "Tekken 8 · Fight Night",
+      "gameId": 49783,
+      "nomes": [
+        "fight night"
+      ]
     },
     {
       "slug": "t8",
-      "name": "Tekken 8"
+      "name": "Tekken 8",
+      "gameId": 49783,
+      "nomes": null
     }
   ]
 }
