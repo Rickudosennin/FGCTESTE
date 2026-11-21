@@ -74,7 +74,7 @@
     panel.dataset.game = selected.slug || gameSelect.value;
     if (selected.status) {
       const message = selected.status === 'not_available_pc'
-        ? 'Preço PC indisponível: este título não possui versão Steam/PC compatível.'
+        ? 'Preço Steam indisponível: este jogo não possui uma versão Steam consultável pelo GG.deals.'
         : 'Preço em preparação: falta confirmar a correspondência correta deste jogo na Steam.';
       content.innerHTML = '<p class="game-prices-message">' + message + '</p><div class="game-prices-footer"><span>PC · Região BR</span></div>';
       return;
@@ -113,7 +113,7 @@
         '<p class="game-prices-disclaimer">Valores agregados pelo GG.deals. Não representam preços de cada loja individualmente.</p>';
     } catch (error) {
       if (panel.dataset.game !== selected.slug) return;
-      content.innerHTML = '<p class="game-prices-message">Preços ainda não disponíveis. ' + escapeHTML(error.message) + '</p>';
+      content.innerHTML = '<p class="game-prices-message">Preços deste jogo ainda aguardam a primeira atualização automática. ' + escapeHTML(error.message) + '</p><div class="game-prices-footer"><span>PC · Região BR</span></div>';
     }
   }
 
