@@ -517,3 +517,27 @@ header h1 {
 .rk-modos { display: flex; gap: 6px; margin: 0 0 12px; }
 .rk-modos button { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.18); color: #aaa; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 7px 0; border-radius: 6px; cursor: pointer; }
 .rk-modos button.on { background: rgba(255,255,255,0.92); color: #111; border-color: transparent; }
+
+/* GAME DEALS — painel de preços integrado ao tema atual */
+.game-prices-panel[hidden] { display: none !important; }
+.game-prices-panel { border-color: rgba(220,38,38,.65); background: linear-gradient(135deg, rgba(24,24,27,.98), rgba(8,8,10,.96)); }
+.game-prices-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.game-prices-kicker { color:#f87171; font-size:10px; font-weight:900; letter-spacing:2px; }
+.game-prices-heading h2 { color:#fff; font-family:'Oswald',sans-serif; font-size:22px; font-weight:700; letter-spacing:1px; }
+.game-prices-region { flex-shrink:0; border:1px solid rgba(255,255,255,.15); border-radius:999px; padding:5px 10px; color:#a1a1aa; font-size:10px; font-weight:800; letter-spacing:1px; }
+.game-prices-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.game-price-card { min-width:0; display:flex; flex-direction:column; gap:8px; padding:16px; border:1px solid rgba(255,255,255,.12); border-radius:10px; background:rgba(0,0,0,.35); }
+.game-price-card.retail { border-top:2px solid #22c55e; }
+.game-price-card.keyshop { border-top:2px solid #f59e0b; }
+.game-price-label { color:#a1a1aa; font-size:10px; font-weight:900; letter-spacing:1px; text-transform:uppercase; }
+.game-price-value { color:#fff; font-size:clamp(20px,3vw,28px); font-weight:900; line-height:1.2; overflow-wrap:anywhere; }
+.game-price-history { color:#71717a; font-size:11px; }
+.game-prices-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-top:14px; color:#71717a; font-size:10px; }
+.game-prices-footer a { color:#f87171; font-weight:900; text-decoration:none; }
+.game-prices-footer a:hover { color:#fff; }
+.game-prices-disclaimer,.game-prices-message { margin-top:10px; color:#a1a1aa; font-size:11px; }
+@media (max-width:600px) {
+  .game-prices-grid { grid-template-columns:1fr; }
+  .game-prices-heading h2 { font-size:19px; }
+  .game-prices-footer { align-items:flex-start; flex-direction:column; }
+}
