@@ -1,0 +1,19 @@
+{
+  "slug": "mbtl",
+  "name": "Melty Blood: Type Lumina",
+  "platform": "PC",
+  "steamAppId": 1372280,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "MELTY BLOOD: TYPE LUMINA",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/melty-blood-type-lumina/",
+  "prices": {
+    "currentRetail": "93.99",
+    "currentKeyshops": "244.35",
+    "historicalRetail": "28.19",
+    "historicalKeyshops": "67.36"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

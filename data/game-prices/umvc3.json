@@ -1,0 +1,19 @@
+{
+  "slug": "umvc3",
+  "name": "Ultimate Marvel vs. Capcom 3",
+  "platform": "PC",
+  "steamAppId": 357190,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "ULTIMATE MARVEL VS. CAPCOM 3",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/ultimate-marvel-vs-capcom-3/",
+  "prices": {
+    "currentRetail": "32.10",
+    "currentKeyshops": "33.25",
+    "historicalRetail": "12.90",
+    "historicalKeyshops": "22.98"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

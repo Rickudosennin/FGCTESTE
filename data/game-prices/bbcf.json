@@ -1,0 +1,19 @@
+{
+  "slug": "bbcf",
+  "name": "BlazBlue: Central Fiction",
+  "platform": "PC",
+  "steamAppId": 586140,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "BlazBlue Centralfiction",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/blazblue-centralfiction/",
+  "prices": {
+    "currentRetail": "57.18",
+    "currentKeyshops": "15.49",
+    "historicalRetail": "8.86",
+    "historicalKeyshops": "8.39"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

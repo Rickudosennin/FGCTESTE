@@ -1,0 +1,19 @@
+{
+  "slug": "mk1",
+  "name": "Mortal Kombat 1",
+  "platform": "PC",
+  "steamAppId": 1971870,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Mortal Kombat 1",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/mortal-kombat-2023/",
+  "prices": {
+    "currentRetail": "29.98",
+    "currentKeyshops": "41.07",
+    "historicalRetail": "23.00",
+    "historicalKeyshops": "33.90"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

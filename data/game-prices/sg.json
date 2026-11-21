@@ -1,0 +1,19 @@
+{
+  "slug": "sg",
+  "name": "Skullgirls 2nd Encore",
+  "platform": "PC",
+  "steamAppId": 245170,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Skullgirls 2nd Encore",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/skullgirls/",
+  "prices": {
+    "currentRetail": "19.99",
+    "currentKeyshops": "15.49",
+    "historicalRetail": "0.03",
+    "historicalKeyshops": "6.82"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

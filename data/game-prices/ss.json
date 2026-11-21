@@ -1,0 +1,19 @@
+{
+  "slug": "ss",
+  "name": "Samurai Shodown",
+  "platform": "PC",
+  "steamAppId": 1342260,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "SAMURAI SHODOWN",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/samurai-shodown-2019/",
+  "prices": {
+    "currentRetail": "93.99",
+    "currentKeyshops": "513.25",
+    "historicalRetail": "14.24",
+    "historicalKeyshops": "59.54"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

@@ -1,0 +1,19 @@
+{
+  "slug": "ggst",
+  "name": "Guilty Gear: Strive",
+  "platform": "PC",
+  "steamAppId": 1384160,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "GUILTY GEAR -STRIVE-",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/guilty-gear-strive/",
+  "prices": {
+    "currentRetail": "76.55",
+    "currentKeyshops": "79.58",
+    "historicalRetail": "65.24",
+    "historicalKeyshops": "49.91"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

@@ -1,17 +1,217 @@
 {
   "provider": "ggdeals",
   "region": "br",
-  "updatedAt": "2026-11-21T11:19:50.876Z",
+  "updatedAt": "2026-11-21T11:54:15.239Z",
   "games": [
     {
-      "slug": "tekken-8",
-      "name": "TEKKEN 8",
-      "steamAppId": 1778820
+      "slug": "2xko",
+      "name": "2XKO",
+      "steamAppId": null,
+      "status": "not_available_pc"
     },
     {
-      "slug": "street-fighter-6",
+      "slug": "alfg",
+      "name": "Avatar Legends: The Fighting Game",
+      "steamAppId": null,
+      "status": "mapping_pending"
+    },
+    {
+      "slug": "bbcf",
+      "name": "BlazBlue: Central Fiction",
+      "steamAppId": 586140,
+      "status": "enabled"
+    },
+    {
+      "slug": "brawlhalla",
+      "name": "Brawlhalla",
+      "steamAppId": 291550,
+      "status": "enabled"
+    },
+    {
+      "slug": "dnf",
+      "name": "DNF Duel",
+      "steamAppId": 1216060,
+      "status": "enabled"
+    },
+    {
+      "slug": "dbfz",
+      "name": "Dragon Ball FighterZ",
+      "steamAppId": 678950,
+      "status": "enabled"
+    },
+    {
+      "slug": "ffcotw",
+      "name": "Fatal Fury: COTW",
+      "steamAppId": 2492040,
+      "status": "enabled"
+    },
+    {
+      "slug": "gbvsr",
+      "name": "Granblue Fantasy Versus: Rising",
+      "steamAppId": 2157560,
+      "status": "enabled"
+    },
+    {
+      "slug": "ggst",
+      "name": "Guilty Gear: Strive",
+      "steamAppId": 1384160,
+      "status": "enabled"
+    },
+    {
+      "slug": "ivs",
+      "name": "Invincible Vs.",
+      "steamAppId": null,
+      "status": "mapping_pending"
+    },
+    {
+      "slug": "inj2",
+      "name": "Injustice 2",
+      "steamAppId": 627270,
+      "status": "enabled"
+    },
+    {
+      "slug": "marvel-tokon-fighting-souls",
+      "name": "Marvel Tokon: Fighting Souls",
+      "steamAppId": null,
+      "status": "mapping_pending"
+    },
+    {
+      "slug": "mvc2",
+      "name": "Marvel vs. Capcom 2",
+      "steamAppId": null,
+      "status": "mapping_pending"
+    },
+    {
+      "slug": "mbtl",
+      "name": "Melty Blood: Type Lumina",
+      "steamAppId": 1372280,
+      "status": "enabled"
+    },
+    {
+      "slug": "mystery-game",
+      "name": "Mystery Game",
+      "steamAppId": null,
+      "status": "mapping_pending"
+    },
+    {
+      "slug": "mk1",
+      "name": "Mortal Kombat 1",
+      "steamAppId": 1971870,
+      "status": "enabled"
+    },
+    {
+      "slug": "mk11",
+      "name": "Mortal Kombat 11",
+      "steamAppId": 976310,
+      "status": "enabled"
+    },
+    {
+      "slug": "mkx",
+      "name": "Mortal Kombat X",
+      "steamAppId": 307780,
+      "status": "enabled"
+    },
+    {
+      "slug": "umk3",
+      "name": "Ultimate Mortal Kombat 3",
+      "steamAppId": null,
+      "status": "not_available_pc"
+    },
+    {
+      "slug": "mvs",
+      "name": "MultiVersus",
+      "steamAppId": 1818750,
+      "status": "enabled"
+    },
+    {
+      "slug": "pb",
+      "name": "Pocket Bravery",
+      "steamAppId": 1555150,
+      "status": "enabled"
+    },
+    {
+      "slug": "roa",
+      "name": "Rivals of Aether",
+      "steamAppId": 383980,
+      "status": "enabled"
+    },
+    {
+      "slug": "rocket-league",
+      "name": "Rocket League",
+      "steamAppId": 252950,
+      "status": "enabled"
+    },
+    {
+      "slug": "ss",
+      "name": "Samurai Shodown",
+      "steamAppId": 1342260,
+      "status": "enabled"
+    },
+    {
+      "slug": "sg",
+      "name": "Skullgirls 2nd Encore",
+      "steamAppId": 245170,
+      "status": "enabled"
+    },
+    {
+      "slug": "sf6",
       "name": "Street Fighter 6",
-      "steamAppId": 1364780
+      "steamAppId": 1364780,
+      "status": "enabled"
+    },
+    {
+      "slug": "sf3",
+      "name": "Street Fighter III: 3rd Strike",
+      "steamAppId": 586200,
+      "status": "enabled"
+    },
+    {
+      "slug": "ssbm",
+      "name": "Super Smash Bros. Melee",
+      "steamAppId": null,
+      "status": "not_available_pc"
+    },
+    {
+      "slug": "ssbu",
+      "name": "Super Smash Bros. Ultimate",
+      "steamAppId": null,
+      "status": "not_available_pc"
+    },
+    {
+      "slug": "st",
+      "name": "Super Street Fighter II Turbo",
+      "steamAppId": null,
+      "status": "not_available_pc"
+    },
+    {
+      "slug": "tekken7",
+      "name": "Tekken 7",
+      "steamAppId": 389730,
+      "status": "enabled"
+    },
+    {
+      "slug": "tekken8",
+      "name": "TEKKEN 8",
+      "steamAppId": 1778820,
+      "status": "enabled"
+    },
+    {
+      "slug": "kof-xv",
+      "name": "The King of Fighters XV",
+      "steamAppId": 1498570,
+      "status": "enabled"
+    },
+    {
+      "slug": "umvc3",
+      "name": "Ultimate Marvel vs. Capcom 3",
+      "steamAppId": 357190,
+      "status": "enabled"
+    },
+    {
+      "slug": "unisc",
+      "name": "Under Night In-Birth II Sys:Celes",
+      "steamAppId": 2076010,
+      "status": "enabled"
     }
   ]
 }

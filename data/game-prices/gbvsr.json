@@ -1,0 +1,19 @@
+{
+  "slug": "gbvsr",
+  "name": "Granblue Fantasy Versus: Rising",
+  "platform": "PC",
+  "steamAppId": 2157560,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Granblue Fantasy Versus: Rising",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/granblue-fantasy-versus-rising/",
+  "prices": {
+    "currentRetail": "82.99",
+    "currentKeyshops": "136.18",
+    "historicalRetail": "48.57",
+    "historicalKeyshops": "48.50"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

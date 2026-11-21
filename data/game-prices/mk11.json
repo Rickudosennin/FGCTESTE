@@ -1,0 +1,19 @@
+{
+  "slug": "mk11",
+  "name": "Mortal Kombat 11",
+  "platform": "PC",
+  "steamAppId": 976310,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Mortal Kombat 11",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/mortal-kombat11/",
+  "prices": {
+    "currentRetail": "11.49",
+    "currentKeyshops": "16.99",
+    "historicalRetail": "9.39",
+    "historicalKeyshops": "9.72"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

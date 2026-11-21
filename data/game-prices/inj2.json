@@ -1,0 +1,19 @@
+{
+  "slug": "inj2",
+  "name": "Injustice 2",
+  "platform": "PC",
+  "steamAppId": 627270,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Injustice 2",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/injustice-2/",
+  "prices": {
+    "currentRetail": "12.74",
+    "currentKeyshops": "13.65",
+    "historicalRetail": "10.91",
+    "historicalKeyshops": "9.42"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

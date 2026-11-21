@@ -1,0 +1,19 @@
+{
+  "slug": "unisc",
+  "name": "Under Night In-Birth II Sys:Celes",
+  "platform": "PC",
+  "steamAppId": 2076010,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "UNDER NIGHT IN-BIRTH II Sys:Celes",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/under-night-in-birth-ii-sysceles/",
+  "prices": {
+    "currentRetail": "206.39",
+    "currentKeyshops": "30.81",
+    "historicalRetail": "49.30",
+    "historicalKeyshops": "25.32"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

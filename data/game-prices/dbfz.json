@@ -1,0 +1,19 @@
+{
+  "slug": "dbfz",
+  "name": "Dragon Ball FighterZ",
+  "platform": "PC",
+  "steamAppId": 678950,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "DRAGON BALL FighterZ",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/dragon-ball-fighterz/",
+  "prices": {
+    "currentRetail": "36.78",
+    "currentKeyshops": "45.18",
+    "historicalRetail": "18.99",
+    "historicalKeyshops": "22.20"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

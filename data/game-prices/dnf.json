@@ -1,0 +1,19 @@
+{
+  "slug": "dnf",
+  "name": "DNF Duel",
+  "platform": "PC",
+  "steamAppId": 1216060,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "DNF Duel",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/dnf-duel/",
+  "prices": {
+    "currentRetail": "199.90",
+    "currentKeyshops": "265.89",
+    "historicalRetail": "0.00",
+    "historicalKeyshops": "111.64"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

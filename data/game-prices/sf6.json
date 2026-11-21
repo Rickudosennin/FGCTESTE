@@ -1,0 +1,19 @@
+{
+  "slug": "sf6",
+  "name": "Street Fighter 6",
+  "platform": "PC",
+  "steamAppId": 1364780,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Street Fighter 6",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/street-fighter-6/",
+  "prices": {
+    "currentRetail": "59.99",
+    "currentKeyshops": "70.50",
+    "historicalRetail": "50.99",
+    "historicalKeyshops": "45.77"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

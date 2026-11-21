@@ -1,0 +1,19 @@
+{
+  "slug": "rocket-league",
+  "name": "Rocket League",
+  "platform": "PC",
+  "steamAppId": 252950,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Rocket League",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/rocket-league/",
+  "prices": {
+    "currentRetail": "0.00",
+    "currentKeyshops": "5722.25",
+    "historicalRetail": "0.00",
+    "historicalKeyshops": "247.76"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

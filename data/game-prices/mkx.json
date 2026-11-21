@@ -1,0 +1,19 @@
+{
+  "slug": "mkx",
+  "name": "Mortal Kombat X",
+  "platform": "PC",
+  "steamAppId": 307780,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Mortal Kombat X",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/mortal-kombat-x/",
+  "prices": {
+    "currentRetail": "11.69",
+    "currentKeyshops": "11.47",
+    "historicalRetail": "7.49",
+    "historicalKeyshops": "7.94"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

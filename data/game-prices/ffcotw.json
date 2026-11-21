@@ -1,0 +1,19 @@
+{
+  "slug": "ffcotw",
+  "name": "Fatal Fury: COTW",
+  "platform": "PC",
+  "steamAppId": 2492040,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "FATAL FURY: City of the Wolves",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/fatal-fury-city-of-the-wolves/",
+  "prices": {
+    "currentRetail": "14.99",
+    "currentKeyshops": "15.60",
+    "historicalRetail": "8.49",
+    "historicalKeyshops": "14.21"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

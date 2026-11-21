@@ -1,0 +1,19 @@
+{
+  "slug": "brawlhalla",
+  "name": "Brawlhalla",
+  "platform": "PC",
+  "steamAppId": 291550,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Brawlhalla",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/brawlhalla-founder-s-pack/",
+  "prices": {
+    "currentRetail": "0.00",
+    "currentKeyshops": null,
+    "historicalRetail": "0.00",
+    "historicalKeyshops": null
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

@@ -1,0 +1,19 @@
+{
+  "slug": "pb",
+  "name": "Pocket Bravery",
+  "platform": "PC",
+  "steamAppId": 1555150,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Pocket Bravery",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/pocket-bravery/",
+  "prices": {
+    "currentRetail": "29.03",
+    "currentKeyshops": "4.51",
+    "historicalRetail": "29.03",
+    "historicalKeyshops": "2.01"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

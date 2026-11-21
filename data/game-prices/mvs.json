@@ -1,0 +1,19 @@
+{
+  "slug": "mvs",
+  "name": "MultiVersus",
+  "platform": "PC",
+  "steamAppId": 1818750,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "MultiVersus",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/multiversus/",
+  "prices": {
+    "currentRetail": null,
+    "currentKeyshops": null,
+    "historicalRetail": "0.00",
+    "historicalKeyshops": null
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}

@@ -1,0 +1,19 @@
+{
+  "slug": "roa",
+  "name": "Rivals of Aether",
+  "platform": "PC",
+  "steamAppId": 383980,
+  "provider": "ggdeals",
+  "status": "ok",
+  "game": "Rivals of Aether",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/rivals-of-aether/",
+  "prices": {
+    "currentRetail": "79.99",
+    "currentKeyshops": "34.55",
+    "historicalRetail": "6.99",
+    "historicalKeyshops": "19.93"
+  },
+  "updatedAt": "2026-11-21T11:54:15.239Z"
+}
