@@ -1,0 +1,39 @@
+name: Atualizar preços de jogos (PC)
+
+on:
+  schedule:
+    - cron: '15 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-game-prices-pc
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Consultar GG.deals e gerar JSON
+        env:
+          GGDEALS_API_KEY: ${{ secrets.GGDEALS_API_KEY }}
+        run: node scripts/update-game-prices.js
+      - name: Commit se mudou
+        run: |
+          git config user.name "fgchub-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/game-prices
+          if git diff --cached --quiet; then
+            echo "Sem mudanças"
+          else
+            git commit -m "chore: atualiza preços dos jogos PC"
+            git pull --rebase
+            git push
+          fi
