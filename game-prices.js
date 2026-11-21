@@ -90,7 +90,7 @@
       if (data.status !== 'ok') {
         const message = data.status === 'not_found'
           ? 'Jogo ainda não encontrado na base GG.deals.'
-          : 'Preços indisponíveis no momento.';
+          : 'Servidor de preços não retornou ofertas para esta região.';
         content.innerHTML = '<p class="game-prices-message">' + message + '</p>';
         return;
       }
