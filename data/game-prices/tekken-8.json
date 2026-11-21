@@ -4,5 +4,16 @@
   "platform": "PC",
   "steamAppId": 1778820,
   "provider": "ggdeals",
-  "status": "not_configured"
+  "status": "ok",
+  "game": "TEKKEN 8",
+  "region": "br",
+  "currency": "BRL",
+  "sourceUrl": "https://gg.deals/game/tekken-8/",
+  "prices": {
+    "currentRetail": "121.49",
+    "currentKeyshops": "107.45",
+    "historicalRetail": "94.99",
+    "historicalKeyshops": "90.17"
+  },
+  "updatedAt": "2026-11-21T11:19:50.876Z"
 }

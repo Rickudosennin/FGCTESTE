@@ -1,9 +1,17 @@
 {
   "provider": "ggdeals",
   "region": "br",
-  "updatedAt": null,
+  "updatedAt": "2026-11-21T11:19:50.876Z",
   "games": [
-    { "slug": "tekken-8", "name": "TEKKEN 8", "steamAppId": 1778820 },
-    { "slug": "street-fighter-6", "name": "Street Fighter 6", "steamAppId": 1364780 }
+    {
+      "slug": "tekken-8",
+      "name": "TEKKEN 8",
+      "steamAppId": 1778820
+    },
+    {
+      "slug": "street-fighter-6",
+      "name": "Street Fighter 6",
+      "steamAppId": 1364780
+    }
   ]
 }
