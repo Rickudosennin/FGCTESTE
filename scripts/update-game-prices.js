@@ -14,12 +14,7 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
 
   if (!process.env.GGDEALS_API_KEY) {
-    console.log('GGDEALS_API_KEY ausente; gravando status de configuração sem consultar a API.');
-    const index = { provider: 'ggdeals', region: CONFIG.region || 'br', updatedAt: new Date().toISOString(), games: games.map(game => ({ slug: game.slug, name: game.name, steamAppId: game.steamAppId })) };
-    for (const game of games) {
-      fs.writeFileSync(path.join(OUT, `${game.slug}.json`), JSON.stringify({ slug: game.slug, name: game.name, platform: 'PC', steamAppId: game.steamAppId, provider: 'ggdeals', status: 'not_configured', updatedAt: new Date().toISOString() }, null, 2) + '\n');
-    }
-    fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index, null, 2) + '\n');
+    console.log('GGDEALS_API_KEY ausente; atualização ignorada, sem alterar arquivos.');
     return;
   }
 
