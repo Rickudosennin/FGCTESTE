@@ -76,7 +76,7 @@
       const message = selected.status === 'not_available_pc'
         ? 'Preço Steam indisponível: este jogo não possui uma versão Steam consultável pelo GG.deals.'
         : 'Preço em preparação: falta confirmar a correspondência correta deste jogo na Steam.';
-      content.innerHTML = '<p class="game-prices-message">' + message + '</p><div class="game-prices-footer"><span>PC · Região BR</span></div>';
+      content.innerHTML = '<p class="game-prices-message">' + message + '</p><div class="game-prices-footer"><span>Servidor de preços · PC · Região BR</span></div>';
       return;
     }
 
@@ -109,11 +109,11 @@
           priceCard('Keyshops (menor preço)', p.currentKeyshops, p.historicalKeyshops, data.currency, 'keyshop') +
           '</div>'
         : '<p class="game-prices-message">Sem ofertas atuais para esta região.</p>') +
-        '<div class="game-prices-footer"><span>PC · Região BR · Atualizado: ' + escapeHTML(updated) + '</span><a href="' + escapeHTML(source) + '" target="_blank" rel="noopener noreferrer">Ver ofertas no GG.deals ↗</a></div>' +
+        '<div class="game-prices-footer"><span>Servidor de preços · PC · Região BR · Atualizado: ' + escapeHTML(updated) + '</span><a href="' + escapeHTML(source) + '" target="_blank" rel="noopener noreferrer">Ver ofertas no GG.deals ↗</a></div>' +
         '<p class="game-prices-disclaimer">Valores agregados pelo GG.deals. Não representam preços de cada loja individualmente.</p>';
     } catch (error) {
       if (panel.dataset.game !== selected.slug) return;
-      content.innerHTML = '<p class="game-prices-message">Preços deste jogo ainda aguardam a primeira atualização automática. ' + escapeHTML(error.message) + '</p><div class="game-prices-footer"><span>PC · Região BR</span></div>';
+      content.innerHTML = '<p class="game-prices-message">Servidor de preços ainda não recebeu a primeira atualização deste jogo. ' + escapeHTML(error.message) + '</p><div class="game-prices-footer"><span>Servidor de preços · PC · Região BR</span></div>';
     }
   }
 
