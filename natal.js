@@ -1,9 +1,9 @@
 /* FGC HUB — Efeitos de Natal (aditivo; não altera nenhum tema nem código existente)
    - Ativo de 20/11 a 06/01 (horário de Brasília). Fora disso não faz nada.
    - Testes: ?natal=1 força ligado · ?natal=0 força desligado
-     ?natal=neve,luzes,bolas,gorro,cobertura,papai,treno → liga só os efeitos listados. */
+     ?natal=neve,luzes,bolas,gorro,cobertura,papai,treno,bonecos → liga só os efeitos listados. */
 (function () {
-  var TODOS = ['neve', 'luzes', 'bolas', 'gorro', 'cobertura', 'papai', 'treno'];
+  var TODOS = ['neve', 'luzes', 'bolas', 'gorro', 'cobertura', 'papai', 'treno', 'bonecos'];
 
   function naJanela() {
     var p = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
@@ -85,12 +85,23 @@
     box.appendChild(t);
   }
 
-  var top = null, bottom = null, ro = null;
+  var top = null, bottom = null, ro = null, espaco = null;
 
   function posicionarChao() {
     if (!bottom) return;
     var h = bottom.offsetHeight || 44;
     bottom.style.top = Math.max(0, document.documentElement.scrollHeight - h) + 'px';
+  }
+
+  function bonecos(box) {
+    var g = document.createElement('div');
+    g.className = 'natal-crew';
+    g.innerHTML = '<svg class="natal-boneco" style="animation-delay:-.3s" viewBox="0 0 70 84" width="58" height="70"><rect x="30" y="72" width="10" height="10" rx="2" fill="#7a4a21"/><path d="M35 14L18 36H24L10 56H18L4 76H66L52 56H60L46 36H52Z" fill="#2f9e55" stroke="#2f9e55" stroke-width="5" stroke-linejoin="round"/><path d="M35 20L24 36H29L18 54H26" fill="none" stroke="#56c77d" stroke-width="3" stroke-linecap="round" opacity=".7"/><path d="M35 0L38 8H47L40 13L43 22L35 17L27 22L30 13L23 8H32Z" fill="#ffd23f"/><circle cx="30" cy="43" r="2.6" fill="#d4202e"/><circle cx="41" cy="46" r="2.6" fill="#f2c14e"/><circle cx="35" cy="31" r="2.4" fill="#4a8be0"/><circle cx="20" cy="68" r="2.6" fill="#d4202e"/><circle cx="50" cy="68" r="2.6" fill="#f2c14e"/><circle cx="30" cy="58" r="1.7" fill="#173b25"/><circle cx="40" cy="58" r="1.7" fill="#173b25"/><path d="M32 63Q35 66 38 63" fill="none" stroke="#173b25" stroke-width="1.5" stroke-linecap="round"/><circle cx="26" cy="62" r="2.2" fill="#f7a8a8" opacity=".75"/><circle cx="44" cy="62" r="2.2" fill="#f7a8a8" opacity=".75"/></svg><svg class="natal-boneco" style="animation-delay:-1.1s" viewBox="0 0 60 92" width="52" height="80"><path d="M20 46H40Q46 46 52 40L58 44Q55 54 44 58V74L50 88Q46 92 42 90L30 78L18 90Q14 92 10 88L16 74V58Q5 54 2 44L8 40Q14 46 20 46Z" fill="#c98a4a"/><path d="M4 44q3 3 6 0M50 44q3 3 6 0M12 87l5-3M43 84l5 3" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="30" cy="56" r="3" fill="#d4202e"/><circle cx="30" cy="66" r="3" fill="#d4202e"/><circle cx="30" cy="31" r="14" fill="#d79a57"/><circle cx="25" cy="33" r="1.9" fill="#3b2412"/><circle cx="35" cy="33" r="1.9" fill="#3b2412"/><path d="M24 38Q30 44 36 38" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="21.5" cy="38" r="2.4" fill="#e86f6f" opacity=".6"/><circle cx="38.5" cy="38" r="2.4" fill="#e86f6f" opacity=".6"/><path d="M17 25C16 8 34 0 43 16L45 25Z" fill="#d4202e"/><rect x="15" y="22" width="32" height="7" rx="3.5" fill="#fff"/><circle cx="44" cy="15" r="4.5" fill="#fff"/></svg><svg class="natal-boneco" style="animation-delay:-2s" viewBox="-4 0 70 88" width="58" height="72"><defs><radialGradient id="ns" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#dbe6f6"/></radialGradient></defs><path d="M12 54L1 45M1 45L0 38M1 45L-3 44M52 54L62 47M62 47L63 41M62 47L66 46" fill="none" stroke="#6b4423" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="67" r="20" fill="url(#ns)"/><circle cx="32" cy="31" r="14" fill="url(#ns)"/><path d="M19 25C19 8 33 4 39 10C44 14 45 19 45 25Z" fill="#d4202e"/><rect x="18" y="22" width="28" height="6" rx="3" fill="#fff"/><circle cx="39" cy="8" r="4" fill="#fff"/><circle cx="27" cy="33" r="1.7" fill="#222"/><circle cx="37" cy="33" r="1.7" fill="#222"/><path d="M32 36L42 39L32 40Z" fill="#f28c28"/><path d="M26 40q6 4 12 0" fill="none" stroke="#333" stroke-width="1.2" stroke-linecap="round"/><path d="M18 44Q32 52 46 44L46 50Q32 58 18 50Z" fill="#d4202e"/><path d="M40 50L46 66L40 68L36 54Z" fill="#b8171f"/><circle cx="32" cy="62" r="2" fill="#333"/><circle cx="32" cy="70" r="2" fill="#333"/><circle cx="32" cy="78" r="2" fill="#333"/></svg>';
+    box.appendChild(g);
+    // espaço no fim da página para os bonecos não cobrirem o conteúdo
+    espaco = document.createElement('div');
+    espaco.className = 'natal-spacer'; espaco.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(espaco);
   }
 
   function ligar() {
@@ -117,7 +128,8 @@
     if (tem('cobertura')) {
       bottom = document.createElement('div');
       bottom.id = 'natal-bottom'; bottom.setAttribute('aria-hidden', 'true');
-      bottom.innerHTML = '<div class="natal-ground"></div>';
+      if (tem('bonecos')) bonecos(bottom);
+      var gr = document.createElement('div'); gr.className = 'natal-ground'; bottom.appendChild(gr);
       document.body.appendChild(bottom);
       posicionarChao();
       window.addEventListener('resize', posicionarChao);
@@ -128,8 +140,8 @@
 
   function desligar() { // (sem uso na UI; mantido p/ testes via console)
     root.classList.remove('natal-on', 'natal-caps');
-    [fx, top, bottom].forEach(function (e) { if (e) e.remove(); });
-    fx = top = bottom = null;
+    [fx, top, bottom, espaco].forEach(function (e) { if (e) e.remove(); });
+    fx = top = bottom = espaco = null;
     if (ro) { ro.disconnect(); ro = null; }
     window.removeEventListener('resize', posicionarChao);
     var a = document.querySelector('.natal-hat-anchor'); if (a) a.remove();

@@ -20,6 +20,13 @@
 #natal-top { position: absolute; left: 0; right: 0; top: 0; height: 90px; overflow: hidden; pointer-events: none; z-index: 45; }
 #natal-bottom { position: absolute; left: 0; right: 0; height: 44px; pointer-events: none; z-index: 45; }
 
+/* ----- Bonecos em pé na neve do rodapé ----- */
+.natal-spacer { height: 104px; flex: 0 0 auto; }
+.natal-crew { position: absolute; right: 5%; bottom: 20px; display: flex; align-items: flex-end; gap: 2px; transform: scale(1.3); transform-origin: right bottom; filter: drop-shadow(0 3px 3px rgba(10,20,45,.35)); }
+.natal-boneco { display: block; transform-origin: 50% 100%; animation: natalBounce 3.2s ease-in-out infinite; }
+@keyframes natalBounce { 0%, 100% { transform: rotate(-1.5deg) scaleY(1); } 50% { transform: rotate(1.5deg) scaleY(1.025); } }
+@media (max-width: 767px) { .natal-crew { right: 3%; transform: scale(1); } }
+
 /* ----- Luzes (pisca-pisca) ----- */
 .natal-lights { position: absolute; left: 0; right: 0; top: 0; height: 46px; }
 .natal-wire { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: #1b1b1b; }
@@ -90,7 +97,7 @@ html.natal-caps #resultados > :nth-child(even)::before { background-image: url("
 
 /* ----- Acessibilidade / celular ----- */
 @media (prefers-reduced-motion: reduce) {
-  .natal-f, .natal-b, .natal-orn, .natal-santa, .natal-santa svg, .natal-sleigh, .natal-sleigh svg, .natal-spark circle, .natal-leg, .natal-arm { animation: none; }
+  .natal-f, .natal-b, .natal-orn, .natal-boneco, .natal-santa, .natal-santa svg, .natal-sleigh, .natal-sleigh svg, .natal-spark circle, .natal-leg, .natal-arm { animation: none; }
   .natal-santa { left: 24px; }
   .natal-sleigh { left: 24px; }
   .natal-f { top: auto; }
