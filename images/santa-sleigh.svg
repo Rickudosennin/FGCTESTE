@@ -39,7 +39,7 @@
 <!-- decorative trim -->
 <path d="M398 183Q479 201 574 183" fill="none" stroke="#ffe6a3" stroke-width="3" opacity=".9"/>
 <!-- reindeer back -->
-<g transform="translate(65 42)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(120 25) scale(.95)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
  <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#9b5b31"/>
  <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#b97842"/>
  <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#9b5b31"/>
@@ -53,7 +53,7 @@
  <path d="M111 99l12 -17 13 17" fill="none" stroke="#d7aa55" stroke-width="4"/>
 </g>
 <!-- front reindeer -->
-<g transform="translate(255 62) scale(.83)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(300 45) scale(.98)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
  <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#a86637"/>
  <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#c1844c"/>
  <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#a86637"/>
