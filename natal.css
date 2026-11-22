@@ -1,0 +1,101 @@
+/* FGC HUB — Efeitos de Natal (aditivo; não altera nenhum tema)
+   - Cores festivas fixas → independente do tema (original, cromo, broadcast, evo).
+   - Camada fixa com pointer-events:none → não atrapalha cliques.
+   - Só entra em ação se natal.js ativar (classe html.natal-on). */
+
+#natal-fx { position: fixed; inset: 0; pointer-events: none; z-index: 45; overflow: hidden; }
+
+/* ----- Neve ----- */
+.natal-f {
+  position: absolute; top: -14px; background: #fff; border-radius: 50%;
+  animation: natalFall linear infinite; will-change: transform;
+}
+@keyframes natalFall {
+  0%   { transform: translate3d(0, 0, 0); }
+  50%  { transform: translate3d(calc(var(--d) / 2), 55vh, 0); }
+  100% { transform: translate3d(var(--d), 108vh, 0); }
+}
+
+/* ----- Luzes (pisca-pisca) ----- */
+.natal-lights { position: absolute; left: 0; right: 0; top: 0; height: 46px; }
+.natal-wire { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: #1b1b1b; }
+.natal-b {
+  position: absolute; width: 9px; height: 13px; border-radius: 50% 50% 55% 55%;
+  box-shadow: 0 0 10px 3px currentColor; animation: natalTw 1.5s ease-in-out infinite;
+}
+@keyframes natalTw { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* ----- Bolas penduradas ----- */
+.natal-orn { position: absolute; top: 0; transform-origin: top center; animation: natalSw 4.2s ease-in-out infinite; }
+.natal-orn u { display: block; width: 1px; background: #d9d9d9; margin: 0 auto; }
+.natal-orn em { display: block; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; box-shadow: 0 2px 8px #0008; }
+@keyframes natalSw { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+
+/* ----- Gorro no título (não muda o layout do h1) ----- */
+.natal-hat-anchor { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; }
+.natal-hat { position: absolute; left: -20px; top: -60px; transform: rotate(-14deg); filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+
+/* ----- Neve no topo dos cards (#resultados: card padrão e linha Broadcast) ----- */
+html.natal-caps #resultados .glass-card,
+html.natal-caps #resultados .bc-row { position: relative; }
+html.natal-caps #resultados .glass-card::before,
+html.natal-caps #resultados .bc-row::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 15px; z-index: 4; pointer-events: none;
+  background:
+    radial-gradient(18px 12px at 8%  0, #f4f8ff 96%, transparent),
+    radial-gradient(26px 15px at 27% 0, #f4f8ff 96%, transparent),
+    radial-gradient(20px 10px at 46% 0, #f4f8ff 96%, transparent),
+    radial-gradient(28px 14px at 68% 0, #f4f8ff 96%, transparent),
+    radial-gradient(18px 11px at 90% 0, #f4f8ff 96%, transparent);
+  filter: drop-shadow(0 2px 0 rgba(160,180,215,.6));
+}
+
+/* ----- Neve acumulada no rodapé ----- */
+.natal-ground {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 20px;
+  background: radial-gradient(40px 13px at 20px 20px, #f4f8ff 98%, transparent) 0 0 / 66px 20px repeat-x;
+  opacity: .95;
+}
+
+/* ----- Papai Noel andando (de ponta a ponta, vira ao chegar na borda) ----- */
+.natal-santa { position: absolute; left: 0; bottom: 8px; width: 64px; height: 84px; animation: natalWalk 44s linear infinite; will-change: transform; }
+.natal-santa svg { display: block; overflow: visible; animation: natalBob .5s ease-in-out infinite; }
+.natal-leg { transform-box: fill-box; transform-origin: 50% 0; animation: natalStep .5s ease-in-out infinite alternate; }
+.natal-leg.b { animation-direction: alternate-reverse; }
+.natal-arm { transform-box: fill-box; transform-origin: 50% 0; animation: natalStep .5s ease-in-out infinite alternate-reverse; }
+@keyframes natalStep { from { transform: rotate(-24deg); } to { transform: rotate(24deg); } }
+@keyframes natalBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes natalWalk {
+  0%      { transform: translateX(-80px) scaleX(1); }
+  49.99%  { transform: translateX(calc(100vw + 16px)) scaleX(1); }
+  50%     { transform: translateX(calc(100vw + 16px)) scaleX(-1); }
+  100%    { transform: translateX(-80px) scaleX(-1); }
+}
+
+/* ----- Trenó voando (cruza a tela, some, volta virado) ----- */
+.natal-sleigh { position: absolute; left: 0; top: 92px; width: 230px; height: 120px; animation: natalFly 56s linear infinite; animation-delay: 2s; will-change: transform; }
+.natal-sleigh svg { display: block; overflow: visible; animation: natalFloat 2.4s ease-in-out infinite; }
+.natal-sleigh .natal-leg { transform-origin: 50% 0; animation-duration: .45s; }
+.natal-spark circle { animation: natalSp 1.2s ease-out infinite; }
+@keyframes natalFloat { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-9px) rotate(1.5deg); } }
+@keyframes natalSp { 0% { opacity: 1; transform: translateX(0) scale(1); } 100% { opacity: 0; transform: translateX(-26px) scale(.3); } }
+@keyframes natalFly {
+  0%      { transform: translateX(-280px) scaleX(1); }
+  40%     { transform: translateX(calc(100vw + 40px)) scaleX(1); }
+  40.01%  { transform: translateX(calc(100vw + 40px)) scaleX(-1); }
+  50%     { transform: translateX(calc(100vw + 40px)) scaleX(-1); }
+  90%     { transform: translateX(-280px) scaleX(-1); }
+  100%    { transform: translateX(-280px) scaleX(-1); }
+}
+
+/* ----- Acessibilidade / celular ----- */
+@media (prefers-reduced-motion: reduce) {
+  .natal-f, .natal-b, .natal-orn, .natal-santa, .natal-santa svg, .natal-sleigh, .natal-sleigh svg, .natal-spark circle, .natal-leg, .natal-arm { animation: none; }
+  .natal-santa { left: 24px; }
+  .natal-sleigh { left: 24px; }
+  .natal-f { top: auto; }
+}
+@media (max-width: 767px) {
+  .natal-orn { display: none; }
+  .natal-sleigh { top: 70px; transform-origin: left top; zoom: .7; }
+}
