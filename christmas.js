@@ -88,6 +88,18 @@
     layer.appendChild(glint);
   });
 
+  /* Trenó SVG vetorial: transparência real, sem fundo quadriculado. */
+  var sleighFlight = document.createElement('div');
+  sleighFlight.className = 'xmas-sleigh-flight';
+  sleighFlight.setAttribute('aria-hidden', 'true');
+  var sleigh = document.createElement('img');
+  sleigh.src = 'images/santa-sleigh.svg';
+  sleigh.alt = '';
+  sleigh.decoding = 'async';
+  sleigh.className = 'xmas-sleigh-art';
+  sleighFlight.appendChild(sleigh);
+  layer.appendChild(sleighFlight);
+
   document.body.appendChild(layer);
 
   /* Enfeita também os cards carregados dinamicamente pelo Start.gg. */
