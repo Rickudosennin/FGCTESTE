@@ -89,4 +89,51 @@
   });
 
   document.body.appendChild(layer);
+
+  /* Enfeita também os cards carregados dinamicamente pelo Start.gg. */
+  function decorateEventCards(root) {
+    if (!layer.isConnected) return;
+    var scope = root && root.querySelectorAll ? root : document;
+    var cards = [];
+    if (scope.matches && scope.matches('.glass-card, .bc-row')) cards.push(scope);
+    cards = cards.concat(Array.prototype.slice.call(scope.querySelectorAll('.glass-card, .bc-row')));
+    cards.forEach(function (card) {
+      if (card.classList.contains('xmas-event-card')) return;
+      card.classList.add('xmas-event-card');
+      var snow = document.createElement('div');
+      snow.className = 'xmas-card-snow';
+      snow.setAttribute('aria-hidden', 'true');
+      var leftFrost = document.createElement('i');
+      leftFrost.className = 'xmas-card-frost left';
+      var rightFrost = document.createElement('i');
+      rightFrost.className = 'xmas-card-frost right';
+      snow.appendChild(leftFrost);
+      snow.appendChild(rightFrost);
+      var flakes = window.innerWidth <= 640 ? 4 : 8;
+      for (var n = 0; n < flakes; n++) {
+        var dot = document.createElement('i');
+        dot.className = 'xmas-card-flake' + (n % 2 ? ' xmas-card-drift-2' : '');
+        dot.style.setProperty('--x', (Math.random() * 96 + 2) + '%');
+        dot.style.setProperty('--s', (Math.random() * 2.2 + 1.4) + 'px');
+        dot.style.setProperty('--duration', (Math.random() * 5 + 5) + 's');
+        dot.style.setProperty('--delay', (-Math.random() * 8) + 's');
+        dot.style.setProperty('--drift', (Math.random() * 22 - 11) + 'px');
+        snow.appendChild(dot);
+      }
+      card.appendChild(snow);
+    });
+  }
+
+  var resultsRoot = document.getElementById('resultados') || document.body;
+  decorateEventCards(resultsRoot);
+  if (window.MutationObserver) {
+    var observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType === 1) decorateEventCards(node);
+        });
+      });
+    });
+    observer.observe(resultsRoot, { childList: true, subtree: true });
+  }
 })();
