@@ -102,3 +102,13 @@
 @media (prefers-reduced-motion: reduce) {
   .xmas-card-snow .xmas-card-flake { animation: none; opacity: .55; }
 }
+/* Trenó vetorial transparente: 28s ida + 28s volta, com inversão de direção. */
+#fgc-xmas-layer .xmas-sleigh-flight{position:absolute;left:0;top:clamp(76px,15vh,150px);width:clamp(250px,37vw,520px);height:auto;transform:translateX(-135vw);animation:xmas-sleigh-cross 56s linear -28s infinite;will-change:transform;filter:drop-shadow(0 8px 12px rgba(0,0,0,.28))}
+#fgc-xmas-layer .xmas-sleigh-art{display:block;width:100%;height:auto;overflow:visible;animation:xmas-sleigh-bob 2.8s ease-in-out infinite}
+#fgc-xmas-layer .xmas-sleigh-flight:before{content:"";position:absolute;z-index:-1;left:-78%;top:55%;width:82%;height:4px;background:linear-gradient(90deg,transparent,rgba(255,220,130,.08) 28%,rgba(255,224,150,.72) 100%);border-radius:50%;filter:blur(3px);box-shadow:0 0 9px 3px rgba(255,211,112,.24),0 0 22px 5px rgba(255,211,112,.14)}
+#fgc-xmas-layer .xmas-sleigh-flight:after{content:"";position:absolute;z-index:-1;left:-40%;top:40%;width:44%;height:70%;opacity:.72;background:radial-gradient(circle,rgba(255,245,198,.95) 0 1px,transparent 2px);background-size:17px 15px;mask-image:linear-gradient(90deg,transparent,#000);animation:xmas-sleigh-sparkle 1.7s ease-in-out infinite alternate}
+@keyframes xmas-sleigh-cross{0%{transform:translateX(-135vw) scaleX(1)}49.8%{transform:translateX(135vw) scaleX(1)}50.2%{transform:translateX(135vw) scaleX(-1)}99.8%{transform:translateX(-135vw) scaleX(-1)}100%{transform:translateX(-135vw) scaleX(1)}}
+@keyframes xmas-sleigh-bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-11px) rotate(1.2deg)}}
+@keyframes xmas-sleigh-sparkle{from{opacity:.25;transform:translateY(-5px) scale(.85)}to{opacity:.9;transform:translateY(5px) scale(1.08)}}
+@media(max-width:640px){#fgc-xmas-layer .xmas-sleigh-flight{width:clamp(190px,55vw,270px);top:100px}}
+@media(prefers-reduced-motion:reduce){#fgc-xmas-layer .xmas-sleigh-flight,#fgc-xmas-layer .xmas-sleigh-art,#fgc-xmas-layer .xmas-sleigh-flight:after{animation:none!important}#fgc-xmas-layer .xmas-sleigh-flight{display:none}}
