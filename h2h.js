@@ -23,9 +23,10 @@ async function resolverGamertagLocal(termo) {
     const lista = await carregarPlayersConhecidos();
     const encontrados = filtrarPlayers(lista, termo);
     if (!encontrados || encontrados.length === 0) return null;
-    const exato = encontrados.find(p => p.gamerTag.toLowerCase() === termo.toLowerCase());
-    const escolhido = exato || encontrados[0];
-    return { playerId: escolhido.playerId, gamerTag: escolhido.gamerTag };
+    const exatos = encontrados.filter(p => p.gamerTag.toLowerCase() === termo.toLowerCase());
+    if (exatos.length === 1) return { playerId: exatos[0].playerId, gamerTag: exatos[0].gamerTag };
+    if (exatos.length > 1) return { erro: 'Nome duplicado. Selecione o cadastro correto na lista de sugestões.' };
+    return null;
 }
 
 async function resolverInputPlayer(valorBruto) {
@@ -243,51 +244,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btn_buscar_h2h');
     const inputP1 = document.getElementById('input_p1');
     const inputP2 = document.getElementById('input_p2');
+    const panelP1 = document.getElementById('sugestoes_input_p1');
+    const panelP2 = document.getElementById('sugestoes_input_p2');
     const resultadoDiv = document.getElementById('h2h_resultado');
+    const selected = { p1: null, p2: null };
+    let playersCache = null, loading = null;
+    const timers = {};
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    async function players() {
+        if (playersCache) return playersCache;
+        if (!loading) loading = carregarPlayersConhecidos().then(v => playersCache = Array.isArray(v) ? v : []).finally(() => loading = null);
+        return loading;
+    }
+    function close(side) {
+        const panel = side === 'p1' ? panelP1 : panelP2;
+        panel.innerHTML = '';
+        panel.classList.add('hidden');
+    }
+    async function suggest(side, raw) {
+        const input = side === 'p1' ? inputP1 : inputP2;
+        const panel = side === 'p1' ? panelP1 : panelP2;
+        const term = raw.trim();
+        if (term.length < 2 || /^\d+$/.test(term) || extrairHashPerfil(term)) { close(side); return; }
+        panel.innerHTML = '<div class="h2h-suggestion-status">Buscando players...</div>';
+        panel.classList.remove('hidden');
+        try {
+            const list = await players();
+            if (input.value.trim() !== term) return;
+            const matches = filtrarPlayers(list, term);
+            if (!matches.length) { panel.innerHTML = '<div class="h2h-suggestion-status">Nenhum player encontrado.</div>'; return; }
+            panel.innerHTML = matches.map((p,i) => {
+                const name = p.prefix ? p.prefix + ' | ' + p.gamerTag : p.gamerTag;
+                return '<button type="button" class="h2h-suggestion-item" role="option" data-index="' + i + '"><span class="h2h-suggestion-name">' + esc(name) + '</span><span class="h2h-suggestion-action">Selecionar</span></button>';
+            }).join('');
+            panel.querySelectorAll('.h2h-suggestion-item').forEach(button => button.addEventListener('click', () => {
+                const p = matches[Number(button.dataset.index)];
+                if (!p) return;
+                selected[side] = { playerId: String(p.playerId), gamerTag: p.gamerTag };
+                input.value = p.prefix ? p.prefix + ' | ' + p.gamerTag : p.gamerTag;
+                close(side);
+            }));
+        } catch (e) {
+            panel.innerHTML = '<div class="h2h-suggestion-status">Falha ao consultar o banco de players.</div>';
+            console.error('Head to Head autocomplete:', e);
+        }
+    }
+    function setup(input, side) {
+        input.addEventListener('input', () => {
+            selected[side] = null;
+            clearTimeout(timers[side]);
+            timers[side] = setTimeout(() => suggest(side, input.value), 250);
+        });
+        input.addEventListener('focus', () => { if (input.value.trim().length >= 2) suggest(side, input.value); });
+        input.addEventListener('keydown', e => { if (e.key === 'Escape') close(side); });
+    }
+    setup(inputP1, 'p1'); setup(inputP2, 'p2');
+    document.addEventListener('click', e => {
+        if (!panelP1.contains(e.target) && e.target !== inputP1) close('p1');
+        if (!panelP2.contains(e.target) && e.target !== inputP2) close('p2');
+    });
 
     btn.addEventListener('click', async () => {
-        const bruto1 = inputP1.value.trim();
-        const bruto2 = inputP2.value.trim();
-
-        if (!bruto1 || !bruto2) {
+        const raw1 = inputP1.value.trim(), raw2 = inputP2.value.trim();
+        if (!raw1 || !raw2) {
             resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Preencha os dois players.</div>';
             return;
         }
-
+        close('p1'); close('p2');
         resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Identificando players...</p></div>';
-
-        const [res1, res2] = await Promise.all([resolverInputPlayer(bruto1), resolverInputPlayer(bruto2)]);
-
-        if (res1.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 1: ${res1.erro}</div>`; return; }
-        if (res2.erro) { resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Player 2: ${res2.erro}</div>`; return; }
-
-        const p1Id = res1.playerId;
-        const p2Id = res2.playerId;
-
-        if (String(p1Id) === String(p2Id)) {
+        const resolve = async (side, raw) => {
+            if (selected[side]) return selected[side];
+            const r = await resolverInputPlayer(raw);
+            if (r.erro && !/^\d+$/.test(raw) && !extrairHashPerfil(raw)) return { erro: 'Selecione um player na lista de sugestões ou informe o código Start.gg.' };
+            return r;
+        };
+        const [r1,r2] = await Promise.all([resolve('p1',raw1),resolve('p2',raw2)]);
+        if (r1.erro) { resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Player 1: '+esc(r1.erro)+'</div>'; return; }
+        if (r2.erro) { resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Player 2: '+esc(r2.erro)+'</div>'; return; }
+        const id1=r1.playerId, id2=r2.playerId;
+        if (String(id1)===String(id2)) {
             resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Os dois players resolveram pro mesmo ID. Confira os dados digitados.</div>';
             return;
         }
-
         resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Revisando o histórico dos players...</p></div>';
-
         try {
-            const resultado = await buscarTodosOsSets(p1Id, p2Id, (pagina, encontrados) => {
-                resultadoDiv.innerHTML = `<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Revisando histórico (página ${pagina}) — ${encontrados} confronto(s) encontrado(s)...</p></div>`;
+            const result = await buscarTodosOsSets(id1,id2,(page,count) => {
+                resultadoDiv.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Revisando histórico (página '+page+') — '+count+' confronto(s) encontrado(s)...</p></div>';
             });
-
-            if (resultado.erro && (!resultado.matches || resultado.matches.length === 0)) {
-                resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: ${resultado.erro}</div>`;
+            if (result.erro && (!result.matches || !result.matches.length)) {
+                resultadoDiv.innerHTML = '<div class="text-red-500 text-sm text-center py-8">Erro na API do start.gg: '+esc(result.erro)+'</div>';
                 return;
             }
-
-            const linhas = (resultado.matches || [])
-                .sort((a, b) => b.startAt - a.startAt)
-                .slice(0, 20);
-
-            resultadoDiv.innerHTML = montarHtmlH2H(linhas, resultado.esgotouLimite);
-        } catch (e) {
-            resultadoDiv.innerHTML = `<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos: ${e.message}</div>`;
+            const rows=(result.matches||[]).sort((a,b)=>b.startAt-a.startAt).slice(0,20);
+            resultadoDiv.innerHTML=montarHtmlH2H(rows,result.esgotouLimite);
+        } catch(e) {
+            resultadoDiv.innerHTML='<div class="text-red-500 text-sm text-center py-8">Erro ao buscar confrontos: '+esc(e.message)+'</div>';
         }
     });
 });
