@@ -48,21 +48,6 @@
     layer.appendChild(el);
   });
 
-  var lights = [
-    ['5%', '28px'], ['11%', '48px'], ['20%', '75px'], ['27%', '105px'],
-    ['73%', '105px'], ['81%', '75px'], ['89%', '48px'], ['96%', '27px']
-  ];
-  lights.forEach(function (point, index) {
-    var light = document.createElement('i');
-    light.className = 'xmas-light';
-    light.style.setProperty('--x', point[0]);
-    light.style.setProperty('--y', point[1]);
-    light.style.setProperty('--light', index % 2 ? '#ffe7a1' : '#e9f4ff');
-    light.style.setProperty('--speed', (2.1 + (index % 3) * .55) + 's');
-    light.style.setProperty('--delay', (-index * .43) + 's');
-    layer.appendChild(light);
-  });
-
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var mobile = window.innerWidth <= 640;
   var count = reduced ? 10 : (mobile ? 20 : 38);
@@ -77,16 +62,6 @@
     flake.style.setProperty('--drift', (Math.random() * 90 - 45) + 'px');
     layer.appendChild(flake);
   }
-
-  /* Pequenos brilhos decorativos próximos aos cantos, sem cobrir o conteúdo. */
-  [['24%', '34px'], ['78%', '39px'], ['13%', '145px'], ['88%', '151px']].forEach(function (point, index) {
-    var glint = document.createElement('i');
-    glint.className = 'xmas-glint';
-    glint.style.setProperty('--x', point[0]);
-    glint.style.setProperty('--y', point[1]);
-    glint.style.setProperty('--delay', (-index * .7) + 's');
-    layer.appendChild(glint);
-  });
 
   /* Trenó SVG vetorial: transparência real, sem fundo quadriculado. */
   var sleighFlight = document.createElement('div');
