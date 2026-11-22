@@ -16,6 +16,10 @@
   100% { transform: translate3d(var(--d), 108vh, 0); }
 }
 
+/* ----- Camadas presas à PÁGINA (rolam junto): topo e rodapé ----- */
+#natal-top { position: absolute; left: 0; right: 0; top: 0; height: 90px; overflow: hidden; pointer-events: none; z-index: 45; }
+#natal-bottom { position: absolute; left: 0; right: 0; height: 44px; pointer-events: none; z-index: 45; }
+
 /* ----- Luzes (pisca-pisca) ----- */
 .natal-lights { position: absolute; left: 0; right: 0; top: 0; height: 46px; }
 .natal-wire { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: #1b1b1b; }
@@ -32,8 +36,8 @@
 @keyframes natalSw { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
 
 /* ----- Gorro no título (não muda o layout do h1) ----- */
-.natal-hat-anchor { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; }
-.natal-hat { position: absolute; left: -20px; top: -60px; transform: rotate(-14deg); filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+.natal-hat-anchor { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; font-size: inherit; }
+.natal-hat { position: absolute; left: -.42em; top: -1.78em; width: 1.3em; height: auto; transform: rotate(-14deg); filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
 
 /* ----- Neve no topo dos cards (#resultados: card padrão e linha Broadcast) ----- */
 html.natal-caps #resultados .glass-card,

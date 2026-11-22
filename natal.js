@@ -85,25 +85,53 @@
     box.appendChild(t);
   }
 
+  var top = null, bottom = null, ro = null;
+
+  function posicionarChao() {
+    if (!bottom) return;
+    var h = bottom.offsetHeight || 44;
+    bottom.style.top = Math.max(0, document.documentElement.scrollHeight - h) + 'px';
+  }
+
   function ligar() {
     root.classList.add('natal-on');
     if (tem('cobertura')) root.classList.add('natal-caps');
     if (tem('gorro')) gorro();
     if (fx) return;
+    // 1) camada fixa na tela: neve e trenó/papai
     fx = document.createElement('div');
     fx.id = 'natal-fx'; fx.setAttribute('aria-hidden', 'true');
-    if (tem('luzes')) luzes(fx);
-    if (tem('bolas')) bolas(fx);
     if (tem('neve')) neve(fx);
     if (tem('papai')) papai(fx);
     if (tem('treno')) treno(fx);
-    if (tem('cobertura')) { var g = document.createElement('div'); g.className = 'natal-ground'; fx.appendChild(g); }
     document.body.appendChild(fx);
+    // 2) topo da PÁGINA (rola junto com o conteúdo): luzes e bolas
+    if (tem('luzes') || tem('bolas')) {
+      top = document.createElement('div');
+      top.id = 'natal-top'; top.setAttribute('aria-hidden', 'true');
+      if (tem('luzes')) luzes(top);
+      if (tem('bolas')) bolas(top);
+      document.body.appendChild(top);
+    }
+    // 3) rodapé da PÁGINA: neve acumulada no fim do documento (não flutua na tela)
+    if (tem('cobertura')) {
+      bottom = document.createElement('div');
+      bottom.id = 'natal-bottom'; bottom.setAttribute('aria-hidden', 'true');
+      bottom.innerHTML = '<div class="natal-ground"></div>';
+      document.body.appendChild(bottom);
+      posicionarChao();
+      window.addEventListener('resize', posicionarChao);
+      window.addEventListener('load', posicionarChao);
+      if (window.ResizeObserver) { ro = new ResizeObserver(posicionarChao); ro.observe(document.body); }
+    }
   }
 
   function desligar() { // (sem uso na UI; mantido p/ testes via console)
     root.classList.remove('natal-on', 'natal-caps');
-    if (fx) { fx.remove(); fx = null; }
+    [fx, top, bottom].forEach(function (e) { if (e) e.remove(); });
+    fx = top = bottom = null;
+    if (ro) { ro.disconnect(); ro = null; }
+    window.removeEventListener('resize', posicionarChao);
     var a = document.querySelector('.natal-hat-anchor'); if (a) a.remove();
   }
 
