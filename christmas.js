@@ -33,10 +33,10 @@
   });
 
   var ornaments = [
-    { left: '7.5%', top: '78px', color: '#b92332', hi: '#ffe0d4', shade: '#5d0915', glow: 'rgba(196,35,50,.35)', size: '13px', delay: '-1s' },
-    { left: '16%', top: '112px', color: '#c6a34e', hi: '#fff4bd', shade: '#6c4c16', glow: 'rgba(218,183,91,.35)', size: '10px', delay: '-2.2s' },
-    { left: '85%', top: '91px', color: '#c6a34e', hi: '#fff4bd', shade: '#6c4c16', glow: 'rgba(218,183,91,.35)', size: '12px', delay: '-.8s' },
-    { left: '93%', top: '55px', color: '#b92332', hi: '#ffe0d4', shade: '#5d0915', glow: 'rgba(196,35,50,.35)', size: '10px', delay: '-1.7s' }
+    { left: '7.5%', top: '78px', color: '#b92332', hi: '#ffe0d4', shade: '#5d0915', glow: 'transparent', size: '13px', delay: '-1s' },
+    { left: '16%', top: '112px', color: '#c6a34e', hi: '#fff4bd', shade: '#6c4c16', glow: 'transparent', size: '10px', delay: '-2.2s' },
+    { left: '85%', top: '91px', color: '#c6a34e', hi: '#fff4bd', shade: '#6c4c16', glow: 'transparent', size: '12px', delay: '-.8s' },
+    { left: '93%', top: '55px', color: '#b92332', hi: '#ffe0d4', shade: '#5d0915', glow: 'transparent', size: '10px', delay: '-1.7s' }
   ];
   ornaments.forEach(function (item) {
     var el = document.createElement('i');
