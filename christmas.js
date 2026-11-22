@@ -23,7 +23,7 @@
     '<g fill="#55a66c" opacity=".85"><path d="M20 13l-13 -11 5 17zM54 32l-12 -12 4 18zM91 57l-13 -11 5 18zM132 84l-12 -12 4 18zM174 113l-13 -11 4 18zM218 146l-12 -10 4 17z"/></g>' +
     '<g fill="url(#xmas-cone)" stroke="#c49a69" stroke-width="1.2"><path d="M72 63q-11 13 0 28q11 -15 0 -28z"/><path d="M72 68l-7 7 7 4 7 -4zM72 78l-6 7 6 4 6 -4z"/>' +
     '<path d="M220 130q-12 14 0 30q12 -16 0 -30z"/><path d="M220 135l-7 7 7 4 7 -4zM220 145l-6 8 6 4 6 -4z"/></g>' +
-    '<g fill="#f4f0df" opacity=".85"><circle cx="11" cy="8" r="2"/><circle cx="45" cy="26" r="1.7"/><circle cx="108" cy="65" r="1.8"/><circle cx="158" cy="101" r="2"/><circle cx="250" cy="166" r="1.7"/></g></svg>';
+    '</svg>';
 
   ['xmas-left', 'xmas-right'].forEach(function (cls) {
     var corner = document.createElement('div');
