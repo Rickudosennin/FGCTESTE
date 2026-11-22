@@ -1,0 +1,38 @@
+/* FGC HUB — decoração natalina sazonal (overlay independente dos temas) */
+#fgc-xmas-layer {
+  position: fixed; inset: 0; z-index: 44; overflow: hidden;
+  pointer-events: none; contain: strict;
+}
+#fgc-xmas-layer .xmas-corner {
+  position: absolute; top: -3px; width: clamp(112px, 17vw, 230px);
+  height: auto; opacity: .86; filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
+}
+#fgc-xmas-layer .xmas-left { left: -3px; }
+#fgc-xmas-layer .xmas-right { right: -3px; transform: scaleX(-1); }
+#fgc-xmas-layer .xmas-flake {
+  position: absolute; top: -12px; left: var(--x); width: var(--s); height: var(--s);
+  border-radius: 50%; background: rgba(255,255,255,.88);
+  box-shadow: 0 0 5px rgba(255,255,255,.35);
+  opacity: var(--o); animation: xmas-fall var(--d) linear var(--delay) infinite;
+}
+#fgc-xmas-layer .xmas-bauble {
+  position: absolute; top: var(--top); left: var(--left); width: 9px; height: 9px;
+  border-radius: 50%; background: var(--bauble); border: 1px solid rgba(255,255,255,.6);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--bauble) 50%, transparent);
+}
+#fgc-xmas-layer .xmas-bauble::before {
+  content: ""; position: absolute; width: 3px; height: 3px; left: 2px; top: -4px;
+  border: 1px solid #c8b98b; border-bottom: 0; border-radius: 2px 2px 0 0;
+}
+@keyframes xmas-fall {
+  from { transform: translate3d(0,-3vh,0); }
+  to { transform: translate3d(var(--drift),108vh,0); }
+}
+@media (max-width: 640px) {
+  #fgc-xmas-layer .xmas-corner { width: 112px; opacity: .76; }
+  #fgc-xmas-layer .xmas-flake:nth-of-type(n+25) { display: none; }
+  #fgc-xmas-layer .xmas-bauble { width: 7px; height: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fgc-xmas-layer .xmas-flake { animation: none; opacity: .42; }
+}
