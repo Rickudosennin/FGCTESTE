@@ -97,5 +97,6 @@ html.natal-caps #resultados > :nth-child(even)::before { background-image: url("
 }
 @media (max-width: 767px) {
   .natal-orn { display: none; }
-  .natal-sleigh { top: 70px; transform-origin: left top; zoom: .7; }
+  .natal-sleigh { top: 70px; width: 161px; height: 84px; }
+  .natal-sleigh svg { width: 161px; height: 84px; }
 }
