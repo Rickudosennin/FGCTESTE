@@ -1,38 +1,64 @@
-/* FGC HUB — decoração natalina sazonal (overlay independente dos temas) */
+/* FGC HUB — Christmas Broadcast Overlay | camada independente dos temas */
 #fgc-xmas-layer {
   position: fixed; inset: 0; z-index: 44; overflow: hidden;
-  pointer-events: none; contain: strict;
+  pointer-events: none; contain: strict; isolation: isolate;
 }
 #fgc-xmas-layer .xmas-corner {
-  position: absolute; top: -3px; width: clamp(112px, 17vw, 230px);
-  height: auto; opacity: .86; filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
+  position: absolute; top: -5px; width: clamp(150px, 21vw, 300px);
+  height: auto; opacity: .94; filter: drop-shadow(0 5px 9px rgba(0,0,0,.42));
 }
-#fgc-xmas-layer .xmas-left { left: -3px; }
-#fgc-xmas-layer .xmas-right { right: -3px; transform: scaleX(-1); }
+#fgc-xmas-layer .xmas-left { left: -5px; }
+#fgc-xmas-layer .xmas-right { right: -5px; transform: scaleX(-1); }
 #fgc-xmas-layer .xmas-flake {
-  position: absolute; top: -12px; left: var(--x); width: var(--s); height: var(--s);
-  border-radius: 50%; background: rgba(255,255,255,.88);
-  box-shadow: 0 0 5px rgba(255,255,255,.35);
-  opacity: var(--o); animation: xmas-fall var(--d) linear var(--delay) infinite;
+  position: absolute; top: -14px; left: var(--x); width: var(--s); height: var(--s);
+  border-radius: 50%; background: #fff; opacity: var(--o);
+  box-shadow: 0 0 5px 1px rgba(220,240,255,.45);
+  animation: xmas-fall var(--d) linear var(--delay) infinite;
+  will-change: transform;
 }
+#fgc-xmas-layer .xmas-flake.xmas-large { box-shadow: 0 0 9px 2px rgba(220,240,255,.55); }
 #fgc-xmas-layer .xmas-bauble {
-  position: absolute; top: var(--top); left: var(--left); width: 9px; height: 9px;
-  border-radius: 50%; background: var(--bauble); border: 1px solid rgba(255,255,255,.6);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--bauble) 50%, transparent);
+  position: absolute; top: var(--top); left: var(--left); width: var(--size, 11px); height: var(--size, 11px);
+  border-radius: 50%; border: 1px solid rgba(255,255,255,.72);
+  background: radial-gradient(circle at 30% 25%, #fff 0, var(--bauble-hi) 13%, var(--bauble) 48%, var(--bauble-shade) 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35), 0 0 10px var(--bauble-glow);
+  animation: xmas-sway 4.5s ease-in-out var(--delay, 0s) infinite;
+  transform-origin: 50% -12px;
 }
 #fgc-xmas-layer .xmas-bauble::before {
-  content: ""; position: absolute; width: 3px; height: 3px; left: 2px; top: -4px;
-  border: 1px solid #c8b98b; border-bottom: 0; border-radius: 2px 2px 0 0;
+  content: ""; position: absolute; left: calc(50% - 2px); top: -5px; width: 4px; height: 4px;
+  border: 1px solid #d8c58e; border-bottom: 0; border-radius: 3px 3px 0 0;
+}
+#fgc-xmas-layer .xmas-bauble::after {
+  content: ""; position: absolute; left: 50%; top: -22px; height: 17px;
+  border-left: 1px solid rgba(218,198,148,.8);
+}
+#fgc-xmas-layer .xmas-light {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  left: var(--x); top: var(--y); background: var(--light);
+  box-shadow: 0 0 5px 2px var(--light), 0 0 13px 3px var(--light);
+  animation: xmas-twinkle var(--speed) ease-in-out var(--delay) infinite alternate;
+}
+#fgc-xmas-layer .xmas-glint {
+  position: absolute; width: 2px; height: 2px; border-radius: 50%;
+  left: var(--x); top: var(--y); background: #fff;
+  box-shadow: 0 0 7px 3px rgba(255,255,255,.75);
+  animation: xmas-twinkle 2.8s ease-in-out var(--delay) infinite alternate;
 }
 @keyframes xmas-fall {
-  from { transform: translate3d(0,-3vh,0); }
-  to { transform: translate3d(var(--drift),108vh,0); }
+  0% { transform: translate3d(0,-4vh,0); }
+  100% { transform: translate3d(var(--drift),108vh,0); }
 }
+@keyframes xmas-sway { 0%,100% { rotate: -5deg; } 50% { rotate: 5deg; } }
+@keyframes xmas-twinkle { from { opacity: .28; transform: scale(.65); } to { opacity: 1; transform: scale(1.25); } }
 @media (max-width: 640px) {
-  #fgc-xmas-layer .xmas-corner { width: 112px; opacity: .76; }
-  #fgc-xmas-layer .xmas-flake:nth-of-type(n+25) { display: none; }
-  #fgc-xmas-layer .xmas-bauble { width: 7px; height: 7px; }
+  #fgc-xmas-layer .xmas-corner { width: clamp(118px, 31vw, 165px); opacity: .86; }
+  #fgc-xmas-layer .xmas-flake:nth-of-type(n+28) { display: none; }
+  #fgc-xmas-layer .xmas-light:nth-of-type(n+7) { display: none; }
+  #fgc-xmas-layer .xmas-bauble { --size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #fgc-xmas-layer .xmas-flake { animation: none; opacity: .42; }
+  #fgc-xmas-layer .xmas-flake, #fgc-xmas-layer .xmas-bauble,
+  #fgc-xmas-layer .xmas-light, #fgc-xmas-layer .xmas-glint { animation: none !important; }
+  #fgc-xmas-layer .xmas-flake { opacity: .48; }
 }
