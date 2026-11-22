@@ -10,32 +10,6 @@
 <ellipse cx="380" cy="238" rx="300" ry="22" fill="url(#glow)" opacity=".55" filter="url(#shadow)"/>
 <!-- reins -->
 <g fill="none" stroke="#c99b4c" stroke-width="3" stroke-linecap="round"><path d="M180 176Q230 140 295 154T408 148"/><path d="M155 170Q230 128 305 143T432 137"/></g>
-<!-- reindeer back -->
-<g transform="translate(65 42)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
- <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#9b5b31"/>
- <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#b97842"/>
- <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#9b5b31"/>
- <path d="M188 78L183 58M183 65L169 52M187 66L201 49M202 81L211 62M208 67L222 57" fill="none"/>
- <path d="M61 128L54 174M88 129L94 173M139 127L135 173M158 126L168 170" fill="none" stroke-width="8"/>
- <path d="M50 174h13M89 173h13M130 173h13M165 170h13" stroke="#21150f" stroke-width="6"/>
- <path d="M30 111Q9 91 15 78" fill="none" stroke-width="4"/>
- <circle cx="194" cy="88" r="3.5" fill="#fff"/><circle cx="195" cy="88" r="1.8" fill="#171717" stroke="none"/>
- <path d="M208 98l8 2" stroke="#24130e" stroke-width="3"/>
- <path d="M175 82l-5 -12" stroke="#f4d6bb" stroke-width="5"/>
- <path d="M111 99l12 -17 13 17" fill="none" stroke="#d7aa55" stroke-width="4"/>
-</g>
-<!-- front reindeer -->
-<g transform="translate(255 62) scale(.83)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
- <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#a86637"/>
- <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#c1844c"/>
- <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#a86637"/>
- <path d="M188 78L183 58M183 65L169 52M187 66L201 49M202 81L211 62M208 67L222 57" fill="none"/>
- <path d="M61 128L54 174M88 129L94 173M139 127L135 173M158 126L168 170" fill="none" stroke-width="8"/>
- <path d="M50 174h13M89 173h13M130 173h13M165 170h13" stroke="#21150f" stroke-width="6"/>
- <circle cx="194" cy="88" r="3.5" fill="#fff"/><circle cx="195" cy="88" r="1.8" fill="#171717" stroke="none"/>
- <path d="M208 98l8 2" stroke="#24130e" stroke-width="3"/>
- <path d="M175 82l-5 -12" stroke="#f4d6bb" stroke-width="5"/>
-</g>
 <!-- bells -->
 <g fill="url(#gold)" stroke="#704a19" stroke-width="2"><circle cx="250" cy="181" r="9"/><circle cx="420" cy="169" r="8"/></g>
 <!-- sleigh runners -->
@@ -64,5 +38,31 @@
 <path d="M462 153Q481 171 509 163" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
 <!-- decorative trim -->
 <path d="M398 183Q479 201 574 183" fill="none" stroke="#ffe6a3" stroke-width="3" opacity=".9"/>
-<g fill="#fff" opacity=".95"><circle cx="38" cy="72" r="3"/><circle cx="29" cy="205" r="2"/><circle cx="322" cy="38" r="3"/><circle cx="350" cy="219" r="2"/><circle cx="603" cy="74" r="3"/><circle cx="644" cy="195" r="2"/><circle cx="700" cy="117" r="2"/></g>
+<!-- reindeer back -->
+<g transform="translate(65 42)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#9b5b31"/>
+ <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#b97842"/>
+ <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#9b5b31"/>
+ <path d="M188 78L183 58M183 65L169 52M187 66L201 49M202 81L211 62M208 67L222 57" fill="none"/>
+ <path d="M61 128L54 174M88 129L94 173M139 127L135 173M158 126L168 170" fill="none" stroke-width="8"/>
+ <path d="M50 174h13M89 173h13M130 173h13M165 170h13" stroke="#21150f" stroke-width="6"/>
+ <path d="M30 111Q9 91 15 78" fill="none" stroke-width="4"/>
+ <circle cx="194" cy="88" r="3.5" fill="#fff"/><circle cx="195" cy="88" r="1.8" fill="#171717" stroke="none"/>
+ <path d="M208 98l8 2" stroke="#24130e" stroke-width="3"/>
+ <path d="M175 82l-5 -12" stroke="#f4d6bb" stroke-width="5"/>
+ <path d="M111 99l12 -17 13 17" fill="none" stroke="#d7aa55" stroke-width="4"/>
+</g>
+<!-- front reindeer -->
+<g transform="translate(255 62) scale(.83)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#a86637"/>
+ <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#c1844c"/>
+ <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#a86637"/>
+ <path d="M188 78L183 58M183 65L169 52M187 66L201 49M202 81L211 62M208 67L222 57" fill="none"/>
+ <path d="M61 128L54 174M88 129L94 173M139 127L135 173M158 126L168 170" fill="none" stroke-width="8"/>
+ <path d="M50 174h13M89 173h13M130 173h13M165 170h13" stroke="#21150f" stroke-width="6"/>
+ <circle cx="194" cy="88" r="3.5" fill="#fff"/><circle cx="195" cy="88" r="1.8" fill="#171717" stroke="none"/>
+ <path d="M208 98l8 2" stroke="#24130e" stroke-width="3"/>
+ <path d="M175 82l-5 -12" stroke="#f4d6bb" stroke-width="5"/>
+</g>
+
 </svg>
