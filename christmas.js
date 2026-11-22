@@ -48,20 +48,7 @@
     layer.appendChild(el);
   });
 
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var mobile = window.innerWidth <= 640;
-  var count = reduced ? 10 : (mobile ? 20 : 38);
-  for (var i = 0; i < count; i++) {
-    var flake = document.createElement('i');
-    flake.className = 'xmas-flake' + (i % 9 === 0 ? ' xmas-large' : '');
-    flake.style.setProperty('--x', (Math.random() * 100) + 'vw');
-    flake.style.setProperty('--s', (Math.random() * 3.2 + (i % 9 === 0 ? 3.2 : 1.5)) + 'px');
-    flake.style.setProperty('--o', (Math.random() * .48 + .28).toFixed(2));
-    flake.style.setProperty('--d', (Math.random() * 10 + 10) + 's');
-    flake.style.setProperty('--delay', (-Math.random() * 20) + 's');
-    flake.style.setProperty('--drift', (Math.random() * 90 - 45) + 'px');
-    layer.appendChild(flake);
-  }
+  /* Sem pontos luminosos soltos no fundo; neve fica restrita aos cards. */
 
   /* Trenó SVG vetorial: transparência real, sem fundo quadriculado. */
   var sleighFlight = document.createElement('div');
