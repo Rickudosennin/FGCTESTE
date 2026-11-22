@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img" aria-label="Papai Noel em trenó puxado por renas">
+<defs>
+ <linearGradient id="sleigh" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff6b61"/><stop offset=".45" stop-color="#b51227"/><stop offset="1" stop-color="#650b1c"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff0a6"/><stop offset=".5" stop-color="#d7a43c"/><stop offset="1" stop-color="#8a5b1c"/></linearGradient>
+ <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#cbd5e1"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#fff7c2" stop-opacity=".9"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<!-- glow -->
+<ellipse cx="380" cy="238" rx="300" ry="22" fill="url(#glow)" opacity=".55" filter="url(#shadow)"/>
+<!-- reins -->
+<g fill="none" stroke="#c99b4c" stroke-width="3" stroke-linecap="round"><path d="M180 176Q230 140 295 154T408 148"/><path d="M155 170Q230 128 305 143T432 137"/></g>
+<!-- reindeer back -->
+<g transform="translate(65 42)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#9b5b31"/>
+ <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#b97842"/>
+ <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#9b5b31"/>
+ <path d="M188 78L183 58M183 65L169 52M187 66L201 49M202 81L211 62M208 67L222 57" fill="none"/>
+ <path d="M61 128L54 174M88 129L94 173M139 127L135 173M158 126L168 170" fill="none" stroke-width="8"/>
+ <path d="M50 174h13M89 173h13M130 173h13M165 170h13" stroke="#21150f" stroke-width="6"/>
+ <path d="M30 111Q9 91 15 78" fill="none" stroke-width="4"/>
+ <circle cx="194" cy="88" r="3.5" fill="#fff"/><circle cx="195" cy="88" r="1.8" fill="#171717" stroke="none"/>
+ <path d="M208 98l8 2" stroke="#24130e" stroke-width="3"/>
+ <path d="M175 82l-5 -12" stroke="#f4d6bb" stroke-width="5"/>
+ <path d="M111 99l12 -17 13 17" fill="none" stroke="#d7aa55" stroke-width="4"/>
+</g>
+<!-- front reindeer -->
+<g transform="translate(255 62) scale(.83)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#a86637"/>
+ <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#c1844c"/>
+ <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#a86637"/>
+ <path d="M188 78L183 58M183 65L169 52M187 66L201 49M202 81L211 62M208 67L222 57" fill="none"/>
+ <path d="M61 128L54 174M88 129L94 173M139 127L135 173M158 126L168 170" fill="none" stroke-width="8"/>
+ <path d="M50 174h13M89 173h13M130 173h13M165 170h13" stroke="#21150f" stroke-width="6"/>
+ <circle cx="194" cy="88" r="3.5" fill="#fff"/><circle cx="195" cy="88" r="1.8" fill="#171717" stroke="none"/>
+ <path d="M208 98l8 2" stroke="#24130e" stroke-width="3"/>
+ <path d="M175 82l-5 -12" stroke="#f4d6bb" stroke-width="5"/>
+</g>
+<!-- bells -->
+<g fill="url(#gold)" stroke="#704a19" stroke-width="2"><circle cx="250" cy="181" r="9"/><circle cx="420" cy="169" r="8"/></g>
+<!-- sleigh runners -->
+<path d="M404 224Q462 250 539 229Q565 220 575 199" fill="none" stroke="#d8a844" stroke-width="9" stroke-linecap="round"/>
+<path d="M406 223Q464 241 535 219" fill="none" stroke="#fff0b2" stroke-width="2" opacity=".9"/>
+<!-- sleigh body -->
+<path d="M399 154Q455 138 532 160L572 184Q586 198 570 215Q548 233 480 224L428 213Q404 206 392 184Z" fill="url(#sleigh)" stroke="#e6b85c" stroke-width="5"/>
+<path d="M414 164Q481 151 548 174" fill="none" stroke="#ffb7a8" stroke-width="5" opacity=".8"/>
+<path d="M421 193Q486 210 566 194" fill="none" stroke="#f4d28b" stroke-width="4"/>
+<path d="M427 222Q463 258 540 243Q576 235 587 210" fill="none" stroke="#d5a33e" stroke-width="7" stroke-linecap="round"/>
+<!-- gifts -->
+<g stroke="#f5d98b" stroke-width="3"><path d="M449 157v-25h34v31M466 132v27M449 143h34" fill="#26794c"/><path d="M491 161v-20h27v27M504 141v25M491 150h27" fill="#b51c32"/></g>
+<!-- santa body and face -->
+<path d="M468 139Q458 111 474 91Q491 72 514 88Q532 100 526 133L515 157 480 158Z" fill="#bd1729" stroke="#7d0e1d" stroke-width="4"/>
+<path d="M468 111Q492 119 529 105L531 119Q498 135 467 124Z" fill="#fff" stroke="#d5dce5" stroke-width="3"/>
+<ellipse cx="500" cy="89" rx="25" ry="24" fill="#f1c49e"/>
+<path d="M475 84Q479 52 508 56Q533 58 533 86Q509 72 475 84Z" fill="#bd1729"/>
+<path d="M475 82Q502 72 533 84L530 94Q501 82 474 94Z" fill="#fff" stroke="#d6dce5" stroke-width="2"/>
+<circle cx="530" cy="84" r="9" fill="#fff" stroke="#d6dce5" stroke-width="2"/>
+<path d="M482 99Q500 117 518 99Q514 129 499 129Q485 124 482 99Z" fill="#fff" stroke="#d6dce5" stroke-width="2"/>
+<circle cx="492" cy="91" r="2.8" fill="#2b1b17"/><circle cx="509" cy="91" r="2.8" fill="#2b1b17"/>
+<path d="M495 98q5 4 10 0" fill="none" stroke="#a45a48" stroke-width="2"/>
+<!-- santa arm waving -->
+<path d="M480 126Q460 117 453 99L442 85" fill="none" stroke="#bd1729" stroke-width="16" stroke-linecap="round"/>
+<path d="M440 85q-11 -13 -2 -21q12 -8 20 4l-4 16Z" fill="#f0c5a4" stroke="#d7a17d" stroke-width="2"/>
+<path d="M462 153Q481 171 509 163" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+<!-- decorative trim -->
+<path d="M398 183Q479 201 574 183" fill="none" stroke="#ffe6a3" stroke-width="3" opacity=".9"/>
+<g fill="#fff" opacity=".95"><circle cx="38" cy="72" r="3"/><circle cx="29" cy="205" r="2"/><circle cx="322" cy="38" r="3"/><circle cx="350" cy="219" r="2"/><circle cx="603" cy="74" r="3"/><circle cx="644" cy="195" r="2"/><circle cx="700" cy="117" r="2"/></g>
+</svg>
