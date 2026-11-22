@@ -9,9 +9,9 @@
 <!-- glow -->
 <ellipse cx="380" cy="238" rx="300" ry="22" fill="url(#glow)" opacity=".55" filter="url(#shadow)"/>
 <!-- reins -->
-<g fill="none" stroke="#c99b4c" stroke-width="3" stroke-linecap="round"><path d="M180 176Q230 140 295 154T408 148"/><path d="M155 170Q230 128 305 143T432 137"/></g>
+<g fill="none" stroke="#c99b4c" stroke-width="3" stroke-linecap="round"><path d="M340 176Q380 140 430 154T490 148"/><path d="M320 170Q390 128 450 143T510 137"/></g>
 <!-- bells -->
-<g fill="url(#gold)" stroke="#704a19" stroke-width="2"><circle cx="250" cy="181" r="9"/><circle cx="420" cy="169" r="8"/></g>
+<g fill="url(#gold)" stroke="#704a19" stroke-width="2"><circle cx="370" cy="181" r="9"/><circle cx="480" cy="169" r="8"/></g>
 <!-- sleigh runners -->
 <path d="M404 224Q462 250 539 229Q565 220 575 199" fill="none" stroke="#d8a844" stroke-width="9" stroke-linecap="round"/>
 <path d="M406 223Q464 241 535 219" fill="none" stroke="#fff0b2" stroke-width="2" opacity=".9"/>
@@ -39,7 +39,7 @@
 <!-- decorative trim -->
 <path d="M398 183Q479 201 574 183" fill="none" stroke="#ffe6a3" stroke-width="3" opacity=".9"/>
 <!-- reindeer back -->
-<g transform="translate(120 25) scale(.95)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(360 25) scale(.76)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
  <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#9b5b31"/>
  <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#b97842"/>
  <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#9b5b31"/>
@@ -53,7 +53,7 @@
  <path d="M111 99l12 -17 13 17" fill="none" stroke="#d7aa55" stroke-width="4"/>
 </g>
 <!-- front reindeer -->
-<g transform="translate(300 45) scale(.98)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(500 45) scale(.76)" stroke="#4a2819" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
  <path d="M20 116Q45 88 92 96L126 112 151 101 177 112 167 131 132 135 103 128 68 137 44 130Z" fill="#a86637"/>
  <path d="M145 111Q156 80 171 73L192 83 190 104 169 119Z" fill="#c1844c"/>
  <path d="M184 82Q201 72 211 82L206 96 189 98Z" fill="#a86637"/>
