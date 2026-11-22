@@ -12,16 +12,16 @@
 #fgc-xmas-layer .xmas-flake {
   position: absolute; top: -14px; left: var(--x); width: var(--s); height: var(--s);
   border-radius: 50%; background: #fff; opacity: var(--o);
-  box-shadow: 0 0 5px 1px rgba(220,240,255,.45);
+  box-shadow: none;
   animation: xmas-fall var(--d) linear var(--delay) infinite;
   will-change: transform;
 }
-#fgc-xmas-layer .xmas-flake.xmas-large { box-shadow: 0 0 9px 2px rgba(220,240,255,.55); }
+#fgc-xmas-layer .xmas-flake.xmas-large { box-shadow: none; }
 #fgc-xmas-layer .xmas-bauble {
   position: absolute; top: var(--top); left: var(--left); width: var(--size, 11px); height: var(--size, 11px);
   border-radius: 50%; border: 1px solid rgba(255,255,255,.72);
   background: radial-gradient(circle at 30% 25%, #fff 0, var(--bauble-hi) 13%, var(--bauble) 48%, var(--bauble-shade) 100%);
-  box-shadow: 0 2px 8px rgba(0,0,0,.35), 0 0 10px var(--bauble-glow);
+  box-shadow: 0 2px 5px rgba(0,0,0,.28);
   animation: xmas-sway 4.5s ease-in-out var(--delay, 0s) infinite;
   transform-origin: 50% -12px;
 }
@@ -42,7 +42,7 @@
 #fgc-xmas-layer .xmas-glint {
   position: absolute; width: 2px; height: 2px; border-radius: 50%;
   left: var(--x); top: var(--y); background: #fff;
-  box-shadow: 0 0 7px 3px rgba(255,255,255,.75);
+  box-shadow: none;
   animation: xmas-twinkle 2.8s ease-in-out var(--delay) infinite alternate;
 }
 @keyframes xmas-fall {
@@ -81,7 +81,7 @@
 .xmas-card-snow .xmas-card-flake {
   position: absolute; top: -8px; left: var(--x); width: var(--s); height: var(--s);
   border-radius: 50%; background: rgba(255,255,255,.94);
-  box-shadow: 0 0 5px rgba(230,245,255,.72);
+  box-shadow: none;
   animation: xmas-card-drift var(--duration) linear var(--delay) infinite;
 }
 .xmas-card-snow .xmas-card-drift-2 { opacity: .55; }
