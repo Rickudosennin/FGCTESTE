@@ -62,3 +62,43 @@
   #fgc-xmas-layer .xmas-light, #fgc-xmas-layer .xmas-glint { animation: none !important; }
   #fgc-xmas-layer .xmas-flake { opacity: .48; }
 }
+/* Neve aplicada dentro dos cards reais de torneio (tema padrão e Broadcast). */
+.xmas-event-card { position: relative !important; isolation: isolate; }
+.xmas-event-card > .xmas-card-snow {
+  position: absolute; z-index: 8; inset: 0; overflow: hidden;
+  pointer-events: none; border-radius: inherit;
+}
+.xmas-event-card > .xmas-card-snow::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(228,241,250,.56) 34%, rgba(255,255,255,0) 100%);
+  filter: drop-shadow(0 2px 4px rgba(215,235,250,.22)); opacity: .78;
+}
+.xmas-event-card > .xmas-card-snow::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 2%, rgba(255,255,255,.92) 14%, rgba(255,255,255,.35) 50%, rgba(255,255,255,.9) 86%, transparent 98%);
+  box-shadow: 0 2px 7px rgba(210,232,248,.3);
+}
+.xmas-card-snow .xmas-card-flake {
+  position: absolute; top: -8px; left: var(--x); width: var(--s); height: var(--s);
+  border-radius: 50%; background: rgba(255,255,255,.94);
+  box-shadow: 0 0 5px rgba(230,245,255,.72);
+  animation: xmas-card-drift var(--duration) linear var(--delay) infinite;
+}
+.xmas-card-snow .xmas-card-drift-2 { opacity: .55; }
+.xmas-card-snow .xmas-card-frost {
+  position: absolute; top: 0; width: 24%; height: 17px; opacity: .75;
+  background: radial-gradient(ellipse at top, rgba(255,255,255,.8), rgba(231,243,250,.22) 48%, transparent 75%);
+}
+.xmas-card-snow .xmas-card-frost.left { left: 0; }
+.xmas-card-snow .xmas-card-frost.right { right: 0; }
+@keyframes xmas-card-drift {
+  from { transform: translate3d(0,-5px,0); }
+  to { transform: translate3d(var(--drift),190px,0); }
+}
+@media (max-width: 640px) {
+  .xmas-card-snow .xmas-card-flake:nth-child(n+5) { display: none; }
+  .xmas-event-card > .xmas-card-snow::before { height: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xmas-card-snow .xmas-card-flake { animation: none; opacity: .55; }
+}
