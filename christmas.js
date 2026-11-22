@@ -1,24 +1,30 @@
-/* FGC HUB — efeito natalino discreto. Não altera data-theme nem tokens dos temas. */
+/* FGC HUB — decoração natalina sazonal. Overlay isolado: não altera os temas. */
 (function () {
   'use strict';
   var now = new Date();
   var start = new Date(now.getFullYear(), 10, 20);
   var end = new Date(now.getFullYear(), 11, 27);
-  if (now < start || now >= end || !document.body) return;
-  if (document.getElementById('fgc-xmas-layer')) return;
+  if (now < start || now >= end || !document.body || document.getElementById('fgc-xmas-layer')) return;
 
   var layer = document.createElement('div');
   layer.id = 'fgc-xmas-layer';
   layer.setAttribute('aria-hidden', 'true');
 
-  var branch = '<svg viewBox="0 0 240 150" xmlns="http://www.w3.org/2000/svg">' +
-    '<path d="M-8 8 Q70 34 145 102" fill="none" stroke="#72543b" stroke-width="5" stroke-linecap="round"/>' +
-    '<g fill="none" stroke="#176b3a" stroke-width="5" stroke-linecap="round">' +
-    '<path d="M18 18 L5 2 M28 24 L31 4 M40 31 L22 10 M53 39 L57 16 M66 48 L47 27 M80 58 L88 34 M94 68 L72 49 M108 78 L119 54 M122 88 L100 71 M136 98 L151 76 M150 108 L129 91 M164 118 L181 99"/>' +
-    '<path d="M19 22 L2 27 M37 32 L20 43 M57 43 L39 56 M77 56 L61 69 M98 70 L81 83 M119 84 L103 97 M140 98 L125 112"/>' +
-    '</g><g fill="#24864b" opacity=".9">' +
-    '<circle cx="29" cy="18" r="3"/><circle cx="62" cy="44" r="3"/><circle cx="96" cy="68" r="3"/><circle cx="131" cy="94" r="3"/>' +
-    '</g></svg>';
+  /* Ramo de pinheiro em SVG: camadas de agulhas, galhos e pinhas. */
+  var branch = '<svg viewBox="0 0 320 205" xmlns="http://www.w3.org/2000/svg" role="presentation">' +
+    '<defs><linearGradient id="xmas-wood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b28a5b"/><stop offset="1" stop-color="#493b2b"/></linearGradient>' +
+    '<linearGradient id="xmas-needle" x1="0" y1="0" x2="0.8" y2="1"><stop stop-color="#3b9a62"/><stop offset=".55" stop-color="#17633d"/><stop offset="1" stop-color="#0c3928"/></linearGradient>' +
+    '<radialGradient id="xmas-cone"><stop stop-color="#9c7045"/><stop offset="1" stop-color="#4b3023"/></radialGradient></defs>' +
+    '<path d="M-12 8 Q90 38 190 133 T330 202" fill="none" stroke="url(#xmas-wood)" stroke-width="7" stroke-linecap="round"/>' +
+    '<g fill="none" stroke="url(#xmas-needle)" stroke-linecap="round" stroke-width="5">' +
+    '<path d="M15 17L2 0 M24 21L31 1 M38 27L18 5 M52 34L61 12 M67 43L43 20 M82 51L95 27 M98 61L72 39 M114 72L130 47 M130 83L104 62 M147 95L165 69 M164 108L137 85 M181 121L203 94 M198 135L170 112 M216 149L239 122 M234 164L207 141 M253 179L278 153 M270 192L246 171"/>' +
+    '<path d="M19 21L0 29 M43 29L22 45 M68 43L45 60 M94 58L72 77 M120 75L97 94 M147 93L123 112 M174 112L151 131 M202 132L180 150 M230 153L209 169"/>' +
+    '<path d="M33 26L16 48 M59 39L42 63 M87 55L68 79 M116 74L97 98 M145 94L126 118 M175 116L156 139 M205 139L188 160"/></g>' +
+    '<g fill="#55a66c" opacity=".85"><path d="M20 13l-13 -11 5 17zM54 32l-12 -12 4 18zM91 57l-13 -11 5 18zM132 84l-12 -12 4 18zM174 113l-13 -11 4 18zM218 146l-12 -10 4 17z"/></g>' +
+    '<g fill="url(#xmas-cone)" stroke="#c49a69" stroke-width="1.2"><path d="M72 63q-11 13 0 28q11 -15 0 -28z"/><path d="M72 68l-7 7 7 4 7 -4zM72 78l-6 7 6 4 6 -4z"/>' +
+    '<path d="M220 130q-12 14 0 30q12 -16 0 -30z"/><path d="M220 135l-7 7 7 4 7 -4zM220 145l-6 8 6 4 6 -4z"/></g>' +
+    '<g fill="#f4f0df" opacity=".85"><circle cx="11" cy="8" r="2"/><circle cx="45" cy="26" r="1.7"/><circle cx="108" cy="65" r="1.8"/><circle cx="158" cy="101" r="2"/><circle cx="250" cy="166" r="1.7"/></g></svg>';
+
   ['xmas-left', 'xmas-right'].forEach(function (cls) {
     var corner = document.createElement('div');
     corner.className = 'xmas-corner ' + cls;
@@ -26,33 +32,61 @@
     layer.appendChild(corner);
   });
 
-  var colors = ['#c83b3b', '#d5b45b', '#e8e8e8'];
-  [
-    { left: '8%', top: '68px', color: colors[0] },
-    { left: '15%', top: '92px', color: colors[1] },
-    { left: '86%', top: '76px', color: colors[1] },
-    { left: '92%', top: '45px', color: colors[0] }
-  ].forEach(function (item) {
-    var bauble = document.createElement('i');
-    bauble.className = 'xmas-bauble';
-    bauble.style.setProperty('--left', item.left);
-    bauble.style.setProperty('--top', item.top);
-    bauble.style.setProperty('--bauble', item.color);
-    layer.appendChild(bauble);
+  var ornaments = [
+    { left: '7.5%', top: '78px', color: '#b92332', hi: '#ffe0d4', shade: '#5d0915', glow: 'rgba(196,35,50,.35)', size: '13px', delay: '-1s' },
+    { left: '16%', top: '112px', color: '#c6a34e', hi: '#fff4bd', shade: '#6c4c16', glow: 'rgba(218,183,91,.35)', size: '10px', delay: '-2.2s' },
+    { left: '85%', top: '91px', color: '#c6a34e', hi: '#fff4bd', shade: '#6c4c16', glow: 'rgba(218,183,91,.35)', size: '12px', delay: '-.8s' },
+    { left: '93%', top: '55px', color: '#b92332', hi: '#ffe0d4', shade: '#5d0915', glow: 'rgba(196,35,50,.35)', size: '10px', delay: '-1.7s' }
+  ];
+  ornaments.forEach(function (item) {
+    var el = document.createElement('i');
+    el.className = 'xmas-bauble';
+    Object.keys(item).forEach(function (key) {
+      var cssKey = key === 'delay' ? '--delay' : '--' + key;
+      el.style.setProperty(cssKey, item[key]);
+    });
+    layer.appendChild(el);
+  });
+
+  var lights = [
+    ['5%', '28px'], ['11%', '48px'], ['20%', '75px'], ['27%', '105px'],
+    ['73%', '105px'], ['81%', '75px'], ['89%', '48px'], ['96%', '27px']
+  ];
+  lights.forEach(function (point, index) {
+    var light = document.createElement('i');
+    light.className = 'xmas-light';
+    light.style.setProperty('--x', point[0]);
+    light.style.setProperty('--y', point[1]);
+    light.style.setProperty('--light', index % 2 ? '#ffe7a1' : '#e9f4ff');
+    light.style.setProperty('--speed', (2.1 + (index % 3) * .55) + 's');
+    light.style.setProperty('--delay', (-index * .43) + 's');
+    layer.appendChild(light);
   });
 
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var count = reduced ? 12 : (window.innerWidth <= 640 ? 24 : 42);
+  var mobile = window.innerWidth <= 640;
+  var count = reduced ? 10 : (mobile ? 20 : 38);
   for (var i = 0; i < count; i++) {
     var flake = document.createElement('i');
-    flake.className = 'xmas-flake';
+    flake.className = 'xmas-flake' + (i % 9 === 0 ? ' xmas-large' : '');
     flake.style.setProperty('--x', (Math.random() * 100) + 'vw');
-    flake.style.setProperty('--s', (Math.random() * 3 + 2) + 'px');
-    flake.style.setProperty('--o', (Math.random() * .45 + .35).toFixed(2));
-    flake.style.setProperty('--d', (Math.random() * 9 + 9) + 's');
-    flake.style.setProperty('--delay', (-Math.random() * 18) + 's');
-    flake.style.setProperty('--drift', (Math.random() * 70 - 35) + 'px');
+    flake.style.setProperty('--s', (Math.random() * 3.2 + (i % 9 === 0 ? 3.2 : 1.5)) + 'px');
+    flake.style.setProperty('--o', (Math.random() * .48 + .28).toFixed(2));
+    flake.style.setProperty('--d', (Math.random() * 10 + 10) + 's');
+    flake.style.setProperty('--delay', (-Math.random() * 20) + 's');
+    flake.style.setProperty('--drift', (Math.random() * 90 - 45) + 'px');
     layer.appendChild(flake);
   }
+
+  /* Pequenos brilhos decorativos próximos aos cantos, sem cobrir o conteúdo. */
+  [['24%', '34px'], ['78%', '39px'], ['13%', '145px'], ['88%', '151px']].forEach(function (point, index) {
+    var glint = document.createElement('i');
+    glint.className = 'xmas-glint';
+    glint.style.setProperty('--x', point[0]);
+    glint.style.setProperty('--y', point[1]);
+    glint.style.setProperty('--delay', (-index * .7) + 's');
+    layer.appendChild(glint);
+  });
+
   document.body.appendChild(layer);
 })();
