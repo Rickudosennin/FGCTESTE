@@ -6,13 +6,15 @@
       "gameId": 49783,
       "nomes": [
         "fight night"
-      ]
+      ],
+      "rotulo": "Ranking · Fight Night"
     },
     {
       "slug": "t8",
       "name": "Tekken 8",
       "gameId": 49783,
-      "nomes": null
+      "nomes": null,
+      "rotulo": "Ranking Tekken 8 Brasil"
     }
   ]
 }
