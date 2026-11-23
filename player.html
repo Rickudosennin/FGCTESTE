@@ -644,24 +644,30 @@
                 `;
             }
 
-            // ===== Desempenho · Tekken 8 (Start.gg): eventos, top 8, sets, games e resultados =====
-            // Sem seed. Uma consulta paginada de sets do player; cache local de 6h.
+            // ===== Desempenho (Start.gg) por jogo: eventos, top 8, sets e games =====
+            // Sem seed. Uma consulta paginada de sets do player agrupada por jogo; cache local de 6h.
             const DESEMP_TTL = 6 * 3600 * 1000;
-            const DESEMP_ESTADO = { modo: 'all', periodo: 'all', dados: null };
-            function montarHtmlDesempenhoT8() {
-                setTimeout(carregarDesempenhoT8, 0);
+            const DESEMP_IDS = { sf6: 43868, mk1: 48599, mk11: 3200, tekken8: 49783, '2xko': 64423, ffcotw: 73221, gbvsr: 48548, ggst: 33945, mtfs: 107706 };
+            const DESEMP_ESTADO = { jogo: null, modo: 'all', periodo: 'all', dados: null };
+            function jogosComDesempenho() { return (jogosPlayer || []).filter(k => DESEMP_IDS[k] && GAMES_PLAYED_MAP[k]); }
+            function montarHtmlDesempenho() {
+                const jogos = jogosComDesempenho();
+                if (!jogos.length) return '';
+                if (!DESEMP_ESTADO.jogo || !jogos.includes(DESEMP_ESTADO.jogo)) DESEMP_ESTADO.jogo = jogos.includes('tekken8') ? 'tekken8' : jogos[0];
+                setTimeout(carregarDesempenho, 0);
                 return `
-                        <div id="desemp_t8_box" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 w-full min-w-0 overflow-hidden">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Desempenho · Tekken 8</h3>
-                            <p id="desemp_t8_msg" class="text-slate-500 text-sm">Carregando eventos...</p>
-                            <div id="desemp_t8_body"></div>
+                        <div id="desemp_box" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 w-full min-w-0 overflow-hidden">
+                            <h3 id="desemp_titulo" class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Desempenho</h3>
+                            <p id="desemp_msg" class="text-slate-500 text-sm">Carregando eventos...</p>
+                            <div id="desemp_body"></div>
                         </div>`;
             }
-            async function buscarSetsT8(pid, onProgress) {
+            async function buscarSetsDesempenho(pid, onProgress) {
                 const q = `query($id:ID!,$page:Int!){player(id:$id){sets(perPage:25,page:$page){pageInfo{totalPages} nodes{ id winnerId event{ id name startAt isOnline numEntrants videogame{id} tournament{name} } slots{ entrant{ id standing{placement} participants{player{id}} } standing{ stats{ score{ value } } } } } } } }`;
+                const validos = new Set(Object.values(DESEMP_IDS));
                 const eventos = new Map();
                 let page = 1, total = 1, falhas = 0;
-                while (page <= total && page <= 80) {
+                while (page <= total && page <= 120) {
                     let j;
                     try { j = await callStartGG(q, { id: String(pid), page }); } catch (e) { j = null; }
                     const conn = j && j.data && j.data.player && j.data.player.sets;
@@ -674,14 +680,14 @@
                     total = (conn.pageInfo && conn.pageInfo.totalPages) || 1;
                     for (const s of conn.nodes || []) {
                         const ev = s.event;
-                        if (!ev || !ev.videogame || Number(ev.videogame.id) !== T8_GAME_ID) continue;
+                        if (!ev || !ev.videogame || !validos.has(Number(ev.videogame.id))) continue;
                         const slots = s.slots || [];
                         const meu = slots.find(x => x.entrant && (x.entrant.participants || []).some(p => p.player && Number(p.player.id) === Number(pid)));
                         if (!meu || (meu.entrant.participants || []).length !== 1) continue; // só singles
                         const outro = slots.find(x => x !== meu);
                         let e = eventos.get(ev.id);
                         if (!e) {
-                            e = { id: ev.id, n: (ev.tournament && ev.tournament.name) || ev.name || 'Evento', en: ev.name || '', d: ev.startAt || 0, on: !!ev.isOnline,
+                            e = { g: Number(ev.videogame.id), id: ev.id, n: (ev.tournament && ev.tournament.name) || ev.name || 'Evento', d: ev.startAt || 0, on: !!ev.isOnline,
                                   ne: ev.numEntrants || 0, p: (meu.entrant.standing && meu.entrant.standing.placement) || null, sw: 0, sl: 0, gw: 0, gl: 0 };
                             eventos.set(ev.id, e);
                         }
@@ -696,18 +702,24 @@
                     page++;
                     if (page <= total) await new Promise(r => setTimeout(r, 700));
                 }
-                return [...eventos.values()].sort((x, y) => y.d - x.d);
+                const porJogo = {};
+                for (const e of eventos.values()) (porJogo[e.g] = porJogo[e.g] || []).push(e);
+                Object.values(porJogo).forEach(l => l.sort((x, y) => y.d - x.d));
+                return porJogo;
             }
             function ordPt(n) { return n ? n + 'º' : '—'; }
-            function renderDesempenhoT8() {
-                const body = document.getElementById('desemp_t8_body');
-                const msg = document.getElementById('desemp_t8_msg');
+            function eventosDoJogoAtivo() { return (DESEMP_ESTADO.dados && DESEMP_ESTADO.dados[DESEMP_IDS[DESEMP_ESTADO.jogo]]) || []; }
+            function renderDesempenho() {
+                const body = document.getElementById('desemp_body');
+                const msg = document.getElementById('desemp_msg');
+                const titulo = document.getElementById('desemp_titulo');
                 if (!body || !DESEMP_ESTADO.dados) return;
-                const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+                const jogos = jogosComDesempenho();
+                if (titulo) titulo.textContent = jogos.length > 1 ? 'Desempenho' : 'Desempenho · ' + GAMES_PLAYED_MAP[DESEMP_ESTADO.jogo].label;
                 const agora = Date.now() / 1000;
                 const lim = DESEMP_ESTADO.periodo === '90' ? agora - 90 * 86400 : DESEMP_ESTADO.periodo === '2026' ? Date.UTC(2026, 0, 1) / 1000 : 0;
                 const fim = DESEMP_ESTADO.periodo === '2026' ? Date.UTC(2027, 0, 1) / 1000 : Infinity;
-                const lista = DESEMP_ESTADO.dados.filter(e => (DESEMP_ESTADO.modo === 'all' || (DESEMP_ESTADO.modo === 'on') === e.on) && e.d >= lim && e.d < fim);
+                const lista = eventosDoJogoAtivo().filter(e => (DESEMP_ESTADO.modo === 'all' || (DESEMP_ESTADO.modo === 'on') === e.on) && e.d >= lim && e.d < fim);
                 if (msg) msg.hidden = true;
                 const off = lista.filter(e => !e.on).length, on = lista.length - off;
                 const top8 = lista.filter(e => e.p && e.p <= 8).length;
@@ -717,7 +729,9 @@
                 const pc = (w, l) => (w + l ? Math.round(w / (w + l) * 100) : 0);
                 const card = (t, v, s) => `<div class="border border-slate-800 rounded-lg p-3"><div class="text-[10px] uppercase tracking-wider text-slate-500">${t}</div><div class="text-2xl font-bold text-white">${v}</div><div class="text-xs text-slate-400">${s}</div></div>`;
                 const pill = (grp, val, rot) => `<button type="button" data-g="${grp}" data-v="${val}" class="px-3 py-1.5 rounded-md text-xs font-semibold ${DESEMP_ESTADO[grp] === val ? 'bg-slate-200 text-slate-900' : 'border border-slate-700 text-slate-400'}">${rot}</button>`;
+                const abas = jogos.length > 1 ? `<div class="flex flex-wrap gap-2 mb-3 pb-3 border-b border-slate-800">${jogos.map(k => `<button type="button" data-jogo="${k}" class="px-3 py-1.5 rounded-md text-xs font-bold ${DESEMP_ESTADO.jogo === k ? 'bg-red-600 text-white' : 'border border-slate-700 text-slate-300'}">${GAMES_PLAYED_MAP[k].label}</button>`).join('')}</div>` : '';
                 body.innerHTML = `
+                    ${abas}
                     <div class="flex flex-wrap gap-2 mb-3">${pill('modo', 'all', 'Todos')}${pill('modo', 'off', 'Offline')}${pill('modo', 'on', 'Online')}</div>
                     <div class="flex flex-wrap gap-2 mb-4">${pill('periodo', '90', 'Últimos 90 dias')}${pill('periodo', '2026', '2026')}${pill('periodo', 'all', 'Todo período')}</div>
                     ${lista.length ? `
@@ -728,14 +742,14 @@
                         ${card('Games', gw + '–' + gl, pc(gw, gl) + '% vitórias')}
                     </div>
                     ` : '<p class="text-slate-500 text-sm">Sem eventos neste filtro.</p>'}`;
-                body.querySelectorAll('button[data-g]').forEach(b => b.onclick = () => { DESEMP_ESTADO[b.dataset.g] = b.dataset.v; renderDesempenhoT8(); });
+                body.querySelectorAll('button[data-g]').forEach(b => b.onclick = () => { DESEMP_ESTADO[b.dataset.g] = b.dataset.v; renderDesempenho(); });
+                body.querySelectorAll('button[data-jogo]').forEach(b => b.onclick = () => { DESEMP_ESTADO.jogo = b.dataset.jogo; renderDesempenho(); atualizarChipsDesempenho(); });
             }
-            function atualizarChipsDesempenhoT8() {
-                const dados = DESEMP_ESTADO.dados;
-                if (!dados) return;
+            function atualizarChipsDesempenho() {
+                if (!DESEMP_ESTADO.dados) return;
                 const ano = new Date().getFullYear();
                 const ini = Date.UTC(ano, 0, 1) / 1000, fim = Date.UTC(ano + 1, 0, 1) / 1000;
-                const lista = dados.filter(e => e.d >= ini && e.d < fim);
+                const lista = eventosDoJogoAtivo().filter(e => e.d >= ini && e.d < fim);
                 const sw = lista.reduce((t, e) => t + e.sw, 0), sl = lista.reduce((t, e) => t + e.sl, 0);
                 const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
                 set('chip-torneios-rot', 'TORNEIOS ' + ano);
@@ -746,19 +760,19 @@
                 const el = document.getElementById('chip-wr');
                 if (el) el.className = wr >= 60 ? 'text-green-500' : wr >= 40 ? 'text-yellow-500' : 'text-red-500';
             }
-            async function carregarDesempenhoT8() {
-                const msg = document.getElementById('desemp_t8_msg');
+            async function carregarDesempenho() {
+                const msg = document.getElementById('desemp_msg');
                 if (!msg || !playerId) return;
-                const key = 'fgchub:desemp:v1:' + playerId;
+                const key = 'fgchub:desemp:v2:' + playerId;
+                const pronto = () => { renderDesempenho(); atualizarChipsDesempenho(); };
                 try {
                     const c = JSON.parse(localStorage.getItem(key) || 'null');
-                    if (c && Date.now() - c.t < DESEMP_TTL && Array.isArray(c.e)) { DESEMP_ESTADO.dados = c.e; renderDesempenhoT8(); atualizarChipsDesempenhoT8(); return; }
+                    if (c && Date.now() - c.t < DESEMP_TTL && c.g && typeof c.g === 'object') { DESEMP_ESTADO.dados = c.g; pronto(); return; }
                 } catch (e) { /* sem cache local */ }
                 try {
-                    DESEMP_ESTADO.dados = await buscarSetsT8(playerId, (p, t) => { const m = document.getElementById('desemp_t8_msg'); if (m) m.textContent = 'Carregando sets... ' + p + '/' + t; });
-                    try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), e: DESEMP_ESTADO.dados })); } catch (e) { /* ok */ }
-                    renderDesempenhoT8();
-                    atualizarChipsDesempenhoT8();
+                    DESEMP_ESTADO.dados = await buscarSetsDesempenho(playerId, (p, t) => { const m = document.getElementById('desemp_msg'); if (m) m.textContent = 'Carregando sets... ' + p + '/' + t; });
+                    try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), g: DESEMP_ESTADO.dados })); } catch (e) { /* ok */ }
+                    pronto();
                 } catch (e) {
                     msg.textContent = 'Não foi possível carregar o desempenho agora. Tente novamente mais tarde.';
                 }
@@ -981,7 +995,7 @@
                             `}
                         </div>
 
-                        ${jogosPlayer.includes('tekken8') ? montarHtmlDesempenhoT8() : ''}
+                        ${montarHtmlDesempenho()}
                         ${jogosPlayer.includes('tekken8') ? montarHtmlRankingsT8() : ''}
 
                         ${montarHtmlUsoPersonagens(characterUsage, characterUsageUnavailable, characterUsagePartial, { characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount })}
