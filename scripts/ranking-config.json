@@ -14,7 +14,8 @@
       "apenasOnline": true,
       "nomes": [
         "fight night"
-      ]
+      ],
+      "rotulo": "Ranking · Fight Night"
     },
     {
       "slug": "t8",
@@ -22,7 +23,8 @@
       "gameId": 49783,
       "from": "2026-01-01",
       "minEntrants": 8,
-      "enabled": true
+      "enabled": true,
+      "rotulo": "Ranking Tekken 8 Brasil"
     },
     {
       "slug": "sf6",

@@ -168,13 +168,22 @@ async function collect(game, cache) {
     }
   }
 
+  // Cache antigo (sem sponsor/país): reconsulta só os standings, usando os dados já guardados
+  const naFila = new Set(todo.map(t => t.id));
+  let upgrade = 0;
+  for (const c of Object.values(cache.events)) {
+    if (c.v === 2 || naFila.has(c.id)) continue;
+    todo.push({ id: c.id, name: c.name, entrants: c.entrants, tName: c.tName, online: c.online, startAt: c.startAt, recheck: c.recheck });
+    upgrade++;
+  }
+  stats.atualizandoCache = upgrade;
   console.log(`[${game.slug}] diag:`, JSON.stringify(stats));
   const B = 5;
   for (let i = 0; i < todo.length; i += B) {
     const batch = todo.slice(i, i + B);
     console.log(`[${game.slug}] standings ${Math.min(i + B, todo.length)}/${todo.length}`);
     const q = 'query{' + batch.map((e, k) =>
-      `e${k}:event(id:${e.id}){id standings(query:{page:1,perPage:16}){nodes{placement entrant{participants{player{id gamerTag}}}}}}`
+      `e${k}:event(id:${e.id}){id standings(query:{page:1,perPage:16}){nodes{placement entrant{participants{prefix user{location{country}} player{id gamerTag}}}}}}`
     ).join('') + '}';
     const d = await gql(q, {});
     batch.forEach((e, k) => {
@@ -186,10 +195,12 @@ async function collect(game, cache) {
         if (ps.length !== 1) { team = true; break; }
         const pl = ps[0].player;
         if (!pl || !pl.id) continue;
-        rows.push({ p: n.placement, id: pl.id, tag: pl.gamerTag });
+        const u = ps[0].user && ps[0].user.location;
+        rows.push({ p: n.placement, id: pl.id, tag: pl.gamerTag, x: ps[0].prefix || '', c: (u && u.country) || '' });
       }
       e.rows = team ? [] : rows;
       e.team = team;
+      e.v = 2; // v2 = standings com prefixo (sponsor) e país
       cache.events[e.id] = e;
     });
   }
@@ -209,8 +220,10 @@ function compute(events, mode, min) {
       const pts = points(r.p);
       if (!pts) continue;
       let o = map.get(r.id);
-      if (!o) { o = { id: r.id, tag: r.tag, pts: 0, best: 99, list: [] }; map.set(r.id, o); }
+      if (!o) { o = { id: r.id, tag: r.tag, px: '', cc: '', pts: 0, best: 99, list: [] }; map.set(r.id, o); }
       o.tag = r.tag; // tag mais recente
+      o.px = r.x || '';            // sponsor do evento mais recente
+      if (r.c) o.cc = r.c;          // último país informado
       o.pts += pts;
       o.best = Math.min(o.best, r.p);
       o.list.push({ n: e.tName + ' — ' + e.name, p: r.p, pts, e: e.entrants, d: e.startAt });
@@ -221,7 +234,7 @@ function compute(events, mode, min) {
   const players = arr.map((o, i) => {
     if (o.pts !== last) { pos = i + 1; last = o.pts; }
     o.list.sort((a, b) => b.d - a.d);
-    return { pos, id: o.id, tag: o.tag, pts: o.pts, n: o.list.length, best: o.best, list: o.list };
+    return { pos, id: o.id, tag: o.tag, px: o.px, cc: o.cc, pts: o.pts, n: o.list.length, best: o.best, list: o.list };
   });
   return { events: evCount, players };
 }
@@ -237,6 +250,8 @@ async function updateGame(game) {
   const nomesLc = (game.nomes || []).map(n => n.toLowerCase());
   const events = Object.values(cache.events).filter(e =>
     !nomesLc.length || nomesLc.some(n => (e.tName || '').toLowerCase().includes(n)));
+  const outFile = path.join(OUT_DIR, `${game.slug}.json`);
+  const old = readJson(outFile, null);
   const out = {
     slug: game.slug,
     name: game.name,
@@ -245,7 +260,18 @@ async function updateGame(game) {
     minEntrants: min,
     modes: Object.fromEntries((game.modos || ['online', 'offline', 'ambos']).map(m => [m, compute(events, m, min)]))
   };
-  fs.writeFileSync(path.join(OUT_DIR, `${game.slug}.json`), JSON.stringify(out));
+  // Movimento: pv = posição na versão anterior do ranking (0 = entrou agora).
+  // A base só troca quando alguma posição muda; senão mantém a anterior.
+  for (const [m, cur] of Object.entries(out.modes)) {
+    const op = old && old.modes && old.modes[m] && old.modes[m].players;
+    if (!op) continue;
+    const oldPos = new Map(op.map(x => [x.id, x.pos]));
+    const changed = cur.players.length !== op.length || cur.players.some(x => oldPos.get(x.id) !== x.pos);
+    const base = changed ? oldPos : new Map(op.filter(x => x.pv !== undefined).map(x => [x.id, x.pv]));
+    if (!base.size) continue;
+    for (const x of cur.players) x.pv = base.has(x.id) ? base.get(x.id) : 0;
+  }
+  fs.writeFileSync(outFile, JSON.stringify(out));
   console.log(`[${game.slug}] OK: +${added} eventos novos, ${events.length} no ranking (${Object.keys(cache.events).length} no cache)`);
 }
 
@@ -253,7 +279,7 @@ function writeIndex() {
   const games = CONFIG.games
     .filter(g => g.enabled)
     .filter(g => fs.existsSync(path.join(OUT_DIR, `${g.slug}.json`)))
-    .map(g => ({ slug: g.slug, name: g.name, gameId: g.gameId, nomes: g.nomes || null }));
+    .map(g => ({ slug: g.slug, name: g.name, gameId: g.gameId, nomes: g.nomes || null, rotulo: g.rotulo || null }));
   fs.writeFileSync(path.join(OUT_DIR, 'index.json'), JSON.stringify({ games }, null, 2));
 }
 

@@ -518,7 +518,7 @@ header h1 {
 .rk-modos button { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.18); color: #aaa; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 7px 0; border-radius: 6px; cursor: pointer; }
 .rk-modos button.on { background: rgba(255,255,255,0.92); color: #111; border-color: transparent; }
 
-/* GAME DEALS — painel de preços integrado ao tema atual */
+/* GAME DEALS · PC */
 .game-prices-panel[hidden] { display: none !important; }
 .game-prices-panel { border-color: rgba(220,38,38,.65); background: linear-gradient(135deg, rgba(24,24,27,.98), rgba(8,8,10,.96)); }
 .game-prices-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }

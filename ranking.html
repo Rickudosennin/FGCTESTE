@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap">
     <link rel="stylesheet" href="themes.css">
     <script src="theme.js"></script>
+    <script src="country-codes.js"></script>
     <style>
         :root {
             --bg: #0d0e10;
@@ -73,7 +74,9 @@
         thead th { background: var(--bg); color: var(--mute); font: 500 11.5px var(--body); text-transform: uppercase; letter-spacing: .08em; padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); position: sticky; top: 0; }
         td { padding: 0 12px; height: 46px; border-bottom: 1px solid var(--line-soft); }
         .r { text-align: right; }
-        .pos { width: 58px; font: 600 18px var(--display); color: var(--mute); }
+        .mv { display: inline-block; margin-left: 6px; font: 600 11px var(--body); letter-spacing: 0; white-space: nowrap; }
+        .mv.up { color: #22c55e; } .mv.down { color: #ef4444; } .mv.eq, .mv.new { color: var(--mute); }
+        .pos { width: 88px; font: 600 18px var(--display); color: var(--mute); }
         tr.p { cursor: pointer; }
         tr.p:hover td, tr.p.open td { background: var(--panel); }
         tr.p td:first-child { box-shadow: inset 3px 0 0 transparent; }
@@ -82,6 +85,9 @@
         tr.p.t2 td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
         tr.p.t3 td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 30%, transparent); }
         .tag { font-weight: 600; font-size: 16px; }
+        .tag .px { color: var(--mute); font-weight: 500; margin-right: 6px; }
+        .tag .px::after { content: ' |'; }
+        .tag .flag { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; margin-right: 9px; vertical-align: -1px; }
         .bar { width: 28%; }
         .bar i { display: block; height: 4px; background: var(--line); position: relative; }
         .bar i b { position: absolute; inset: 0 auto 0 0; background: var(--text); opacity: .75; }
@@ -123,11 +129,12 @@
             .scale div { border-bottom: 1px solid var(--line); }
             tr.d td { padding-left: 12px; }
             td { padding: 0 8px; }
-            .pos { width: 40px; }
+            .pos { width: 68px; }
             .best { width: 56px; }
             .pts { width: 56px; }
         }
     </style>
+    <link rel="stylesheet" href="natal.css">
 </head>
 <body>
     <div class="wrap">
@@ -178,11 +185,30 @@
     </div>
 
 <script>
+// Bloqueio simples de inspeção (mesmo padrão do restante do site)
+document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+document.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase();
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && 'ijc'.indexOf(k) > -1) || (e.ctrlKey && (k === 'u' || k === 's'))) {
+        e.preventDefault(); return false;
+    }
+});
+</script>
+<script>
 (function () {
     'use strict';
     var BASE = 'data/ranking/';
     var $ = function (id) { return document.getElementById(id); };
     var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
+    // Movimento no ranking: ▲ subiu (verde), ▼ desceu (vermelho), = manteve, NEW entrou agora
+    var mv = function (o) {
+        if (o.pv === undefined) return '<span class="mv eq" title="Manteve a posição">=</span>';
+        if (o.pv === 0) return '<span class="mv new" title="Entrou no ranking">NEW</span>';
+        var d = o.pv - o.pos;
+        if (d > 0) return '<span class="mv up" title="Subiu ' + d + ' (era ' + o.pv + 'º)">&#9650;' + d + '</span>';
+        if (d < 0) return '<span class="mv down" title="Desceu ' + (-d) + ' (era ' + o.pv + 'º)">&#9660;' + (-d) + '</span>';
+        return '<span class="mv eq" title="Manteve a posição">=</span>';
+    };
     // "Torneio — Evento": mostra uma vez só quando o nome do evento repete o do torneio
     var nomeEv = function (n) {
         var i = String(n).indexOf(' — ');
@@ -190,6 +216,10 @@
         var t = n.slice(0, i), e = n.slice(i + 3);
         var a = norm(t), b = norm(e);
         return (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) ? (t.length >= e.length ? t : e) : n;
+    };
+    var flag = function (c) {
+        var iso = c && window.fgcCountryIso2 ? window.fgcCountryIso2(c) : null;
+        return iso ? '<img class="flag" src="https://flagcdn.com/w40/' + iso.toLowerCase() + '.png" alt="" title="' + esc(c) + '" loading="lazy">' : '';
     };
     var norm = function (s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
     var qs = new URLSearchParams(location.search);
@@ -264,7 +294,7 @@
             '<small>' + upd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</small>';
 
         var f = norm(filtro.trim());
-        var list = f ? m.players.filter(function (o) { return norm(o.tag).indexOf(f) >= 0; }) : m.players;
+        var list = f ? m.players.filter(function (o) { return norm((o.px || '') + ' ' + o.tag).indexOf(f) >= 0; }) : m.players;
         var max = m.players.length ? m.players[0].pts : 1;
 
         var body = $('corpo');
@@ -278,8 +308,8 @@
             var tr = document.createElement('tr');
             tr.className = 'p' + (o.pos <= 3 ? ' t' + o.pos : '');
             tr.innerHTML =
-                '<td class="pos">' + o.pos + '</td>' +
-                '<td class="tag">' + esc(o.tag) + '</td>' +
+                '<td class="pos">' + o.pos + mv(o) + '</td>' +
+                '<td class="tag">' + flag(o.cc) + (o.px ? '<span class="px">' + esc(o.px) + '</span>' : '') + esc(o.tag) + '</td>' +
                 '<td class="bar hide-s"><i><b style="width:' + Math.max(2, Math.round(o.pts / max * 100)) + '%"></b></i></td>' +
                 '<td class="r pts">' + o.pts + '</td>' +
                 '<td class="r hide-s">' + o.n + '</td>' +
@@ -323,5 +353,7 @@
     });
 })();
 </script>
+    <script>window.FGC_NATAL_NEVE = 28;</script>
+    <script src="natal.js"></script>
 </body>
 </html>

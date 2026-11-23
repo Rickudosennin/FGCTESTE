@@ -12,7 +12,9 @@
     <!-- Temas -->
     <link rel="stylesheet" href="themes.css">
     <link rel="stylesheet" href="theme-evo-pages.css?v=1">
+    <link rel="stylesheet" href="ewgf-dashboard.css?v=20261119-1">
     <script src="theme.js"></script>
+    <link rel="stylesheet" href="natal.css">
 </head>
 <body class="p-4 md:p-10 bg-slate-950 text-slate-100 overflow-x-hidden">
 
@@ -55,11 +57,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js?v=character-history-scan-20261003-2"></script>
+    <script src="script.js?v=character-history-scan-20261003-2-rk1"></script>
     <script src="players.js?v=ewgf-rank-20261013-1"></script>
     <script src="country-codes.js"></script>
     <script src="ewgf-config.js?v=20261013-2"></script>
     <script src="ewgf-rank.js?v=20261013-3"></script>
+    <script src="ewgf-dashboard.js?v=20261119-1"></script>
     <script src="player-share.js?v=20261009-2"></script>
     <script>
         (function() {
@@ -597,6 +600,11 @@
                     `;
                 }).join('');
 
+                // Só mostra o card quando há personagem encontrado (ou contagem pausada/com erro, para poder continuar)
+                const varreduraPendente = !controleVarreduraPersonagens.running &&
+                    ['paused', 'error'].includes(estadoVarreduraPersonagens?.status);
+                if (!gameCards && !varreduraPendente) return '';
+
                 return `
                     <div id="character-usage-panel" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 w-full min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -634,6 +642,213 @@
                         </div>
                     </div>
                 `;
+            }
+
+            // ===== Desempenho · Tekken 8 (Start.gg): eventos, top 8, sets, games e resultados =====
+            // Sem seed. Uma consulta paginada de sets do player; cache local de 6h.
+            const DESEMP_TTL = 6 * 3600 * 1000;
+            const DESEMP_ESTADO = { modo: 'all', periodo: 'all', dados: null, mostrar: 15 };
+            function montarHtmlDesempenhoT8() {
+                setTimeout(carregarDesempenhoT8, 0);
+                return `
+                        <div id="desemp_t8_box" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 w-full min-w-0 overflow-hidden">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Desempenho · Tekken 8</h3>
+                            <p id="desemp_t8_msg" class="text-slate-500 text-sm">Carregando eventos...</p>
+                            <div id="desemp_t8_body"></div>
+                        </div>`;
+            }
+            async function buscarSetsT8(pid, onProgress) {
+                const q = `query($id:ID!,$page:Int!){player(id:$id){sets(perPage:25,page:$page){pageInfo{totalPages} nodes{ id winnerId event{ id name startAt isOnline numEntrants videogame{id} tournament{name} } slots{ entrant{ id standing{placement} participants{player{id}} } standing{ stats{ score{ value } } } } } } } }`;
+                const eventos = new Map();
+                let page = 1, total = 1, falhas = 0;
+                while (page <= total && page <= 80) {
+                    let j;
+                    try { j = await callStartGG(q, { id: String(pid), page }); } catch (e) { j = null; }
+                    const conn = j && j.data && j.data.player && j.data.player.sets;
+                    if (!conn) {
+                        if (++falhas > 3) throw new Error('falha na API');
+                        await new Promise(r => setTimeout(r, 2500));
+                        continue;
+                    }
+                    falhas = 0;
+                    total = (conn.pageInfo && conn.pageInfo.totalPages) || 1;
+                    for (const s of conn.nodes || []) {
+                        const ev = s.event;
+                        if (!ev || !ev.videogame || Number(ev.videogame.id) !== T8_GAME_ID) continue;
+                        const slots = s.slots || [];
+                        const meu = slots.find(x => x.entrant && (x.entrant.participants || []).some(p => p.player && Number(p.player.id) === Number(pid)));
+                        if (!meu || (meu.entrant.participants || []).length !== 1) continue; // só singles
+                        const outro = slots.find(x => x !== meu);
+                        let e = eventos.get(ev.id);
+                        if (!e) {
+                            e = { id: ev.id, n: (ev.tournament && ev.tournament.name) || ev.name || 'Evento', en: ev.name || '', d: ev.startAt || 0, on: !!ev.isOnline,
+                                  ne: ev.numEntrants || 0, p: (meu.entrant.standing && meu.entrant.standing.placement) || null, sw: 0, sl: 0, gw: 0, gl: 0 };
+                            eventos.set(ev.id, e);
+                        }
+                        const a = meu.standing && meu.standing.stats && meu.standing.stats.score && meu.standing.stats.score.value;
+                        const b = outro && outro.standing && outro.standing.stats && outro.standing.stats.score && outro.standing.stats.score.value;
+                        const dq = a == null || b == null || a < 0 || b < 0;
+                        if (s.winnerId == null || dq) continue; // DQ / sem placar: não conta
+                        if (Number(s.winnerId) === Number(meu.entrant.id)) e.sw++; else e.sl++;
+                        e.gw += a; e.gl += b;
+                    }
+                    if (onProgress) onProgress(page, total);
+                    page++;
+                    if (page <= total) await new Promise(r => setTimeout(r, 700));
+                }
+                return [...eventos.values()].sort((x, y) => y.d - x.d);
+            }
+            function ordPt(n) { return n ? n + 'º' : '—'; }
+            function renderDesempenhoT8() {
+                const body = document.getElementById('desemp_t8_body');
+                const msg = document.getElementById('desemp_t8_msg');
+                if (!body || !DESEMP_ESTADO.dados) return;
+                const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+                const agora = Date.now() / 1000;
+                const lim = DESEMP_ESTADO.periodo === '90' ? agora - 90 * 86400 : DESEMP_ESTADO.periodo === '2026' ? Date.UTC(2026, 0, 1) / 1000 : 0;
+                const fim = DESEMP_ESTADO.periodo === '2026' ? Date.UTC(2027, 0, 1) / 1000 : Infinity;
+                const lista = DESEMP_ESTADO.dados.filter(e => (DESEMP_ESTADO.modo === 'all' || (DESEMP_ESTADO.modo === 'on') === e.on) && e.d >= lim && e.d < fim);
+                if (msg) msg.hidden = true;
+                const off = lista.filter(e => !e.on).length, on = lista.length - off;
+                const top8 = lista.filter(e => e.p && e.p <= 8).length;
+                const melhor = Math.min(...lista.map(e => e.p || 999));
+                const sw = lista.reduce((s, e) => s + e.sw, 0), sl = lista.reduce((s, e) => s + e.sl, 0);
+                const gw = lista.reduce((s, e) => s + e.gw, 0), gl = lista.reduce((s, e) => s + e.gl, 0);
+                const pc = (w, l) => (w + l ? Math.round(w / (w + l) * 100) : 0);
+                const card = (t, v, s) => `<div class="border border-slate-800 rounded-lg p-3"><div class="text-[10px] uppercase tracking-wider text-slate-500">${t}</div><div class="text-2xl font-bold text-white">${v}</div><div class="text-xs text-slate-400">${s}</div></div>`;
+                const pill = (grp, val, rot) => `<button type="button" data-g="${grp}" data-v="${val}" class="px-3 py-1.5 rounded-md text-xs font-semibold ${DESEMP_ESTADO[grp] === val ? 'bg-slate-200 text-slate-900' : 'border border-slate-700 text-slate-400'}">${rot}</button>`;
+                const linhas = lista.slice(0, DESEMP_ESTADO.mostrar).map(e => `
+                    <div class="flex items-center gap-3 py-2 border-b border-slate-800/70">
+                        <div class="w-14 shrink-0"><div class="text-white font-bold">${ordPt(e.p)}</div><div class="text-[10px] text-slate-500">de ${e.ne || '?'}</div></div>
+                        <div class="min-w-0 flex-1"><div class="text-sm text-slate-200 truncate">${esc(e.n)}</div><div class="text-[11px] text-slate-500">${e.on ? 'Online' : 'Offline'} · ${e.d ? new Date(e.d * 1000).toLocaleDateString('pt-BR') : ''}</div></div>
+                        <div class="text-xs text-slate-400 shrink-0">${e.sw}–${e.sl}</div>
+                    </div>`).join('');
+                body.innerHTML = `
+                    <div class="flex flex-wrap gap-2 mb-3">${pill('modo', 'all', 'Todos')}${pill('modo', 'off', 'Offline')}${pill('modo', 'on', 'Online')}</div>
+                    <div class="flex flex-wrap gap-2 mb-4">${pill('periodo', '90', 'Últimos 90 dias')}${pill('periodo', '2026', '2026')}${pill('periodo', 'all', 'Todo período')}</div>
+                    ${lista.length ? `
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        ${card('Eventos', lista.length, off + ' offline · ' + on + ' online')}
+                        ${card('Top 8', top8, 'melhor: ' + (melhor < 999 ? ordPt(melhor) : '—'))}
+                        ${card('Sets', sw + '–' + sl, pc(sw, sl) + '% vitórias')}
+                        ${card('Games', gw + '–' + gl, pc(gw, gl) + '% vitórias')}
+                    </div>
+                    <h4 class="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Resultados</h4>
+                    <div>${linhas}</div>
+                    ${lista.length > DESEMP_ESTADO.mostrar ? '<button type="button" data-mais="1" class="mt-3 text-xs text-slate-300 border border-slate-700 rounded-md px-3 py-1.5">Ver mais</button>' : ''}
+                    ` : '<p class="text-slate-500 text-sm">Sem eventos neste filtro.</p>'}`;
+                body.querySelectorAll('button[data-g]').forEach(b => b.onclick = () => { DESEMP_ESTADO[b.dataset.g] = b.dataset.v; DESEMP_ESTADO.mostrar = 15; renderDesempenhoT8(); });
+                const mais = body.querySelector('button[data-mais]');
+                if (mais) mais.onclick = () => { DESEMP_ESTADO.mostrar += 20; renderDesempenhoT8(); };
+            }
+            async function carregarDesempenhoT8() {
+                const msg = document.getElementById('desemp_t8_msg');
+                if (!msg || !playerId) return;
+                const key = 'fgchub:desemp:v1:' + playerId;
+                try {
+                    const c = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (c && Date.now() - c.t < DESEMP_TTL && Array.isArray(c.e)) { DESEMP_ESTADO.dados = c.e; renderDesempenhoT8(); return; }
+                } catch (e) { /* sem cache local */ }
+                try {
+                    DESEMP_ESTADO.dados = await buscarSetsT8(playerId, (p, t) => { const m = document.getElementById('desemp_t8_msg'); if (m) m.textContent = 'Carregando sets... ' + p + '/' + t; });
+                    try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), e: DESEMP_ESTADO.dados })); } catch (e) { /* ok */ }
+                    renderDesempenhoT8();
+                } catch (e) {
+                    msg.textContent = 'Não foi possível carregar o desempenho agora. Tente novamente mais tarde.';
+                }
+            }
+
+            // ===== Rankings do Tekken 8: ranking Brasil + séries/ligas em que o player aparece =====
+            // Só aparece quando "Tekken 8" está nos jogos do player. Dados: data/ranking/*.json (workflow) e ligas do Start.gg.
+            const T8_GAME_ID = 49783;
+            function montarHtmlRankingsT8() {
+                setTimeout(carregarRankingsT8, 0); // roda depois que o HTML do perfil entrar na página
+                return `
+                        <div id="rank_t8_box" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Rankings · Tekken 8</h3>
+                            <p class="text-slate-500 text-sm">Carregando rankings...</p>
+                        </div>`;
+            }
+            async function posicaoNaLigaT8(slug, pid) {
+                const key = `fgchub:liga:${slug}:${pid}`;
+                try {
+                    const c = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (c && Date.now() - c.t < 3600000) return c.r;
+                } catch (e) { /* sem cache local */ }
+                const q = `query($slug:String,$page:Int){league(slug:$slug){standings(query:{page:$page,perPage:50}){pageInfo{totalPages} nodes{placement totalPoints entrant{participants{player{id}}}}}}}`;
+                let achou = null, page = 1, total = 1;
+                while (page <= total && page <= 20) {
+                    const j = await callStartGG(q, { slug, page });
+                    const st = j && j.data && j.data.league && j.data.league.standings;
+                    if (!st) return undefined; // erro ou liga sem acesso: não grava cache
+                    total = (st.pageInfo && st.pageInfo.totalPages) || 1;
+                    const n = (st.nodes || []).find(x => ((x.entrant && x.entrant.participants) || []).some(p => p.player && String(p.player.id) === String(pid)));
+                    if (n) { achou = { pos: n.placement, pts: n.totalPoints ?? 0 }; break; }
+                    page++;
+                }
+                try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), r: achou })); } catch (e) { /* ok */ }
+                return achou;
+            }
+            async function carregarRankingsT8() {
+                const box = document.getElementById('rank_t8_box');
+                if (!box || !playerId) return;
+                const pid = Number(playerId);
+                const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+                const lerJson = async f => { const r = await fetch('data/ranking/' + f, { cache: 'no-cache' }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
+                const ROTULOS = { 't8': 'Ranking Tekken 8 Brasil', 't8-fn': 'Ranking · Fight Night' };
+
+                let lista = [];
+                try { lista = ((await lerJson('index.json')).games || []).filter(g => (g.gameId || T8_GAME_ID) === T8_GAME_ID); } catch (e) { /* usa padrão */ }
+                if (!lista.length) lista = [{ slug: 't8' }, { slug: 't8-fn' }];
+
+                const dados = {};
+                await Promise.all(lista.map(async g => { try { dados[g.slug] = await lerJson(g.slug + '.json'); } catch (e) { dados[g.slug] = null; } }));
+                const achar = (d, modo) => {
+                    const m = d && d.modes && d.modes[modo];
+                    const p = m && m.players.find(x => x.id === pid);
+                    return p ? { pos: p.pos, pts: p.pts, n: p.n } : null;
+                };
+
+                // Ranking Brasil: online e offline (NA quando não pontua)
+                const base = dados['t8'];
+                const celula = (rot, r, modo) => `
+                            <a href="ranking.html?jogo=t8&modo=${modo}" class="block bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-center hover:border-slate-500 transition">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${rot}</div>
+                                <div class="text-2xl font-black ${r ? 'text-white' : 'text-slate-500'}">${r ? '#' + r.pos : 'NA'}</div>
+                                <div class="text-xs text-slate-400">${r ? `${r.pts.toLocaleString('pt-BR')} pts · ${r.n} ${r.n === 1 ? 'evento' : 'eventos'}` : 'sem pontuação'}</div>
+                            </a>`;
+                let html = `
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Rankings · Tekken 8</h3>
+                                <span class="text-xs text-slate-500">${esc((lista.find(g => g.slug === 't8') || {}).rotulo || ROTULOS['t8'])}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                ${celula('Online', achar(base, 'online'), 'online')}
+                                ${celula('Offline', achar(base, 'offline'), 'offline')}
+                            </div>`;
+
+                // Séries próprias (ex.: Fight Night) e ligas externas: só aparecem se o player participa
+                const extras = [];
+                lista.filter(g => g.slug !== 't8').forEach(g => {
+                    const d = dados[g.slug];
+                    if (!d) return;
+                    const modo = d.modes.ambos ? 'ambos' : Object.keys(d.modes)[0];
+                    const r = achar(d, modo);
+                    if (r) extras.push({ label: g.rotulo || ROTULOS[g.slug] || ('Ranking ' + (g.name || g.slug)), r, url: 'ranking.html?jogo=' + g.slug + '&modo=' + modo });
+                });
+                const ligas = (typeof LIGAS_MONITORADAS !== 'undefined' ? LIGAS_MONITORADAS : []).filter(l => (l.jogos || []).includes('tekken8'));
+                const resLigas = await Promise.all(ligas.map(l => posicaoNaLigaT8(l.slug, pid).catch(() => undefined)));
+                ligas.forEach((l, i) => { if (resLigas[i]) extras.push({ label: l.label, r: { pos: resLigas[i].pos, pts: resLigas[i].pts }, url: l.rankingUrl, externo: true }); });
+
+                if (extras.length) {
+                    html += `<div class="divide-y divide-slate-800 border-t border-slate-800 pt-1">` + extras.map(x => `
+                                <a href="${esc(x.url)}"${x.externo ? ' target="_blank" rel="noopener"' : ''} class="flex items-center justify-between gap-3 py-2 hover:bg-slate-800/40 transition rounded">
+                                    <span class="text-sm text-slate-300 truncate">${esc(x.label)}</span>
+                                    <span class="text-sm font-bold text-white whitespace-nowrap">#${x.r.pos}<span class="text-xs font-normal text-slate-400"> · ${x.r.pts.toLocaleString('pt-BR')} pts</span></span>
+                                </a>`).join('') + `</div>`;
+                }
+                const atual = document.getElementById('rank_t8_box');
+                if (atual) atual.innerHTML = html;
             }
 
             function montarHtmlPerfil(dados, fonte) {
@@ -780,6 +995,9 @@
                             `}
                         </div>
 
+                        ${jogosPlayer.includes('tekken8') ? montarHtmlRankingsT8() : ''}
+                        ${jogosPlayer.includes('tekken8') ? montarHtmlDesempenhoT8() : ''}
+
                         ${montarHtmlUsoPersonagens(characterUsage, characterUsageUnavailable, characterUsagePartial, { characterUsageHistoryComplete, characterUsageEventCount, characterUsageSetCount })}
 
                         <!-- RECENT FORM -->
@@ -846,33 +1064,6 @@
                             <div class="h-48 relative w-full pt-2 min-w-0">
                                 <canvas id="chartEvolucao"></canvas>
                             </div>
-                        </div>
-
-                        <!-- HEAD TO HEAD -->
-                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3 w-full min-w-0 overflow-hidden">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Head to Head</h3>
-                            <p class="text-[11px] text-slate-500 -mt-1">Calculado a partir dos sets dos últimos ${tournaments.length} torneios registrados no Start.gg para este player. Torneios mais antigos que isso não entram na conta.</p>
-                            ${(!headToHead || headToHead.length === 0) ? `
-                                <div class="text-slate-500 text-sm py-6 text-center border border-dashed border-slate-800 rounded-lg">
-                                    Nenhum confronto direto registrado via Start.gg.
-                                </div>
-                            ` : `
-                                <div class="divide-y divide-slate-800">
-                                    ${headToHead.map(r => {
-                                        const wrClass = r.winrate >= 60 ? 'text-green-500' : (r.winrate >= 40 ? 'text-yellow-500' : 'text-red-500');
-                                        const oppUrl = `player.html?id=${encodeURIComponent(r.opponentId)}&tag=${encodeURIComponent(r.opponentTag)}`;
-                                        return `
-                                            <div class="py-3 flex items-center justify-between text-sm gap-2 min-w-0">
-                                                <a href="${oppUrl}" class="font-semibold text-slate-200 truncate hover:text-red-500 transition min-w-0">${r.opponentTag}</a>
-                                                <div class="flex items-center gap-2 sm:gap-3 text-xs flex-shrink-0">
-                                                    <span class="text-slate-400 font-mono">${r.wins}W - ${r.losses}L</span>
-                                                    <span class="font-bold ${wrClass}">${r.winrate}%</span>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            `}
                         </div>
 
                         <!-- HISTÓRICO COMPLETO -->
@@ -1213,6 +1404,7 @@
                 );
                 const nextPanel = wrapper.firstElementChild;
                 if (nextPanel) currentPanel.replaceWith(nextPanel);
+                else currentPanel.remove();
                 atualizarInterfaceVarreduraPersonagens();
             }
 
@@ -1448,16 +1640,35 @@
                     if (input) input.value = normalizedId;
                     if (!normalizedId) {
                         document.getElementById('ewgf-rank-link')?.classList.add('hidden');
+                        window.FGCEwgfDashboard?.unmount();
                         definirStatusEwgfRank('ID EWGF removido do perfil.');
                         return true;
                     }
                     definirStatusEwgfRank('ID salvo. Consultando o rank…');
                     await buscarRankEwgf(normalizedId, false);
+                    void montarDashboardEwgf();
                     return true;
                 } finally {
                     if (saveButton) saveButton.disabled = false;
                 }
             };
+
+            // Dashboard EWGF: só para quem marcou Tekken 8 em "Jogos" e informou o Tekken ID
+            function ewgfCharIcon(name) {
+                const chars = GAMES_ART_MAP?.tekken8?.chars || {};
+                const norm = v => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const n = norm(name);
+                if (!n) return '';
+                const hit = Object.values(chars).find(c => norm(c.label) === n)
+                    || Object.entries(chars).find(([key]) => n.startsWith(key))?.[1];
+                return hit ? hit.file : '';
+            }
+            function montarDashboardEwgf(force = false) {
+                if (ewgfTekkenIdProfile && jogosPlayer.includes('tekken8')) {
+                    return window.FGCEwgfDashboard?.mount(ewgfTekkenIdProfile, { charIcon: ewgfCharIcon, force });
+                }
+                window.FGCEwgfDashboard?.unmount();
+            }
 
             async function carregarPerfil(forceRefresh = false) {
                 if (!playerId) {
@@ -1503,6 +1714,12 @@
                     dadosPerfilAtual = dados;
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
                     if (ewgfTekkenIdProfile) void buscarRankEwgf(ewgfTekkenIdProfile, true);
+                    // Busca de personagens automática: só quando ainda não existe histórico (local ou compartilhado)
+                    if (!historyToApply && !controleVarreduraPersonagens.running && !estadoVarreduraPersonagens
+                        && (dados.tournaments || []).length > 0 && typeof window.iniciarVarreduraPersonagens === 'function') {
+                        void window.iniciarVarreduraPersonagens();
+                    }
+                    void montarDashboardEwgf();
                     renderizarGraficoEvolucao(dados.tournaments || []);
                     atualizarInterfaceVarreduraPersonagens();
                     if (fonte === 'cache' && dados.countryChecked !== true && !dados.countryName && !dados.countryCode) {
@@ -1769,5 +1986,7 @@
             carregarPerfil(false);
         })();
     </script>
+    <script>window.FGC_NATAL = ['neve', 'luzes']; window.FGC_NATAL_NEVE = 30;</script>
+    <script src="natal.js"></script>
 </body>
 </html>
