@@ -608,3 +608,40 @@ html[data-theme="evo"] .event-select { background: var(--evo-panel-2); border-co
 html[data-theme="evo"] .event-select:focus { border-color: var(--evo-green); }
 html[data-theme="evo"] .bracket-sidebar .sidebar-content { background: var(--evo-bg); }
 html[data-theme="evo"] .api-status-bar { border-color: var(--evo-line); }
+
+/* EVO — plataformas de transmissão em faixa própria abaixo dos metadados */
+html[data-theme="evo"] .bc-streams {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 11px;
+}
+html[data-theme="evo"] .bc-stream {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 112px;
+    min-height: 34px;
+    padding: 6px 12px;
+    border: 1px solid var(--evo-line-hi);
+    border-radius: 4px;
+    background: rgba(75, 85, 255, .09);
+    color: var(--evo-text);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    line-height: 1;
+}
+html[data-theme="evo"] .bc-stream i { font-size: 15px; }
+html[data-theme="evo"] .bc-stream-twitch i { color: #b69cff; }
+html[data-theme="evo"] .bc-stream-youtube i { color: #ff5555; }
+html[data-theme="evo"] .bc-stream:hover {
+    background: rgba(75, 85, 255, .17);
+    border-color: var(--evo-accent-hi);
+}
+@media (max-width: 520px) {
+    html[data-theme="evo"] .bc-streams { gap: 7px; margin-top: 9px; }
+    html[data-theme="evo"] .bc-stream { flex: 1 1 0; min-width: 0; min-height: 36px; }
+}
