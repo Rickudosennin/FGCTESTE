@@ -608,3 +608,293 @@ html[data-theme="evo"] .event-select { background: var(--evo-panel-2); border-co
 html[data-theme="evo"] .event-select:focus { border-color: var(--evo-green); }
 html[data-theme="evo"] .bracket-sidebar .sidebar-content { background: var(--evo-bg); }
 html[data-theme="evo"] .api-status-bar { border-color: var(--evo-line); }
+
+/* =========================================================
+   EVO 2027 — acabamento profissional FGC HUB
+   Refinamento visual somente; estrutura e componentes originais preservados.
+   ========================================================= */
+html[data-theme="evo"] {
+    --evo-bg: #080c0d;
+    --evo-panel: #11191b;
+    --evo-panel-2: #172326;
+    --evo-line: rgba(157, 190, 164, .18);
+    --evo-line-hi: rgba(163, 230, 53, .42);
+    --evo-text: #f2f6f2;
+    --evo-mute: #9aa9a0;
+    --evo-accent: #a3e635;
+    --evo-accent-hi: #c4f477;
+    --evo-accent-dk: #42651d;
+    --evo-green: #a3e635;
+    --evo-green-dark: #17240e;
+    --evo-gold: #c4f477;
+    --evo-glow: rgba(163, 230, 53, .14);
+}
+
+html[data-theme="evo"],
+html[data-theme="evo"] body {
+    background-color: var(--evo-bg);
+}
+html[data-theme="evo"] body {
+    background-image:
+        radial-gradient(900px 420px at 92% -12%, rgba(163, 230, 53, .075), transparent 62%),
+        radial-gradient(720px 360px at 0% 8%, rgba(116, 150, 130, .055), transparent 64%),
+        linear-gradient(180deg, #0b1112 0%, #080c0d 48%, #0a0f10 100%);
+    background-attachment: fixed;
+}
+
+/* Cabeçalho existente: marca, quatro atalhos e seletor */
+html[data-theme="evo"] header {
+    border-bottom-color: var(--evo-line);
+}
+html[data-theme="evo"] header > h1 {
+    text-shadow: 0 5px 22px rgba(0, 0, 0, .55);
+}
+html[data-theme="evo"] header > h1 .text-red-600 {
+    background: linear-gradient(100deg, #f5f8f4 0%, #c4f477 72%, #a3e635 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+html[data-theme="evo"] header > a {
+    background: rgba(255, 255, 255, .025);
+    border-color: var(--evo-line);
+    border-radius: 5px;
+}
+html[data-theme="evo"] header > a:hover {
+    color: var(--evo-accent-hi);
+    border-color: var(--evo-line-hi);
+    background: rgba(163, 230, 53, .055);
+}
+html[data-theme="evo"] #theme-switcher .fgc-theme-toggle {
+    border-color: var(--evo-line);
+    background: rgba(17, 25, 27, .82);
+}
+html[data-theme="evo"] .fgc-theme-toggle button[aria-pressed="true"] {
+    color: #10170b;
+    background: var(--evo-accent);
+    border-color: var(--evo-accent);
+}
+
+/* Busca de torneios: mesmo painel e mesmos quatro campos */
+html[data-theme="evo"] main > .glass-card {
+    background: linear-gradient(145deg, rgba(255,255,255,.025), transparent 58%), var(--evo-panel) !important;
+    border: 1px solid var(--evo-line) !important;
+    border-radius: 7px !important;
+    box-shadow: 0 14px 34px rgba(0,0,0,.22) !important;
+}
+html[data-theme="evo"] main > .glass-card label {
+    color: var(--evo-accent-hi) !important;
+    font-size: 10px;
+    letter-spacing: .105em;
+}
+html[data-theme="evo"] main > .glass-card select,
+html[data-theme="evo"] .event-select {
+    min-height: 46px;
+    background-color: var(--evo-panel-2) !important;
+    border: 1px solid var(--evo-line) !important;
+    border-radius: 5px !important;
+    color: var(--evo-text) !important;
+}
+html[data-theme="evo"] main > .glass-card select:hover,
+html[data-theme="evo"] main > .glass-card select:focus {
+    border-color: var(--evo-line-hi) !important;
+    box-shadow: 0 0 0 3px rgba(163, 230, 53, .06);
+}
+html[data-theme="evo"] .btn-primary {
+    min-height: 46px;
+    background: linear-gradient(105deg, #567d22, #8fca36) !important;
+    border: 1px solid rgba(196, 244, 119, .5) !important;
+    border-radius: 5px !important;
+    color: #10170b !important;
+    font-family: var(--evo-display);
+    font-weight: 700;
+    letter-spacing: .09em;
+    box-shadow: 0 5px 16px rgba(0,0,0,.2) !important;
+}
+html[data-theme="evo"] .btn-primary:hover {
+    background: linear-gradient(105deg, #6f9e2d, #c4f477) !important;
+    transform: translateY(-1px);
+}
+
+/* Ofertas e preços — painel de conteúdo, sem competir com a busca */
+html[data-theme="evo"] #game_prices_panel {
+    background: linear-gradient(145deg, rgba(163,230,53,.035), transparent 55%), var(--evo-panel);
+    border: 1px solid var(--evo-line);
+    border-radius: 7px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.18);
+}
+html[data-theme="evo"] .game-prices-kicker,
+html[data-theme="evo"] .game-prices-region {
+    color: var(--evo-accent-hi);
+    letter-spacing: .12em;
+}
+html[data-theme="evo"] #game_prices_title {
+    color: var(--evo-text);
+    letter-spacing: .045em;
+}
+
+/* Sugestão de datas: grade original de 14 dias */
+html[data-theme="evo"] #painel_disponibilidade {
+    border-top: 1px solid var(--evo-line);
+    padding-top: 18px;
+}
+html[data-theme="evo"] #painel_disponibilidade h2 {
+    color: var(--evo-text);
+    font-size: 17px;
+    letter-spacing: .025em;
+}
+html[data-theme="evo"] .day-slot {
+    min-height: 62px;
+    background: #11191b;
+    border: 1px solid var(--evo-line);
+    border-radius: 5px;
+    transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+}
+html[data-theme="evo"] .day-slot:hover {
+    border-color: var(--evo-line-hi);
+    background: #182326;
+    transform: translateY(-2px);
+}
+html[data-theme="evo"] .day-available {
+    border-color: rgba(163,230,53,.42);
+    background: rgba(163,230,53,.07);
+    color: var(--evo-accent-hi);
+}
+html[data-theme="evo"] .day-busy {
+    border-color: rgba(148,163,184,.2);
+    background: rgba(148,163,184,.045);
+}
+
+/* Resultados: card Broadcast em linha continua sendo o protagonista */
+html[data-theme="evo"] #resultados:has(.bc-row) {
+    gap: 10px;
+}
+html[data-theme="evo"] .bc-row {
+    background: linear-gradient(100deg, rgba(255,255,255,.022), transparent 48%), var(--evo-panel);
+    border: 1px solid var(--evo-line);
+    border-left: 3px solid rgba(163,230,53,.35);
+    border-radius: 6px;
+    box-shadow: 0 8px 22px rgba(0,0,0,.16);
+    transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+}
+html[data-theme="evo"] .bc-row:hover {
+    background-color: #15201d;
+    border-color: var(--evo-line-hi);
+    border-left-color: var(--evo-accent);
+    box-shadow: 0 12px 28px rgba(0,0,0,.25);
+    transform: translateY(-1px);
+}
+html[data-theme="evo"] .bc-date {
+    background: rgba(163,230,53,.055);
+    border-right: 1px solid var(--evo-line);
+}
+html[data-theme="evo"] .bc-date b,
+html[data-theme="evo"] .bc-info h3 {
+    color: var(--evo-text);
+}
+html[data-theme="evo"] .bc-info h3 {
+    letter-spacing: .015em;
+}
+html[data-theme="evo"] .bc-primary {
+    background: linear-gradient(105deg, #567d22, #8fca36) !important;
+    border: 1px solid rgba(196,244,119,.45);
+    border-radius: 4px;
+    color: #10170b !important;
+    box-shadow: none;
+    animation: none;
+}
+html[data-theme="evo"] .bc-primary:hover {
+    background: linear-gradient(105deg, #6f9e2d, #c4f477) !important;
+    box-shadow: 0 5px 16px rgba(0,0,0,.22);
+}
+html[data-theme="evo"] .bc-btn {
+    background: rgba(255,255,255,.025);
+    border-color: var(--evo-line);
+    border-radius: 4px;
+}
+html[data-theme="evo"] .bc-btn:hover {
+    background: rgba(163,230,53,.07);
+    border-color: var(--evo-line-hi);
+    color: var(--evo-accent-hi);
+}
+html[data-theme="evo"] .bc-live {
+    color: #ff8585;
+    background: rgba(239,68,68,.08);
+    border-color: rgba(239,68,68,.28);
+}
+html[data-theme="evo"] .bc-events a,
+html[data-theme="evo"] .evo-cd-link {
+    color: var(--evo-accent-hi);
+}
+html[data-theme="evo"] .bc-events a:hover,
+html[data-theme="evo"] .evo-cd-link:hover {
+    color: #fff;
+}
+
+/* Contagem regressiva da Evo: identidade discreta, sem brilho excessivo */
+html[data-theme="evo"] #evo-countdown {
+    background: linear-gradient(105deg, rgba(163,230,53,.07), transparent 70%), var(--evo-panel);
+    border: 1px solid var(--evo-line);
+    border-left: 3px solid var(--evo-accent);
+    border-radius: 6px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.2);
+}
+html[data-theme="evo"] #evo-countdown::before {
+    color: rgba(163,230,53,.045);
+}
+html[data-theme="evo"] .evo-cd-num {
+    text-shadow: none;
+}
+html[data-theme="evo"] .evo-cd-sep {
+    color: var(--evo-accent);
+}
+
+/* Banners existentes: moldura neutra; arte original preservada */
+html[data-theme="evo"] .side-banners-right .wise-banner,
+html[data-theme="evo"] .mobile-banner-wise .wise-banner {
+    border-color: var(--evo-line) !important;
+    background: var(--evo-panel) !important;
+}
+html[data-theme="evo"] .wise-banner-btn {
+    background: var(--evo-accent) !important;
+    color: #10170b !important;
+}
+html[data-theme="evo"] .side-banners-right .side-banner-right,
+html[data-theme="evo"] .mobile-banner-exitlag img {
+    border: 1px solid var(--evo-line) !important;
+    border-radius: 5px !important;
+    filter: none;
+    opacity: 1;
+}
+
+/* Status da API e rodapé */
+html[data-theme="evo"] .api-status-bar {
+    background: rgba(10,15,16,.94);
+    border: 1px solid var(--evo-line);
+    border-radius: 5px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+html[data-theme="evo"] footer {
+    border-top-color: var(--evo-line) !important;
+}
+html[data-theme="evo"] footer .text-red-500 {
+    color: var(--evo-accent-hi) !important;
+}
+
+/* Foco acessível e movimento reduzido */
+html[data-theme="evo"] a:focus-visible,
+html[data-theme="evo"] button:focus-visible,
+html[data-theme="evo"] select:focus-visible {
+    outline: 2px solid var(--evo-accent-hi);
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme="evo"] *,
+    html[data-theme="evo"] *::before,
+    html[data-theme="evo"] *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
