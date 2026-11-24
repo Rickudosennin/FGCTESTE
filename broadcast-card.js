@@ -36,7 +36,12 @@
       } else {
         var tw = t.streams.some(function (s) { return s.streamSource === 'TWITCH'; });
         var yt = t.streams.some(function (s) { return s.streamSource === 'YOUTUBE'; });
-        streamTag = (tw ? '<span class="bc-st">TWITCH</span>' : '') + (yt ? '<span class="bc-st">YOUTUBE</span>' : '');
+        streamTag = (tw || yt)
+          ? '<div class="bc-streams" aria-label="Plataformas de transmissão">' +
+              (tw ? '<span class="bc-stream bc-stream-twitch"><i class="fa-brands fa-twitch" aria-hidden="true"></i><span>TWITCH</span></span>' : '') +
+              (yt ? '<span class="bc-stream bc-stream-youtube"><i class="fa-brands fa-youtube" aria-hidden="true"></i><span>YOUTUBE</span></span>' : '') +
+            '</div>'
+          : '';
       }
     }
 
@@ -76,7 +81,8 @@
         '<h3>' + t.name + '</h3>' +
         '<div class="bc-meta">' + ctx.inscritos + ' inscrito' + plural + '<s>/</s>TO ' + ctx.toName + '<s>/</s>' + local + '</div>' +
         '<div class="bc-status"><i class="' + (aberta ? '' : 'off') + '"></i><b class="' + (aberta ? 'ok' : 'off') + '">' +
-          (aberta ? 'Inscrição aberta' : 'Inscrição fechada') + '</b>' + encerra + streamTag + '</div>' +
+          (aberta ? 'Inscrição aberta' : 'Inscrição fechada') + '</b>' + encerra + '</div>' +
+        streamTag +
         timer +
         eventos +
       '</div>' +
