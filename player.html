@@ -662,50 +662,62 @@
                             <div id="desemp_body"></div>
                         </div>`;
             }
-            async function buscarSetsDesempenho(pid, onProgress) {
-                const q = `query($id:ID!,$page:Int!){player(id:$id){sets(perPage:25,page:$page){pageInfo{totalPages} nodes{ id winnerId event{ id name startAt isOnline numEntrants videogame{id} tournament{name} } slots{ entrant{ id standing{placement} participants{player{id}} } standing{ stats{ score{ value } } } } } } } }`;
+            // Busca sets do mais recente para o mais antigo. Com `base` (cache), para assim que uma página só traz sets já contados.
+            async function buscarSetsDesempenho(pid, onProgress, base) {
+                const mk = ord => `query($id:ID!,$page:Int!){player(id:$id){sets(perPage:25,page:$page${ord ? ',sortType:RECENT' : ''}){pageInfo{totalPages} nodes{ id winnerId event{ id name startAt isOnline numEntrants videogame{id} tournament{name} } slots{ entrant{ id standing{placement} participants{player{id}} } standing{ stats{ score{ value } } } } } } } }`;
                 const validos = new Set(Object.values(DESEMP_IDS));
                 const eventos = new Map();
+                const seen = new Set(base ? base.seen : []);
+                if (base) Object.values(base.g).forEach(l => l.forEach(e => eventos.set(e.id, { ...e })));
+                let ord = base ? base.ord : true;
                 let page = 1, total = 1, falhas = 0;
                 while (page <= total && page <= 120) {
                     let j;
-                    try { j = await callStartGG(q, { id: String(pid), page }); } catch (e) { j = null; }
+                    try { j = await callStartGG(mk(ord), { id: String(pid), page }); } catch (e) { j = null; }
                     const conn = j && j.data && j.data.player && j.data.player.sets;
                     if (!conn) {
+                        if (page === 1 && ord && !base && ++falhas === 1) { ord = false; continue; } // ordenação recusada: varredura completa sem parada antecipada
                         if (++falhas > 3) throw new Error('falha na API');
                         await new Promise(r => setTimeout(r, 2500));
                         continue;
                     }
                     falhas = 0;
                     total = (conn.pageInfo && conn.pageInfo.totalPages) || 1;
-                    for (const s of conn.nodes || []) {
+                    const nodes = conn.nodes || [];
+                    const todosVistos = nodes.length > 0 && nodes.every(n => seen.has(n.id));
+                    for (const s of nodes) {
+                        if (seen.has(s.id)) continue;
                         const ev = s.event;
-                        if (!ev || !ev.videogame || !validos.has(Number(ev.videogame.id))) continue;
+                        if (!ev || !ev.videogame || !validos.has(Number(ev.videogame.id))) { if (s.winnerId != null) seen.add(s.id); continue; }
                         const slots = s.slots || [];
                         const meu = slots.find(x => x.entrant && (x.entrant.participants || []).some(p => p.player && Number(p.player.id) === Number(pid)));
-                        if (!meu || (meu.entrant.participants || []).length !== 1) continue; // só singles
+                        if (!meu || (meu.entrant.participants || []).length !== 1) { if (s.winnerId != null) seen.add(s.id); continue; } // só singles
                         const outro = slots.find(x => x !== meu);
                         let e = eventos.get(ev.id);
                         if (!e) {
                             e = { g: Number(ev.videogame.id), id: ev.id, n: (ev.tournament && ev.tournament.name) || ev.name || 'Evento', d: ev.startAt || 0, on: !!ev.isOnline,
-                                  ne: ev.numEntrants || 0, p: (meu.entrant.standing && meu.entrant.standing.placement) || null, sw: 0, sl: 0, gw: 0, gl: 0 };
+                                  ne: ev.numEntrants || 0, p: null, sw: 0, sl: 0, gw: 0, gl: 0 };
                             eventos.set(ev.id, e);
                         }
+                        e.p = (meu.entrant.standing && meu.entrant.standing.placement) || e.p;
+                        e.ne = ev.numEntrants || e.ne;
                         const a = meu.standing && meu.standing.stats && meu.standing.stats.score && meu.standing.stats.score.value;
                         const b = outro && outro.standing && outro.standing.stats && outro.standing.stats.score && outro.standing.stats.score.value;
-                        const dq = a == null || b == null || a < 0 || b < 0;
-                        if (s.winnerId == null || dq) continue; // DQ / sem placar: não conta
+                        if (s.winnerId == null) continue; // ainda em andamento: conta numa próxima atualização
+                        seen.add(s.id);
+                        if (a == null || b == null || a < 0 || b < 0) continue; // DQ / sem placar: não conta
                         if (Number(s.winnerId) === Number(meu.entrant.id)) e.sw++; else e.sl++;
                         e.gw += a; e.gl += b;
                     }
                     if (onProgress) onProgress(page, total);
+                    if (base && ord && todosVistos) break; // chegou no que já estava no cache
                     page++;
                     if (page <= total) await new Promise(r => setTimeout(r, 700));
                 }
                 const porJogo = {};
                 for (const e of eventos.values()) (porJogo[e.g] = porJogo[e.g] || []).push(e);
                 Object.values(porJogo).forEach(l => l.sort((x, y) => y.d - x.d));
-                return porJogo;
+                return { g: porJogo, seen: [...seen], ord };
             }
             function ordPt(n) { return n ? n + 'º' : '—'; }
             function eventosDoJogoAtivo() { return (DESEMP_ESTADO.dados && DESEMP_ESTADO.dados[DESEMP_IDS[DESEMP_ESTADO.jogo]]) || []; }
@@ -760,21 +772,51 @@
                 const el = document.getElementById('chip-wr');
                 if (el) el.className = wr >= 60 ? 'text-green-500' : wr >= 40 ? 'text-yellow-500' : 'text-red-500';
             }
+            let DESEMP_FORCAR = false; // true quando o usuário clica em "Atualizar"
+            const DESEMP_COOLDOWN = 10 * 60 * 1000; // cache compartilhado "fresco": Atualizar não consulta a API de novo
+            // Cache compartilhado (Firestore, players/<id>.desempenho, merge) + cópia local para abrir rápido
+            async function lerDesempenhoRemoto(pid) {
+                try {
+                    const doc = await _playersCollection.doc(String(pid)).get();
+                    const d = doc.exists ? doc.data().desempenho : null;
+                    return d && d.g && Array.isArray(d.seen) ? d : null;
+                } catch (e) { return null; }
+            }
+            async function salvarDesempenhoRemoto(pid, reg) {
+                try {
+                    await _playersCollection.doc(String(pid)).set({ desempenho: JSON.parse(JSON.stringify(reg)) }, { merge: true });
+                } catch (e) { console.warn('Não foi possível salvar o desempenho compartilhado:', e); }
+            }
             async function carregarDesempenho() {
                 const msg = document.getElementById('desemp_msg');
                 if (!msg || !playerId) return;
-                const key = 'fgchub:desemp:v2:' + playerId;
+                const key = 'fgchub:desemp:v3:' + playerId;
                 const pronto = () => { renderDesempenho(); atualizarChipsDesempenho(); };
+                const forcar = DESEMP_FORCAR; DESEMP_FORCAR = false;
+                let local = null;
                 try {
                     const c = JSON.parse(localStorage.getItem(key) || 'null');
-                    if (c && Date.now() - c.t < DESEMP_TTL && c.g && typeof c.g === 'object') { DESEMP_ESTADO.dados = c.g; pronto(); return; }
+                    if (c && c.g && Array.isArray(c.seen)) local = c;
                 } catch (e) { /* sem cache local */ }
+                if (local && !forcar) { DESEMP_ESTADO.dados = local.g; pronto(); }
+                // cache compartilhado: vale o mais novo entre o do servidor e o local
+                const remoto = await lerDesempenhoRemoto(playerId);
+                let cache = remoto && (!local || (remoto.t || 0) >= (local.t || 0)) ? remoto : local;
+                if (cache) {
+                    DESEMP_ESTADO.dados = cache.g; pronto();
+                    try { localStorage.setItem(key, JSON.stringify(cache)); } catch (e) { /* ok */ }
+                    if (!forcar) return; // cache sem prazo: só busca novidades ao clicar em Atualizar
+                    if (Date.now() - (cache.t || 0) < DESEMP_COOLDOWN) return; // alguém atualizou há pouco
+                }
                 try {
-                    DESEMP_ESTADO.dados = await buscarSetsDesempenho(playerId, (p, t) => { const m = document.getElementById('desemp_msg'); if (m) m.textContent = 'Carregando sets... ' + p + '/' + t; });
-                    try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), g: DESEMP_ESTADO.dados })); } catch (e) { /* ok */ }
+                    const r = await buscarSetsDesempenho(playerId, (p, t) => { const m = document.getElementById('desemp_msg'); if (m && !cache) m.textContent = 'Carregando sets... ' + p + '/' + t; }, cache);
+                    const reg = { t: Date.now(), g: r.g, seen: r.seen, ord: r.ord };
+                    DESEMP_ESTADO.dados = r.g;
+                    try { localStorage.setItem(key, JSON.stringify(reg)); } catch (e) { /* ok */ }
+                    void salvarDesempenhoRemoto(playerId, reg);
                     pronto();
                 } catch (e) {
-                    msg.textContent = 'Não foi possível carregar o desempenho agora. Tente novamente mais tarde.';
+                    if (!cache) msg.textContent = 'Não foi possível carregar o desempenho agora. Tente novamente mais tarde.';
                 }
             }
 
@@ -1732,6 +1774,7 @@
             }
 
             window.atualizarDados = function() {
+                DESEMP_FORCAR = true;
                 carregarPerfil(true);
             };
 
