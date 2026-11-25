@@ -87,6 +87,8 @@
         .tag { font-weight: 600; font-size: 16px; }
         .tag .px { color: var(--mute); font-weight: 500; margin-right: 6px; }
         .tag .px::after { content: ' |'; }
+        .star { color: #f5b301; font-weight: 700; font-size: 13px; margin-left: 8px; white-space: nowrap; }
+        .star.s1 { margin-left: 0; margin-right: 6px; }
         .tag .flag { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; margin-right: 9px; vertical-align: -1px; }
         .bar { width: 28%; }
         .bar i { display: block; height: 4px; background: var(--line); position: relative; }
@@ -217,6 +219,12 @@ document.addEventListener('keydown', function (e) {
         var a = norm(t), b = norm(e);
         return (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) ? (t.length >= e.length ? t : e) : n;
     };
+    // Estrela dourada = campeão do evento (1º lugar no bracket principal); número = quantidade de títulos
+    var titulos = function (o) {
+        var n = o.list.filter(function (x) { return x.p === 1; }).length;
+        if (!n) return '';
+        return '<span class="star" title="' + n + (n > 1 ? ' títulos' : ' título') + ' (campeão do bracket principal)">&#9733;' + (n > 1 ? n : '') + '</span>';
+    };
     var flag = function (c) {
         var iso = c && window.fgcCountryIso2 ? window.fgcCountryIso2(c) : null;
         return iso ? '<img class="flag" src="https://flagcdn.com/w40/' + iso.toLowerCase() + '.png" alt="" title="' + esc(c) + '" loading="lazy">' : '';
@@ -294,6 +302,8 @@ document.addEventListener('keydown', function (e) {
             '<small>' + upd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</small>';
 
         var f = norm(filtro.trim());
+        var cur = games.filter(function (g) { return g.slug === slug; })[0];
+        var stars = !!(cur && cur.estrelas);
         var list = f ? m.players.filter(function (o) { return norm((o.px || '') + ' ' + o.tag).indexOf(f) >= 0; }) : m.players;
         var max = m.players.length ? m.players[0].pts : 1;
 
@@ -309,7 +319,7 @@ document.addEventListener('keydown', function (e) {
             tr.className = 'p' + (o.pos <= 3 ? ' t' + o.pos : '');
             tr.innerHTML =
                 '<td class="pos">' + o.pos + mv(o) + '</td>' +
-                '<td class="tag">' + flag(o.cc) + (o.px ? '<span class="px">' + esc(o.px) + '</span>' : '') + esc(o.tag) + '</td>' +
+                '<td class="tag">' + flag(o.cc) + (o.px ? '<span class="px">' + esc(o.px) + '</span>' : '') + esc(o.tag) + (stars ? titulos(o) : '') + '</td>' +
                 '<td class="bar hide-s"><i><b style="width:' + Math.max(2, Math.round(o.pts / max * 100)) + '%"></b></i></td>' +
                 '<td class="r pts">' + o.pts + '</td>' +
                 '<td class="r hide-s">' + o.n + '</td>' +
@@ -322,7 +332,7 @@ document.addEventListener('keydown', function (e) {
                 det.className = 'd';
                 var rows = o.list.map(function (x) {
                     return '<tr><td>' + new Date(x.d * 1000).toLocaleDateString('pt-BR') + '</td>' +
-                        '<td class="ev">' + esc(nomeEv(x.n)) + '</td>' +
+                        '<td class="ev">' + (stars && x.p === 1 ? '<span class="star s1" title="Campeão">&#9733;</span>' : '') + esc(nomeEv(x.n)) + '</td>' +
                         '<td class="r">' + x.p + 'º de ' + x.e + '</td><td class="r">+' + x.pts + '</td></tr>';
                 }).join('');
                 det.innerHTML = '<td colspan="7"><table class="hist"><tbody>' + rows + '</tbody></table></td>';

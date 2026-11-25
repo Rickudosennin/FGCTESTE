@@ -15,7 +15,8 @@
       "nomes": [
         "fight night"
       ],
-      "rotulo": "Ranking · Fight Night"
+      "rotulo": "Ranking · Fight Night",
+      "estrelas": true
     },
     {
       "slug": "t8",

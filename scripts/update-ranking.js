@@ -279,7 +279,7 @@ function writeIndex() {
   const games = CONFIG.games
     .filter(g => g.enabled)
     .filter(g => fs.existsSync(path.join(OUT_DIR, `${g.slug}.json`)))
-    .map(g => ({ slug: g.slug, name: g.name, gameId: g.gameId, nomes: g.nomes || null, rotulo: g.rotulo || null }));
+    .map(g => ({ slug: g.slug, name: g.name, gameId: g.gameId, nomes: g.nomes || null, rotulo: g.rotulo || null, estrelas: !!g.estrelas }));
   fs.writeFileSync(path.join(OUT_DIR, 'index.json'), JSON.stringify({ games }, null, 2));
 }
 
