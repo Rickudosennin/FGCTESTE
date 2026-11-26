@@ -32,7 +32,7 @@ jobs:
       - name: Sincronizar CFN
         env:
           BUCKLER_COOKIE: ${{ secrets.BUCKLER_COOKIE }}
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          CFN_API_URL: https://fgchub-sf6-api.hatakepaulo1.workers.dev
           FORCE: ${{ github.event.inputs.force || 'false' }}
         run: node scripts/cfn-sync.mjs
       - name: Commit
