@@ -6,7 +6,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { getSf6CfnIdsFromFirestore } from './firestore-cfn-ids.mjs';
+const CFN_API_URL = (process.env.CFN_API_URL || 'https://fgchub-sf6-api.hatakepaulo1.workers.dev').replace(/\\/$/, '');
 
 const BASE = 'https://www.streetfighter.com/6/buckler';
 const LOCALE = 'en';
@@ -115,9 +115,16 @@ export function mapProfile(sid, json) {
   };
 }
 
-async function idsFromFirestore() {
-  const ids = await getSf6CfnIdsFromFirestore();
-  console.log(`Firestore: ${ids.length} CFN ID(s) com SF6.`);
+async function idsFromCloudflare() {
+  const response = await fetch(`${CFN_API_URL}/api/sf6/cfns`, {
+    headers: { Accept: 'application/json' }
+  });
+  if (!response.ok) throw new Error(`Cloudflare CFN API HTTP ${response.status}`);
+  const rows = await response.json();
+  const ids = [...new Set((Array.isArray(rows) ? rows : [])
+    .map(row => String(row.cfnId || '').trim())
+    .filter(id => /^\\d{1,20}$/.test(id)))];
+  console.log(`Cloudflare D1: ${ids.length} CFN(s) cadastrados.`);
   return ids;
 }
 
@@ -140,7 +147,7 @@ async function main() {
     console.error('BUCKLER_COOKIE vazio. Configure o secret (Settings > Secrets and variables > Actions).');
     process.exit(1);
   }
-  const ids = [...new Set([...(await idsFromFirestore()), ...(await idsFromFile())])];
+  const ids = [...new Set([...(await idsFromCloudflare()), ...(await idsFromFile())])];
   if (!ids.length) { console.log('Nenhum CFN ID para sincronizar.'); return; }
 
   const withAge = await Promise.all(ids.map(async id => ({ id, at: await lastUpdated(id) })));
