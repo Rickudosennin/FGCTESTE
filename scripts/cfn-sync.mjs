@@ -6,7 +6,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-const CFN_API_URL = (process.env.CFN_API_URL || 'https://fgchub-sf6-api.hatakepaulo1.workers.dev').replace(/\\/$/, '');
+const CFN_API_URL = (process.env.CFN_API_URL || 'https://fgchub-sf6-api.hatakepaulo1.workers.dev').replace(/\/$/, '');
 
 const BASE = 'https://www.streetfighter.com/6/buckler';
 const LOCALE = 'en';
@@ -123,7 +123,7 @@ async function idsFromCloudflare() {
   const rows = await response.json();
   const ids = [...new Set((Array.isArray(rows) ? rows : [])
     .map(row => String(row.cfnId || '').trim())
-    .filter(id => /^\\d{1,20}$/.test(id)))];
+    .filter(id => /^\d{1,20}$/.test(id)))];
   console.log(`Cloudflare D1: ${ids.length} CFN(s) cadastrados.`);
   return ids;
 }
