@@ -46,10 +46,28 @@ async function accessToken(serviceAccount) {
 
 function readFields(document) {
   const fields = document?.fields || {};
-  const cfn = String(fields.sf6CfnId?.stringValue ?? fields.sf6CfnId?.integerValue ?? '').trim();
+  const cfn = String(
+    fields.sf6CfnId?.stringValue ??
+    fields.sf6CfnId?.integerValue ??
+    fields.sf6CfnId?.doubleValue ??
+    ''
+  ).trim();
+
   const rawGames = fields.gamesPlayed?.arrayValue?.values || [];
-  const games = rawGames.map(value => value.stringValue).filter(Boolean);
-  return /^\d{1,20}$/.test(cfn) && games.includes('sf6') ? cfn : '';
+  const games = rawGames.map(value => {
+    if (typeof value?.stringValue === 'string') return value.stringValue;
+    if (typeof value?.mapValue?.fields?.key?.stringValue === 'string') return value.mapValue.fields.key.stringValue;
+    if (typeof value?.mapValue?.fields?.id?.stringValue === 'string') return value.mapValue.fields.id.stringValue;
+    return '';
+  }).map(value => value.trim().toLowerCase());
+
+  const hasSf6 = games.some(game =>
+    game === 'sf6' ||
+    game === 'street fighter 6' ||
+    game === 'street-fighter-6'
+  );
+
+  return /^\\d{1,20}$/.test(cfn) && hasSf6 ? cfn : '';
 }
 
 export async function getSf6CfnIdsFromFirestore() {
