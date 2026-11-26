@@ -1731,9 +1731,9 @@
                 const statsLink = document.getElementById('sf6-stats-link');
                 const enabled = jogosPlayer.includes('sf6');
                 editButton?.classList.toggle('hidden', !enabled);
-                statsLink?.classList.toggle('hidden', !enabled || !/^\\d{1,20}$/.test(sf6CfnIdProfile));
-                statsLink?.classList.toggle('inline-flex', enabled && /^\\d{1,20}$/.test(sf6CfnIdProfile));
-                if (statsLink && enabled && /^\\d{1,20}$/.test(sf6CfnIdProfile)) {
+                statsLink?.classList.toggle('hidden', !enabled || !/^\d{1,20}$/.test(sf6CfnIdProfile));
+                statsLink?.classList.toggle('inline-flex', enabled && /^\d{1,20}$/.test(sf6CfnIdProfile));
+                if (statsLink && enabled && /^\d{1,20}$/.test(sf6CfnIdProfile)) {
                     statsLink.href = `https://sfstats.app/data/players/${encodeURIComponent(sf6CfnIdProfile)}/overview`;
                     statsLink.title = 'Abrir estatísticas públicas deste CFN no SF6 Stats';
                 }
@@ -1761,7 +1761,7 @@
                 const button = document.getElementById('sf6-cfn-save');
                 const status = document.getElementById('sf6-cfn-status');
                 const raw = String(input?.value || '').trim();
-                if (raw && !/^\\d{1,20}$/.test(raw)) {
+                if (raw && !/^\d{1,20}$/.test(raw)) {
                     status.textContent = 'CFN ID inválido. Informe somente números (até 20 dígitos).';
                     status.classList.add('text-red-400');
                     return false;
