@@ -1787,7 +1787,7 @@
                 external.href = `https://sfstats.app/data/players/${encodeURIComponent(cfnId)}/overview`;
 
                 try {
-                    const response = await fetch(`data/cfn/${encodeURIComponent(cfnId)}.json?v=${Date.now()}`, { cache: 'no-store' });
+                    const response = await fetch(`https://fgchub-sf6-api.hatakepaulo1.workers.dev/api/sf6/profile/${encodeURIComponent(playerId)}?v=${Date.now()}`, { cache: 'no-store' });
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
                     if (String(data.cfnId) !== cfnId) throw new Error('CFN do arquivo não corresponde ao perfil');
@@ -1845,7 +1845,7 @@
                                 </div>
                             </div>
                         ` : ''}
-                        <p class="text-[10px] text-slate-500">Última sincronização: ${escaparHtmlSf6(updated)} · Dados armazenados em cache no FGC HUB.</p>
+                        <p class="text-[10px] text-slate-500">Última sincronização: ${escaparHtmlSf6(updated)} · Consulta direta ao Buckler · atualizada agora.</p>
                     `;
                 } catch (error) {
                     console.warn('Não foi possível carregar os dados SF6 em cache:', error);
