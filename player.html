@@ -83,6 +83,7 @@
             let jogosPlayerDraft = [];
             let dadosPerfilAtual = null;
             let ewgfTekkenIdProfile = '';
+            let sf6CfnIdProfile = '';
             let estadoVarreduraPersonagens = null;
             const controleVarreduraPersonagens = { running: false, paused: false, waiters: [] };
 
@@ -1000,6 +1001,12 @@
                                     <button onclick="abrirSeletorJogosPlayer()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-gamepad"></i> Jogos
                                     </button>
+                                    <button id="sf6-cfn-edit-button" onclick="abrirSf6CfnModal()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-id-card"></i> SF6 CFN ID
+                                    </button>
+                                    <a id="sf6-stats-link" href="#" target="_blank" rel="noopener noreferrer" class="hidden text-xs bg-blue-700 hover:bg-blue-600 border border-blue-500 text-white px-3 py-1.5 rounded-lg font-bold transition items-center gap-1.5">
+                                        <i class="fa-solid fa-chart-line"></i> SF6 STATS
+                                    </a>
                                     <button onclick="abrirEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-trophy"></i> TEKKEN 8 ID
                                     </button>
@@ -1147,6 +1154,29 @@
                                 <div class="flex gap-2">
                                     <button type="button" onclick="fecharEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold transition">Fechar</button>
                                     <button type="button" id="ewgf-id-save" onclick="salvarEwgfTekkenId()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold transition">Salvar ID</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL: CFN STREET FIGHTER 6 -->
+                    <div id="sf6_cfn_modal" class="fixed inset-0 z-50 hidden bg-black/70 flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 max-w-md w-full space-y-4" role="dialog" aria-modal="true" aria-labelledby="sf6_cfn_title">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 id="sf6_cfn_title" class="text-sm font-bold text-white uppercase tracking-wider">Street Fighter 6 · CFN</h3>
+                                    <p class="text-xs text-slate-400 mt-1">Informe o ID numérico do CFN. Não exige login ou cookie do jogador.</p>
+                                </div>
+                                <button type="button" onclick="fecharSf6CfnModal()" aria-label="Fechar" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <label for="sf6-cfn-id" class="block text-xs font-bold text-slate-300">CFN ID</label>
+                            <input id="sf6-cfn-id" type="text" inputmode="numeric" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Ex.: 2743506095" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-blue-500 focus:outline-none">
+                            <p id="sf6-cfn-status" class="text-xs text-slate-400" role="status" aria-live="polite"></p>
+                            <div class="flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
+                                <button type="button" onclick="removerSf6CfnId()" class="text-xs text-slate-400 hover:text-white px-2 py-2">Remover ID</button>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="fecharSf6CfnModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-2 rounded-lg font-bold">Fechar</button>
+                                    <button type="button" id="sf6-cfn-save" onclick="salvarSf6CfnId()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-bold">Salvar ID</button>
                                 </div>
                             </div>
                         </div>
@@ -1695,6 +1725,65 @@
                 }
             };
 
+
+            function atualizarLinkSf6Stats() {
+                const editButton = document.getElementById('sf6-cfn-edit-button');
+                const statsLink = document.getElementById('sf6-stats-link');
+                const enabled = jogosPlayer.includes('sf6');
+                editButton?.classList.toggle('hidden', !enabled);
+                statsLink?.classList.toggle('hidden', !enabled || !/^\\d{1,20}$/.test(sf6CfnIdProfile));
+                statsLink?.classList.toggle('inline-flex', enabled && /^\\d{1,20}$/.test(sf6CfnIdProfile));
+                if (statsLink && enabled && /^\\d{1,20}$/.test(sf6CfnIdProfile)) {
+                    statsLink.href = `https://sfstats.app/data/players/${encodeURIComponent(sf6CfnIdProfile)}/overview`;
+                    statsLink.title = 'Abrir estatísticas públicas deste CFN no SF6 Stats';
+                }
+            }
+
+            window.abrirSf6CfnModal = function() {
+                const input = document.getElementById('sf6-cfn-id');
+                const modal = document.getElementById('sf6_cfn_modal');
+                if (!input || !modal) return;
+                input.value = sf6CfnIdProfile;
+                document.getElementById('sf6-cfn-status').textContent = '';
+                modal.classList.remove('hidden');
+                input.focus();
+            };
+            window.fecharSf6CfnModal = function() {
+                document.getElementById('sf6_cfn_modal')?.classList.add('hidden');
+            };
+            window.removerSf6CfnId = function() {
+                const input = document.getElementById('sf6-cfn-id');
+                if (input) input.value = '';
+                return window.salvarSf6CfnId();
+            };
+            window.salvarSf6CfnId = async function() {
+                const input = document.getElementById('sf6-cfn-id');
+                const button = document.getElementById('sf6-cfn-save');
+                const status = document.getElementById('sf6-cfn-status');
+                const raw = String(input?.value || '').trim();
+                if (raw && !/^\\d{1,20}$/.test(raw)) {
+                    status.textContent = 'CFN ID inválido. Informe somente números (até 20 dígitos).';
+                    status.classList.add('text-red-400');
+                    return false;
+                }
+                button.disabled = true;
+                try {
+                    const saved = await _salvarSf6CfnId(playerId, raw);
+                    if (!saved) {
+                        status.textContent = 'Não foi possível salvar o CFN ID.';
+                        return false;
+                    }
+                    sf6CfnIdProfile = raw;
+                    atualizarLinkSf6Stats();
+                    status.textContent = raw ? 'CFN ID salvo. Link SF6 Stats liberado.' : 'CFN ID removido.';
+                    status.classList.remove('text-red-400');
+                    if (!raw) window.fecharSf6CfnModal();
+                    return true;
+                } finally {
+                    button.disabled = false;
+                }
+            };
+
             // Dashboard EWGF: só para quem marcou Tekken 8 em "Jogos" e informou o Tekken ID
             function ewgfCharIcon(name) {
                 const chars = GAMES_ART_MAP?.tekken8?.chars || {};
@@ -1721,6 +1810,9 @@
                     conteudo.innerHTML = '<div class="loading-attendees"><div class="spinner"></div><p style="margin-top:15px;">Carregando perfil...</p></div>';
                     const { dados, fonte } = await obterDadosPlayer(playerId, gamerTag, forceRefresh, prefix, prefixProvided);
                     dados.characterArt = await _lerCharArt(playerId);
+                    const sf6CfnIdPromise = typeof _lerSf6CfnId === 'function'
+                        ? _lerSf6CfnId(playerId)
+                        : Promise.resolve('');
                     const ewgfTekkenIdPromise = typeof _lerEwgfTekkenId === 'function'
                         ? _lerEwgfTekkenId(playerId)
                         : Promise.resolve('');
@@ -1733,6 +1825,12 @@
                         console.warn('Não foi possível carregar os jogos do player:', gamesError);
                     }
                     jogosPlayer = Array.isArray(savedGames) ? [...new Set(savedGames.filter(key => GAMES_PLAYED_MAP[key]))] : [];
+                    try {
+                        sf6CfnIdProfile = await sf6CfnIdPromise;
+                    } catch (sf6CfnReadError) {
+                        console.warn('Não foi possível carregar o CFN do Street Fighter 6:', sf6CfnReadError);
+                        sf6CfnIdProfile = '';
+                    }
                     try {
                         ewgfTekkenIdProfile = await ewgfTekkenIdPromise;
                     } catch (ewgfReadError) {
@@ -1755,6 +1853,7 @@
                     if (historyToApply) aplicarHistoricoCompleto(dados, historyToApply);
                     dadosPerfilAtual = dados;
                     conteudo.innerHTML = montarHtmlPerfil(dados, fonte);
+                    atualizarLinkSf6Stats();
                     if (ewgfTekkenIdProfile) void buscarRankEwgf(ewgfTekkenIdProfile, true);
                     // Busca de personagens automática: só quando ainda não existe histórico (local ou compartilhado)
                     if (!historyToApply && !controleVarreduraPersonagens.running && !estadoVarreduraPersonagens
@@ -1932,6 +2031,10 @@
                 if (event.key === 'Escape' && !document.getElementById('performance-share-modal').classList.contains('hidden')) {
                     window.fecharCompartilhamentoDesempenho();
                 }
+                const sf6Modal = document.getElementById('sf6_cfn_modal');
+                if (event.key === 'Escape' && sf6Modal && !sf6Modal.classList.contains('hidden')) {
+                    window.fecharSf6CfnModal();
+                }
                 const ewgfModal = document.getElementById('ewgf_id_modal');
                 if (event.key === 'Escape' && ewgfModal && !ewgfModal.classList.contains('hidden')) {
                     window.fecharEwgfIdModal();
@@ -2022,6 +2125,7 @@
                     return;
                 }
                 jogosPlayer = selectedGames;
+                atualizarLinkSf6Stats();
                 window.fecharSeletorJogosPlayer();
                 carregarPerfil(false);
             };
