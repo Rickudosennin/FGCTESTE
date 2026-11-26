@@ -1004,9 +1004,11 @@
                                     <button id="sf6-cfn-edit-button" onclick="abrirSf6CfnModal()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-id-card"></i> SF6 CFN ID
                                     </button>
-                                    <button onclick="abrirEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
-                                        <i class="fa-solid fa-trophy"></i> TEKKEN 8 ID
-                                    </button>
+                                    ${jogosPlayer.includes('tekken8') ? `
+                                        <button onclick="abrirEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                                            <i class="fa-solid fa-trophy"></i> TEKKEN 8 ID
+                                        </button>
+                                    ` : ''}
                                     <button id="share-performance-button" onclick="abrirCompartilhamentoDesempenho()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-share-nodes"></i> Compartilhar(BETA)
                                     </button>
@@ -1759,30 +1761,26 @@
                             <h2 class="text-sm font-black uppercase tracking-wider text-white">Desempenho · Street Fighter 6</h2>
                             <p class="text-xs text-slate-400 mt-1">Estatísticas individuais vinculadas ao CFN cadastrado</p>
                         </div>
-                        <a id="sf6-dashboard-external" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-300 hover:text-white underline">Abrir SF6 Stats ↗</a>
                     </div>
                     <div id="sf6-dashboard-content" class="text-sm text-slate-300">Carregando estatísticas…</div>
                 `;
                 existing?.replaceWith(section);
                 if (!existing) {
                     const desempenhoAnchor = document.getElementById('desemp_box');
-                    if (desempenhoAnchor && desempenhoAnchor.parentElement === conteudo) {
-                        conteudo.insertBefore(section, desempenhoAnchor);
+                    if (desempenhoAnchor?.parentElement) {
+                        desempenhoAnchor.parentElement.insertBefore(section, desempenhoAnchor);
                     } else {
                         conteudo.appendChild(section);
                     }
                 }
 
                 const content = section.querySelector('#sf6-dashboard-content');
-                const external = section.querySelector('#sf6-dashboard-external');
                 const cfnId = String(sf6CfnIdProfile || '').trim();
                 if (!/^\d{1,20}$/.test(cfnId)) {
-                    external.classList.add('hidden');
                     content.innerHTML = '<p>Cadastre o CFN ID para carregar as estatísticas do jogador.</p>';
                     return;
                 }
 
-                external.href = `https://sfstats.app/data/players/${encodeURIComponent(cfnId)}/overview`;
                 try {
                     const response = await fetch(`data/cfn/${encodeURIComponent(cfnId)}.json?v=${Date.now()}`, { cache: 'no-store' });
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
