@@ -116,14 +116,9 @@ export function mapProfile(sid, json) {
 }
 
 async function idsFromFirestore() {
-  try {
-    const ids = await getSf6CfnIdsFromFirestore();
-    console.log(`Firestore: ${ids.length} CFN ID(s) com SF6.`);
-    return ids;
-  } catch (e) {
-    console.warn(`Aviso: não foi possível ler IDs do Firestore: ${e.message}`);
-    return [];
-  }
+  const ids = await getSf6CfnIdsFromFirestore();
+  console.log(`Firestore: ${ids.length} CFN ID(s) com SF6.`);
+  return ids;
 }
 
 async function idsFromFile() {
