@@ -146,7 +146,7 @@ export async function getSf6CfnIdsFromFirestore() {
       fields.sf6CfnId?.doubleValue ??
       ''
     ).trim();
-    if (/^\\d{1,20}$/.test(id)) ids.add(id);
+    if (/^\d{1,20}$/.test(id)) ids.add(id);
   }
   return [...ids];
 }
