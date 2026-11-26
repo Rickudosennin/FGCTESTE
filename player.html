@@ -1774,7 +1774,14 @@
                     <div id="sf6-dashboard-content" class="text-sm text-slate-300">Carregando estatísticas…</div>
                 `;
                 existing?.replaceWith(section);
-                if (!existing) conteudo.appendChild(section);
+                if (!existing) {
+                    const desempenhoAnchor = document.getElementById('desemp_box');
+                    if (desempenhoAnchor && desempenhoAnchor.parentElement === conteudo) {
+                        conteudo.insertBefore(section, desempenhoAnchor);
+                    } else {
+                        conteudo.appendChild(section);
+                    }
+                }
 
                 const content = section.querySelector('#sf6-dashboard-content');
                 const external = section.querySelector('#sf6-dashboard-external');
