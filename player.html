@@ -1737,6 +1737,125 @@
                     statsLink.href = `https://sfstats.app/data/players/${encodeURIComponent(sf6CfnIdProfile)}/overview`;
                     statsLink.title = 'Abrir estatísticas públicas deste CFN no SF6 Stats';
                 }
+                void renderizarDashboardSf6();
+            }
+
+            function escaparHtmlSf6(value) {
+                return String(value ?? '').replace(/[&<>"']/g, char => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                })[char]);
+            }
+
+            function formatarNumeroSf6(value) {
+                const number = Number(value);
+                return Number.isFinite(number) && number > 0
+                    ? Math.round(number).toLocaleString('pt-BR')
+                    : '—';
+            }
+
+            async function renderizarDashboardSf6() {
+                const existing = document.getElementById('sf6-performance-section');
+                if (!jogosPlayer.includes('sf6')) {
+                    existing?.remove();
+                    return;
+                }
+
+                const section = document.createElement('section');
+                section.id = 'sf6-performance-section';
+                section.className = 'mt-6 rounded-xl border border-blue-500/30 bg-slate-900/90 p-4 sm:p-5 space-y-4';
+                section.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-sm font-black uppercase tracking-wider text-white">Desempenho · Street Fighter 6</h2>
+                            <p class="text-xs text-slate-400 mt-1">Estatísticas individuais vinculadas ao CFN cadastrado</p>
+                        </div>
+                        <a id="sf6-dashboard-external" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-300 hover:text-white underline">Abrir SF6 Stats ↗</a>
+                    </div>
+                    <div id="sf6-dashboard-content" class="text-sm text-slate-300">Carregando estatísticas…</div>
+                `;
+                existing?.replaceWith(section);
+                if (!existing) conteudo.appendChild(section);
+
+                const content = section.querySelector('#sf6-dashboard-content');
+                const external = section.querySelector('#sf6-dashboard-external');
+                const cfnId = String(sf6CfnIdProfile || '').trim();
+                if (!/^\d{1,20}$/.test(cfnId)) {
+                    external.classList.add('hidden');
+                    content.innerHTML = '<p>Cadastre o CFN ID para carregar as estatísticas do jogador.</p>';
+                    return;
+                }
+
+                external.href = `https://sfstats.app/data/players/${encodeURIComponent(cfnId)}/overview`;
+                try {
+                    const response = await fetch(`data/cfn/${encodeURIComponent(cfnId)}.json?v=${Date.now()}`, { cache: 'no-store' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (String(data.cfnId) !== cfnId) throw new Error('CFN do arquivo não corresponde ao perfil');
+                    const league = data.league || {};
+                    const season = data.season || {};
+                    const main = data.main || {};
+                    const battles = Number(season.battles) || 0;
+                    const wins = Number(season.wins) || 0;
+                    const losses = Math.max(0, battles - wins);
+                    const winRate = battles > 0 ? Math.round((wins / battles) * 100) : 0;
+                    const rating = Number(league.masterRating) || 0;
+                    const points = Number(league.points) || 0;
+                    const ranking = Number(league.masterRatingRanking) || 0;
+                    const hours = Math.floor((Number(data.playTimeSeconds) || 0) / 3600);
+                    const topCharacters = Array.isArray(data.topCharacters) ? data.topCharacters : [];
+                    const updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString('pt-BR') : '—';
+
+                    const metrics = [
+                        { label: 'MR atual', value: rating ? formatarNumeroSf6(rating) : '—' },
+                        { label: 'LP', value: points ? formatarNumeroSf6(points) : '—' },
+                        { label: 'Ranking MR', value: ranking ? `#${formatarNumeroSf6(ranking)}` : '—' },
+                        { label: 'Partidas na temporada', value: formatarNumeroSf6(battles) },
+                        { label: 'Vitórias', value: formatarNumeroSf6(wins) },
+                        { label: 'Derrotas', value: formatarNumeroSf6(losses) },
+                        { label: 'Win rate', value: battles ? `${winRate}%` : '—' },
+                        { label: 'Tempo de jogo', value: hours ? `${formatarNumeroSf6(hours)} h` : '—' }
+                    ];
+                    content.innerHTML = `
+                        <div class="flex flex-wrap items-center gap-3 rounded-lg bg-slate-950/70 p-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500">Personagem favorito</p>
+                                <p class="text-lg font-black text-white">${escaparHtmlSf6(main.name || 'Não informado')}</p>
+                                <p class="text-[11px] text-slate-500">CFN ID: ${escaparHtmlSf6(cfnId)} · Temporada ${escaparHtmlSf6(season.id || '—')}</p>
+                            </div>
+                            <span class="rounded-lg border border-blue-400/30 bg-blue-500/10 px-3 py-2 text-xs font-bold text-blue-200">SF6</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            ${metrics.map(metric => `
+                                <div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3">
+                                    <p class="text-[10px] uppercase tracking-wide text-slate-500">${metric.label}</p>
+                                    <p class="mt-1 text-xl font-black text-white">${metric.value}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${topCharacters.length ? `
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Personagens mais utilizados</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    ${topCharacters.map(character => `
+                                        <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-3 flex items-center justify-between gap-2">
+                                            <span class="font-bold text-white">${escaparHtmlSf6(character.name)}</span>
+                                            <span class="text-xs text-slate-400">${formatarNumeroSf6(character.battles)} partidas</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        <p class="text-[10px] text-slate-500">Última sincronização: ${escaparHtmlSf6(updated)} · Dados armazenados em cache no FGC HUB.</p>
+                    `;
+                } catch (error) {
+                    console.warn('Não foi possível carregar os dados SF6 em cache:', error);
+                    content.innerHTML = `
+                        <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                            <p class="font-bold text-amber-200">Dados SF6 ainda não sincronizados</p>
+                            <p class="mt-1 text-xs text-slate-400">CFN ${escaparHtmlSf6(cfnId)} cadastrado. A sincronização automática precisa estar configurada no GitHub Actions (secret BUCKLER_COOKIE).</p>
+                        </div>
+                    `;
+                }
             }
 
             window.abrirSf6CfnModal = function() {
