@@ -27,7 +27,7 @@ async function getBuildId(cookie) {
   const response = await fetch(`${BASE}/${LOCALE}`, { headers, redirect: "follow" });
   if (!response.ok) throw new Error(`Buckler HTTP ${response.status}`);
   const html = await response.text();
-  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\\s\\S]*?)<\\/script>/);
+  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   const buildId = match ? JSON.parse(match[1]).buildId : "";
   if (!buildId) throw new Error("Não foi possível obter a versão atual do Buckler");
   return buildId;
@@ -89,12 +89,12 @@ export default {
       try {
         const body=await request.json();
         const playerId=String(body.playerId||"").trim(), cfnId=String(body.cfnId||"").trim();
-        if (!/^\\d{1,30}$/.test(playerId)||!/^\\d{1,20}$/.test(cfnId)) return json({error:"ID do jogador ou CFN inválido"},400);
+        if (!/^\d{1,30}$/.test(playerId)||!/^\d{1,20}$/.test(cfnId)) return json({error:"ID do jogador ou CFN inválido"},400);
         await env.DB.prepare("INSERT INTO sf6_players (player_id,cfn_id,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(player_id) DO UPDATE SET cfn_id=excluded.cfn_id,updated_at=CURRENT_TIMESTAMP").bind(playerId,cfnId).run();
         return json({ok:true,playerId,cfnId});
       } catch { return json({error:"Não foi possível salvar CFN"},500); }
     }
-    const match=url.pathname.match(/^\\/api\\/sf6\\/cfn\\/(\\d{1,30})$/);
+    const match=url.pathname.match(/^\/api\/sf6\/cfn\/(\d{1,30})$/);
     if (match && request.method==="GET") {
       const row=await env.DB.prepare("SELECT player_id AS playerId,cfn_id AS cfnId FROM sf6_players WHERE player_id=?").bind(match[1]).first();
       return row?json(row):json({error:"CFN não cadastrado"},404);
@@ -104,7 +104,7 @@ export default {
       return json({ok:true});
     }
 
-    const profileMatch=url.pathname.match(/^\\/api\\/sf6\\/profile\\/(\\d{1,30})$/);
+    const profileMatch=url.pathname.match(/^\/api\/sf6\/profile\/(\d{1,30})$/);
     if (profileMatch && request.method==="GET") {
       try {
         if (!env.BUCKLER_COOKIE) return json({error:"Consulta SF6 não configurada"},503);
