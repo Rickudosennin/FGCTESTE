@@ -1004,9 +1004,6 @@
                                     <button id="sf6-cfn-edit-button" onclick="abrirSf6CfnModal()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-id-card"></i> SF6 CFN ID
                                     </button>
-                                    <a id="sf6-stats-link" href="#" target="_blank" rel="noopener noreferrer" class="hidden text-xs bg-blue-700 hover:bg-blue-600 border border-blue-500 text-white px-3 py-1.5 rounded-lg font-bold transition items-center gap-1.5">
-                                        <i class="fa-solid fa-chart-line"></i> SF6 STATS
-                                    </a>
                                     <button onclick="abrirEwgfIdModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                                         <i class="fa-solid fa-trophy"></i> TEKKEN 8 ID
                                     </button>
@@ -1728,15 +1725,8 @@
 
             function atualizarLinkSf6Stats() {
                 const editButton = document.getElementById('sf6-cfn-edit-button');
-                const statsLink = document.getElementById('sf6-stats-link');
                 const enabled = jogosPlayer.includes('sf6');
                 editButton?.classList.toggle('hidden', !enabled);
-                statsLink?.classList.toggle('hidden', !enabled || !/^\d{1,20}$/.test(sf6CfnIdProfile));
-                statsLink?.classList.toggle('inline-flex', enabled && /^\d{1,20}$/.test(sf6CfnIdProfile));
-                if (statsLink && enabled && /^\d{1,20}$/.test(sf6CfnIdProfile)) {
-                    statsLink.href = `https://sfstats.app/data/players/${encodeURIComponent(sf6CfnIdProfile)}/overview`;
-                    statsLink.title = 'Abrir estatísticas públicas deste CFN no SF6 Stats';
-                }
                 void renderizarDashboardSf6();
             }
 
