@@ -1,6 +1,6 @@
-// Sincroniza dados públicos do Buckler (CFN) de players com SF6 cadastrado.
+// Sincroniza exclusivamente os CFNs cadastrados no Cloudflare D1.
 // Roda no GitHub Actions com a SUA sessão (secret BUCKLER_COOKIE). Nunca roda no navegador.
-// Saída: data/cfn/<cfnId>.json (lido pelo player.html).
+// Saída: data/cfn/<cfnId>.json (lido pelo player.html). A lista de CFNs vem somente do D1.
 // Configuração, secret e solução de problemas: ver CFN-SETUP.md na raiz do repo.
 // Uso responsável (doc buckler-api-docs): ritmo lento, sem concorrência, para em 401/403/429, cache.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -128,13 +128,6 @@ async function idsFromCloudflare() {
   return ids;
 }
 
-async function idsFromFile() {
-  try {
-    const list = JSON.parse(await readFile('data/cfn-ids.json', 'utf8'));
-    return (Array.isArray(list) ? list : []).map(String).filter(id => /^\d{1,20}$/.test(id));
-  } catch { return []; }
-}
-
 async function lastUpdated(id) {
   try {
     const t = Date.parse(JSON.parse(await readFile(`${OUT_DIR}/${id}.json`, 'utf8')).updatedAt);
@@ -147,7 +140,7 @@ async function main() {
     console.error('BUCKLER_COOKIE vazio. Configure o secret (Settings > Secrets and variables > Actions).');
     process.exit(1);
   }
-  const ids = [...new Set([...(await idsFromCloudflare()), ...(await idsFromFile())])];
+  const ids = await idsFromCloudflare();
   if (!ids.length) { console.log('Nenhum CFN ID para sincronizar.'); return; }
 
   const withAge = await Promise.all(ids.map(async id => ({ id, at: await lastUpdated(id) })));
