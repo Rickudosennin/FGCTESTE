@@ -67,7 +67,7 @@ function readFields(document) {
     game === 'street-fighter-6'
   );
 
-  return /^\\d{1,20}$/.test(cfn) && hasSf6 ? cfn : '';
+  return /^\d{1,20}$/.test(cfn) && hasSf6 ? cfn : '';
 }
 
 export async function getSf6CfnIdsFromFirestore() {
