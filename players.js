@@ -488,7 +488,7 @@ async function _salvarSf6CfnId(playerId, cfnId) {
     try {
         const playerKey = String(playerId ?? '').trim();
         const value = String(cfnId ?? '').trim();
-        if (!/^\\d{1,30}$/.test(playerKey) || (value && !/^\\d{1,20}$/.test(value))) return false;
+        if (!/^\d{1,30}$/.test(playerKey) || (value && !/^\d{1,20}$/.test(value))) return false;
         if (!value) {
             const response = await fetch(`${_SF6_CFN_API}/api/sf6/cfn/${encodeURIComponent(playerKey)}`, { method: 'DELETE' });
             return response.ok;
@@ -508,7 +508,7 @@ async function _salvarSf6CfnId(playerId, cfnId) {
 async function _lerSf6CfnId(playerId) {
     try {
         const playerKey = String(playerId ?? '').trim();
-        if (!/^\\d{1,30}$/.test(playerKey)) return '';
+        if (!/^\d{1,30}$/.test(playerKey)) return '';
         const response = await fetch(`${_SF6_CFN_API}/api/sf6/cfn/${encodeURIComponent(playerKey)}`);
         if (response.status === 404) return '';
         if (!response.ok) return '';
