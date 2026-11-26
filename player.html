@@ -1850,10 +1850,7 @@
                 } catch (error) {
                     console.warn('Não foi possível carregar os dados SF6 em cache:', error);
                     content.innerHTML = `
-                        <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                            <p class="font-bold text-amber-200">Dados SF6 ainda não sincronizados</p>
-                            <p class="mt-1 text-xs text-slate-400">CFN ${escaparHtmlSf6(cfnId)} cadastrado. A sincronização automática precisa estar configurada no GitHub Actions (secret BUCKLER_COOKIE).</p>
-                        </div>
+                        <p class="text-xs text-slate-400">Dados de Street Fighter 6 indisponíveis no momento.</p>
                     `;
                 }
             }
