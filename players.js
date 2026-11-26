@@ -479,6 +479,36 @@ async function _lerGamesPlayed(playerId) {
     }
 }
 
+ 
+// ==================== CFN / STREET FIGHTER 6 STATS ====================
+// Campo independente para não ser sobrescrito pelo cache Start.gg.
+async function _salvarSf6CfnId(playerId, cfnId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        const value = String(cfnId ?? '').trim();
+        if (!playerKey || (value && !/^\\d{1,20}$/.test(value))) return false;
+        await _playersCollection.doc(playerKey).set({ sf6CfnId: value }, { merge: true });
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar CFN do Street Fighter 6:', e);
+        return false;
+    }
+}
+
+async function _lerSf6CfnId(playerId) {
+    try {
+        const playerKey = playerId == null ? '' : String(playerId).trim();
+        if (!playerKey) return '';
+        const doc = await _playersCollection.doc(playerKey).get();
+        if (!doc.exists) return '';
+        const value = doc.data().sf6CfnId;
+        return value == null ? '' : String(value).trim();
+    } catch (e) {
+        console.error('Erro ao ler CFN do Street Fighter 6:', e);
+        return '';
+    }
+}
+
 // ==================== ID EWGF / TEKKEN (Firestore, campo separado) ====================
 // Mantém o ID fora de `dados`, que é sobrescrito quando o cache Start.gg atualiza.
 async function _salvarEwgfTekkenId(playerId, tekkenId) {
