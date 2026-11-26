@@ -658,7 +658,7 @@
                 setTimeout(carregarDesempenho, 0);
                 return `
                         <div id="desemp_box" class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 w-full min-w-0 overflow-hidden">
-                            <h3 id="desemp_titulo" class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Desempenho</h3>
+                            <h3 id="desemp_titulo" class="text-xs font-bold text-slate-400 uppercase tracking-wider border-l-2 border-red-500 pl-2">Desempenho em Torneios by Start GG · ${GAMES_PLAYED_MAP[DESEMP_ESTADO.jogo].label}</h3>
                             <p id="desemp_msg" class="text-slate-500 text-sm">Carregando eventos...</p>
                             <div id="desemp_body"></div>
                         </div>`;
@@ -728,7 +728,7 @@
                 const titulo = document.getElementById('desemp_titulo');
                 if (!body || !DESEMP_ESTADO.dados) return;
                 const jogos = jogosComDesempenho();
-                if (titulo) titulo.textContent = jogos.length > 1 ? 'Desempenho' : 'Desempenho · ' + GAMES_PLAYED_MAP[DESEMP_ESTADO.jogo].label;
+                if (titulo) titulo.textContent = 'Desempenho em Torneios by Start GG · ' + GAMES_PLAYED_MAP[DESEMP_ESTADO.jogo].label;
                 const agora = Date.now() / 1000;
                 const lim = DESEMP_ESTADO.periodo === '90' ? agora - 90 * 86400 : DESEMP_ESTADO.periodo === '2026' ? Date.UTC(2026, 0, 1) / 1000 : 0;
                 const fim = DESEMP_ESTADO.periodo === '2026' ? Date.UTC(2027, 0, 1) / 1000 : Infinity;
