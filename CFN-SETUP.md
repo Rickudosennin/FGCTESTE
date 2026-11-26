@@ -12,10 +12,11 @@ A integração não pede login ou cookie de cada jogador. A coleta atual usa uma
 ## Configuração obrigatória (uma vez)
 
 1. Entrar no GitHub → repositório **FGCTESTE** → **Settings** → **Secrets and variables** → **Actions**.
-2. Criar repository secret com o nome `BUCKLER_COOKIE`.
-3. Colar o valor do cookie de sessão de uma conta Buckler autorizada. Não colocar esse valor em arquivos, commits, issues ou conversas.
-4. Em **Settings → Actions → General → Workflow permissions**, habilitar **Read and write permissions**.
-5. Abrir **Actions → CFN sync → Run workflow** para executar a primeira coleta.
+2. Criar repository secret `BUCKLER_COOKIE` com o cookie de sessão de uma conta Buckler autorizada. Não colocar esse valor em arquivos, commits, issues ou conversas.
+3. Criar uma **Service Account** no Google Cloud do projeto Firebase `fgcgub`, habilitar a API Cloud Firestore e conceder a função **Cloud Datastore Viewer** (somente leitura).
+4. Gerar uma chave JSON dessa Service Account e salvar o JSON inteiro como GitHub Actions repository secret `FIREBASE_SERVICE_ACCOUNT_JSON`. Nunca commitar ou enviar a chave em conversas.
+5. Em **Settings → Actions → General → Workflow permissions**, habilitar **Read and write permissions**.
+6. Abrir **Actions → CFN sync → Run workflow** para executar a primeira coleta.
 
 O workflow também está agendado diariamente às 06:00 (horário de Brasília).
 
@@ -44,6 +45,6 @@ A seção mostra estado de "ainda não sincronizado" enquanto o JSON do CFN não
 - **BUCKLER_COOKIE vazio** → cadastrar/renovar o secret.
 - **401/403 ou redirecionamento** → sessão expirou; renovar o secret.
 - **429** → limite da fonte; aguardar próxima execução.
-- **Firestore HTTP 403** → a leitura REST da coleção `players` não está pública; a fila manual `data/cfn-ids.json` continua disponível.
+- **Firestore HTTP 403** → conferir secret `FIREBASE_SERVICE_ACCOUNT_JSON`, projeto `fgcgub`, API Firestore habilitada e função `Cloud Datastore Viewer` atribuída à Service Account.
 - **Perfil indisponível** → conferir se o User Code/CFN ID corresponde ao perfil Buckler.
 
