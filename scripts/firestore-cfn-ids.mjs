@@ -139,8 +139,14 @@ export async function getSf6CfnIdsFromFirestore() {
   const rows = await response.json();
   const ids = new Set();
   for (const row of rows || []) {
-    const id = readFields({ fields: row.document?.fields || {} });
-    if (id) ids.add(id);
+    const fields = row.document?.fields || {};
+    const id = String(
+      fields.sf6CfnId?.stringValue ??
+      fields.sf6CfnId?.integerValue ??
+      fields.sf6CfnId?.doubleValue ??
+      ''
+    ).trim();
+    if (/^\\d{1,20}$/.test(id)) ids.add(id);
   }
   return [...ids];
 }
