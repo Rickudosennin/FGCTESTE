@@ -17,7 +17,7 @@ function bucklerHeaders(accept = "application/json, text/plain, */*") {
     Accept: accept,
     "Accept-Language": "en-US,en;q=0.9",
     Referer: `${BASE}/${LOCALE}/`,
-    "User-Agent": "Mozilla/5.0 (compatible; FGCHUB-SF6/1.0)",
+    "User-Agent": "Mozilla/5.0 (compatible; FGCHUB-cfn-sync/1.0)",
     Cookie: ""
   };
 }
