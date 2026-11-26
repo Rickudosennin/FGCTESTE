@@ -6,6 +6,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { getSf6CfnIdsFromFirestore } from './firestore-cfn-ids.mjs';
 
 const BASE = 'https://www.streetfighter.com/6/buckler';
 const LOCALE = 'en';
@@ -116,28 +117,7 @@ export function mapProfile(sid, json) {
 
 async function idsFromFirestore() {
   try {
-    const cfg = await readFile('firebase-config.js', 'utf8');
-    const apiKey = cfg.match(/apiKey:\s*"([^"]+)"/)?.[1];
-    const projectId = cfg.match(/projectId:\s*"([^"]+)"/)?.[1];
-    if (!apiKey || !projectId) throw new Error('firebase-config.js sem apiKey/projectId');
-    const ids = [];
-    let pageToken = '';
-    do {
-      const qs = new URLSearchParams({ pageSize: '300', key: apiKey });
-      qs.append('mask.fieldPaths', 'sf6CfnId');
-      qs.append('mask.fieldPaths', 'gamesPlayed');
-      if (pageToken) qs.set('pageToken', pageToken);
-      const res = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/players?${qs}`);
-      if (!res.ok) throw new Error(`Firestore HTTP ${res.status} (regras podem bloquear leitura pública)`);
-      const body = await res.json();
-      for (const doc of body.documents || []) {
-        const f = doc.fields || {};
-        const id = String(f.sf6CfnId?.stringValue ?? f.sf6CfnId?.integerValue ?? '').trim();
-        const games = (f.gamesPlayed?.arrayValue?.values || []).map(v => v.stringValue);
-        if (/^\d{1,20}$/.test(id) && games.includes('sf6')) ids.push(id);
-      }
-      pageToken = body.nextPageToken || '';
-    } while (pageToken);
+    const ids = await getSf6CfnIdsFromFirestore();
     console.log(`Firestore: ${ids.length} CFN ID(s) com SF6.`);
     return ids;
   } catch (e) {
