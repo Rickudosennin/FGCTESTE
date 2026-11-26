@@ -38,7 +38,7 @@ async function accessToken(serviceAccount) {
       assertion
     })
   });
-  if (!response.ok) throw new Error(\`Google OAuth HTTP \${response.status}\`);
+  if (!response.ok) throw new Error(`Google OAuth HTTP ${response.status}`);
   const token = await response.json();
   if (!token.access_token) throw new Error('Google OAuth não retornou access_token');
   return token.access_token;
@@ -72,16 +72,16 @@ export async function getSf6CfnIdsFromFirestore() {
   let pageToken = '';
 
   do {
-    const url = new URL(\`https://firestore.googleapis.com/v1/projects/\${projectId}/databases/(default)/documents/players\`);
+    const url = new URL(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/players`);
     url.searchParams.set('pageSize', '300');
     url.searchParams.append('mask.fieldPaths', 'sf6CfnId');
     url.searchParams.append('mask.fieldPaths', 'gamesPlayed');
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
     const response = await fetch(url, {
-      headers: { authorization: \`Bearer \${token}\` }
+      headers: { authorization: `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error(\`Firestore autenticado HTTP \${response.status}\`);
+    if (!response.ok) throw new Error(`Firestore autenticado HTTP ${response.status}`);
     const body = await response.json();
     for (const document of body.documents || []) {
       const id = readFields(document);
