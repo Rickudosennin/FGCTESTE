@@ -96,9 +96,25 @@ export async function getSf6CfnIdsFromFirestore() {
     url.searchParams.append('mask.fieldPaths', 'gamesPlayed');
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-    const response = await fetch(url, {
-      headers: { authorization: `Bearer ${token}` }
-    });
+    let response;
+    for (let attempt = 1; attempt <= 6; attempt++) {
+      response = await fetch(url, {
+        headers: { authorization: `Bearer ${token}` }
+      });
+      if (response.status !== 429 && response.status < 500) break;
+
+      if (attempt === 6) {
+        throw new Error(`Firestore autenticado HTTP ${response.status} após ${attempt} tentativas`);
+      }
+
+      const retryAfter = Number(response.headers.get('retry-after'));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(retryAfter * 1000, 60000)
+        : Math.min(5000 * (2 ** (attempt - 1)), 60000);
+      console.warn(`Firestore HTTP ${response.status}; nova tentativa ${attempt + 1}/6 em ${Math.ceil(waitMs / 1000)}s.`);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+
     if (!response.ok) throw new Error(`Firestore autenticado HTTP ${response.status}`);
     const body = await response.json();
     for (const document of body.documents || []) {
