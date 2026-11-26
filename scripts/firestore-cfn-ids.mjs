@@ -38,7 +38,7 @@ async function accessToken(serviceAccount) {
       assertion
     })
   });
-  if (!response.ok) throw new Error(`Google OAuth HTTP ${response.status}`);
+  if (!response.ok) throw new Error(\`Google OAuth HTTP \${response.status}\`);
   const token = await response.json();
   if (!token.access_token) throw new Error('Google OAuth não retornou access_token');
   return token.access_token;
@@ -49,46 +49,41 @@ function readFields(document) {
   const cfn = String(fields.sf6CfnId?.stringValue ?? fields.sf6CfnId?.integerValue ?? '').trim();
   const rawGames = fields.gamesPlayed?.arrayValue?.values || [];
   const games = rawGames.map(value => value.stringValue).filter(Boolean);
-  return /^\\d{1,20}$/.test(cfn) && games.includes('sf6') ? cfn : '';
+  return /^\d{1,20}$/.test(cfn) && games.includes('sf6') ? cfn : '';
 }
 
 export async function getSf6CfnIdsFromFirestore() {
   const raw = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
-  if (!raw) {
-    // Compatibilidade com a leitura pública antiga; não é suficiente quando rules bloqueiam.
-    const config = await readFile('firebase-config.js', 'utf8');
-    const apiKey = config.match(/apiKey:\\s*"([^"]+)"/)?.[1];
-    const projectId = config.match(/projectId:\\s*"([^"]+)"/)?.[1];
-    if (!apiKey || !projectId) throw new Error('firebase-config.js sem apiKey/projectId');
-    const response = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/players?key=${apiKey}&pageSize=1`);
-    if (!response.ok) throw new Error(`Firestore público HTTP ${response.status}; configure FIREBASE_SERVICE_ACCOUNT_JSON no GitHub Actions`);
-    throw new Error('Firestore público acessível, mas leitura autenticada é necessária para enumerar perfis com segurança; configure FIREBASE_SERVICE_ACCOUNT_JSON');
-  }
+  if (!raw) throw new Error('Secret FIREBASE_SERVICE_ACCOUNT_JSON não configurado');
 
   let serviceAccount;
   try { serviceAccount = JSON.parse(raw); }
   catch { throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON não contém JSON válido'); }
 
+  const config = await readFile('firebase-config.js', 'utf8');
+  const configuredProject = config.match(/projectId:\s*"([^"]+)"/)?.[1];
   const projectId = serviceAccount.project_id;
-  if (!projectId) throw new Error('Service account sem project_id');
+  if (!projectId || projectId !== configuredProject) {
+    throw new Error('A Service Account precisa pertencer ao projeto Firebase configurado no FGC HUB');
+  }
+
   const token = await accessToken(serviceAccount);
   const ids = new Set();
   let pageToken = '';
 
   do {
-    const url = new URL(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`);
+    const url = new URL(\`https://firestore.googleapis.com/v1/projects/\${projectId}/databases/(default)/documents/players\`);
     url.searchParams.set('pageSize', '300');
     url.searchParams.append('mask.fieldPaths', 'sf6CfnId');
     url.searchParams.append('mask.fieldPaths', 'gamesPlayed');
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
     const response = await fetch(url, {
-      headers: { authorization: `Bearer ${token}` }
+      headers: { authorization: \`Bearer \${token}\` }
     });
-    if (!response.ok) throw new Error(`Firestore autenticado HTTP ${response.status}`);
+    if (!response.ok) throw new Error(\`Firestore autenticado HTTP \${response.status}\`);
     const body = await response.json();
     for (const document of body.documents || []) {
-      if (!document.name?.includes('/documents/players/')) continue;
       const id = readFields(document);
       if (id) ids.add(id);
     }
