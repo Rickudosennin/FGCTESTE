@@ -86,43 +86,61 @@ export async function getSf6CfnIdsFromFirestore() {
   }
 
   const token = await accessToken(serviceAccount);
-  const ids = new Set();
-  let pageToken = '';
-
-  do {
-    const url = new URL(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/players`);
-    url.searchParams.set('pageSize', '300');
-    url.searchParams.append('mask.fieldPaths', 'sf6CfnId');
-    url.searchParams.append('mask.fieldPaths', 'gamesPlayed');
-    if (pageToken) url.searchParams.set('pageToken', pageToken);
-
-    let response;
-    for (let attempt = 1; attempt <= 6; attempt++) {
-      response = await fetch(url, {
-        headers: { authorization: `Bearer ${token}` }
-      });
-      if (response.status !== 429 && response.status < 500) break;
-
-      if (attempt === 6) {
-        throw new Error(`Firestore autenticado HTTP ${response.status} após ${attempt} tentativas`);
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+  const query = {
+    structuredQuery: {
+      from: [{ collectionId: 'players' }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'sf6CfnId' },
+          op: 'GREATER_THAN',
+          value: { stringValue: '' }
+        }
+      },
+      orderBy: [
+        { field: { fieldPath: 'sf6CfnId' }, direction: 'ASCENDING' }
+      ],
+      select: {
+        fields: [{ fieldPath: 'sf6CfnId' }]
       }
+    }
+  };
 
-      const retryAfter = Number(response.headers.get('retry-after'));
-      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
-        ? Math.min(retryAfter * 1000, 60000)
-        : Math.min(5000 * (2 ** (attempt - 1)), 60000);
-      console.warn(`Firestore HTTP ${response.status}; nova tentativa ${attempt + 1}/6 em ${Math.ceil(waitMs / 1000)}s.`);
-      await new Promise(resolve => setTimeout(resolve, waitMs));
+  let response;
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(query)
+    });
+    if (response.status !== 429 && response.status < 500) break;
+
+    if (attempt === 6) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(`Firestore query HTTP ${response.status} após ${attempt} tentativas: ${detail.slice(0, 500)}`);
     }
 
-    if (!response.ok) throw new Error(`Firestore autenticado HTTP ${response.status}`);
-    const body = await response.json();
-    for (const document of body.documents || []) {
-      const id = readFields(document);
-      if (id) ids.add(id);
-    }
-    pageToken = body.nextPageToken || '';
-  } while (pageToken);
+    const retryAfter = Number(response.headers.get('retry-after'));
+    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? Math.min(retryAfter * 1000, 60000)
+      : Math.min(5000 * (2 ** (attempt - 1)), 60000);
+    console.warn(`Firestore HTTP ${response.status}; nova tentativa ${attempt + 1}/6 em ${Math.ceil(waitMs / 1000)}s.`);
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
 
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`Firestore query HTTP ${response.status}: ${detail.slice(0, 500)}`);
+  }
+
+  const rows = await response.json();
+  const ids = new Set();
+  for (const row of rows || []) {
+    const id = readFields({ fields: row.document?.fields || {} });
+    if (id) ids.add(id);
+  }
   return [...ids];
 }
