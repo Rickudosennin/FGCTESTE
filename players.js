@@ -482,13 +482,23 @@ async function _lerGamesPlayed(playerId) {
  
 // ==================== CFN / STREET FIGHTER 6 STATS ====================
 // Campo independente para não ser sobrescrito pelo cache Start.gg.
+const _SF6_CFN_API = 'https://fgchub-sf6-api.hatakepaulo1.workers.dev';
+
 async function _salvarSf6CfnId(playerId, cfnId) {
     try {
-        const playerKey = playerId == null ? '' : String(playerId).trim();
+        const playerKey = String(playerId ?? '').trim();
         const value = String(cfnId ?? '').trim();
-        if (!playerKey || (value && !/^\d{1,20}$/.test(value))) return false;
-        await _playersCollection.doc(playerKey).set({ sf6CfnId: value }, { merge: true });
-        return true;
+        if (!/^\\d{1,30}$/.test(playerKey) || (value && !/^\\d{1,20}$/.test(value))) return false;
+        if (!value) {
+            const response = await fetch(`${_SF6_CFN_API}/api/sf6/cfn/${encodeURIComponent(playerKey)}`, { method: 'DELETE' });
+            return response.ok;
+        }
+        const response = await fetch(`${_SF6_CFN_API}/api/sf6/cfn`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: playerKey, cfnId: value })
+        });
+        return response.ok;
     } catch (e) {
         console.error('Erro ao salvar CFN do Street Fighter 6:', e);
         return false;
@@ -497,12 +507,13 @@ async function _salvarSf6CfnId(playerId, cfnId) {
 
 async function _lerSf6CfnId(playerId) {
     try {
-        const playerKey = playerId == null ? '' : String(playerId).trim();
-        if (!playerKey) return '';
-        const doc = await _playersCollection.doc(playerKey).get();
-        if (!doc.exists) return '';
-        const value = doc.data().sf6CfnId;
-        return value == null ? '' : String(value).trim();
+        const playerKey = String(playerId ?? '').trim();
+        if (!/^\\d{1,30}$/.test(playerKey)) return '';
+        const response = await fetch(`${_SF6_CFN_API}/api/sf6/cfn/${encodeURIComponent(playerKey)}`);
+        if (response.status === 404) return '';
+        if (!response.ok) return '';
+        const data = await response.json();
+        return String(data.cfnId || '').trim();
     } catch (e) {
         console.error('Erro ao ler CFN do Street Fighter 6:', e);
         return '';
