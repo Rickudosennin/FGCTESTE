@@ -15,7 +15,8 @@
       "name": "Tekken 8",
       "gameId": 49783,
       "nomes": null,
-      "rotulo": "Ranking Tekken 8 Brasil"
+      "rotulo": "Ranking Tekken 8 Brasil",
+      "estrelas": false
     }
   ]
 }
