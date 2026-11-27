@@ -568,13 +568,16 @@ function adicionarBotaoAssistir(t, card) {
         if (!links.length) return;
         const rot = { TWITCH: 'Twitch', YOUTUBE: 'YouTube' };
         const bc = card.querySelector('.bc-sub');
-        links.slice(0, 2).forEach(l => {
+        const mostrar = links.slice(0, 2);
+        mostrar.slice().reverse().forEach(l => {
             const txt = 'Assistir' + (rot[l.src] ? ' · ' + rot[l.src] : '');
+            const ytAttr = l.src === 'YOUTUBE' ? encodeURIComponent(l.nome) : '';
             if (bc) {
-                bc.insertAdjacentHTML('afterbegin', `<a class="bc-btn" href="${l.url}" target="_blank" rel="noopener" data-yt-stream="${l.src === 'YOUTUBE' ? encodeURIComponent(l.nome) : ''}" onclick="event.stopPropagation();">${txt}</a>`);
+                const ico = l.src === 'TWITCH' ? 'fa-twitch' : (l.src === 'YOUTUBE' ? 'fa-youtube' : '');
+                bc.insertAdjacentHTML('afterbegin', `<a class="bc-btn bc-watch${mostrar.length === 1 ? ' bc-watch-solo' : ''}" href="${l.url}" target="_blank" rel="noopener" title="${txt} (ao vivo)" aria-label="${txt}" data-yt-stream="${ytAttr}" onclick="event.stopPropagation();">${ico ? `<i class="fa-brands ${ico}" aria-hidden="true"></i>` : ''}${rot[l.src] || 'Assistir'}</a>`);
             } else {
                 const box = card.querySelector('.mt-4.space-y-2');
-                if (box) box.insertAdjacentHTML('afterbegin', `<a href="${l.url}" target="_blank" rel="noopener" data-yt-stream="${l.src === 'YOUTUBE' ? encodeURIComponent(l.nome) : ''}" class="block text-center btn-calendar text-slate-300 font-bold py-2 rounded-lg transition uppercase text-[10px] tracking-wider" onclick="event.stopPropagation();"><i class="fa-solid fa-tv mr-1"></i> ${txt}</a>`);
+                if (box) box.insertAdjacentHTML('afterbegin', `<a href="${l.url}" target="_blank" rel="noopener" data-yt-stream="${ytAttr}" class="block text-center btn-calendar text-slate-300 font-bold py-2 rounded-lg transition uppercase text-[10px] tracking-wider" onclick="event.stopPropagation();"><i class="fa-solid fa-tv mr-1"></i> ${txt}</a>`);
             }
         });
         atualizarLinksYoutubeComId(t, card);

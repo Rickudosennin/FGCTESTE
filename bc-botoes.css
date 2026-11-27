@@ -1,0 +1,15 @@
+/* FGC HUB - botões do card em linha (temas broadcast/evo): grade por função.
+   Linha 1: Assistir (Twitch | YouTube) · Linha 2: Inscritos/Bracket/Agenda(/Mapa) · Linha 3+: Rankings */
+html[data-theme="broadcast"] .bc-sub, html[data-theme="evo"] .bc-sub {
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;
+}
+html[data-theme="broadcast"] .bc-sub > .bc-btn, html[data-theme="evo"] .bc-sub > .bc-btn {
+    min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none;
+}
+.bc-sub > .bc-watch { grid-column: span 3; order: 1; gap: 6px; height: 36px; background: rgba(90, 110, 255, .16) !important; border-color: rgba(130, 150, 255, .65) !important; }
+.bc-sub > .bc-watch.bc-watch-solo { grid-column: span 6; }
+.bc-sub > .bc-watch i { font-size: 15px; }
+.bc-sub > .bc-main { grid-column: span 2; order: 2; }
+.bc-sub:has(.bc-map) > .bc-main { grid-column: span 3; }
+.bc-sub > .bc-rank { grid-column: span 6; order: 3; height: 28px; font-size: 12px !important; font-weight: 500 !important; opacity: .85; }
+.bc-sub > .bc-rank:hover { opacity: 1; }

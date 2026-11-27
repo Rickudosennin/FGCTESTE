@@ -60,12 +60,12 @@
     }
 
     var ranking = (ctx.ligasInfo || []).map(function (l) {
-      return '<button type="button" class="bc-btn" onclick="abrirRanking(\'' + l.slug + '\',\'' + String(l.label).replace(/'/g, "\\'") + '\',\'' + l.rankingUrl + '\')">Ranking' +
-        (ctx.ligasInfo.length > 1 ? ': ' + l.label : '') + '</button>';
+      var rotRank = ctx.ligasInfo.length > 1 ? (/^ranking/i.test(l.label) ? l.label : 'Ranking: ' + l.label) : 'Ranking';
+      return '<button type="button" class="bc-btn bc-rank" title="' + String(rotRank).replace(/"/g, '&quot;') + '" onclick="abrirRanking(\'' + l.slug + '\',\'' + String(l.label).replace(/'/g, "\\'") + '\',\'' + l.rankingUrl + '\')">' + rotRank + '</button>';
     }).join('');
 
     var mapa = ctx.typeVal === 'offline'
-      ? '<a class="bc-btn" href="mapa-evento.html?' + ctx.paramsMapa + '" target="_blank" rel="noopener">Mapa</a>'
+      ? '<a class="bc-btn bc-main bc-map" href="mapa-evento.html?' + ctx.paramsMapa + '" target="_blank" rel="noopener">Mapa</a>'
       : '';
 
     return '' +
@@ -84,9 +84,9 @@
       '<div class="bc-act">' +
         '<a class="bc-primary" href="https://start.gg' + t.url + '" target="_blank" rel="noopener">Página do torneio</a>' +
         '<div class="bc-sub">' +
-          '<button type="button" class="bc-btn" onclick="event.stopPropagation();abrirAttendees(\'' + t.url + '\')">Inscritos</button>' +
-          '<button type="button" class="bc-btn" onclick="event.stopPropagation();abrirBracket(\'' + t.url + '\')">Bracket</button>' +
-          '<a class="bc-btn" href="' + ctx.calendarLink + '" target="_blank" rel="noopener" title="Adicionar ao Google Calendar" aria-label="Adicionar ao Google Calendar">Agenda</a>' +
+          '<button type="button" class="bc-btn bc-main" onclick="event.stopPropagation();abrirAttendees(\'' + t.url + '\')">Inscritos</button>' +
+          '<button type="button" class="bc-btn bc-main" onclick="event.stopPropagation();abrirBracket(\'' + t.url + '\')">Bracket</button>' +
+          '<a class="bc-btn bc-main" href="' + ctx.calendarLink + '" target="_blank" rel="noopener" title="Adicionar ao Google Calendar" aria-label="Adicionar ao Google Calendar">Agenda</a>' +
           mapa + ranking +
         '</div>' +
       '</div>';
