@@ -59,13 +59,13 @@
   const SHOPS = { steam: 'Steam' };
   function shopLogo(shop) {
     if (!Object.prototype.hasOwnProperty.call(SHOPS, shop)) return '';
-    return '<img class="game-price-shop" src="imagens/shops/' + shop + '.svg" alt="' + SHOPS[shop] + '" title="' + SHOPS[shop] + '" height="18" style="height:18px;width:auto;display:block;margin:2px 0" onerror="this.remove()">';
+    return '<img class="game-price-shop" src="imagens/shops/' + shop + '.svg" alt="' + SHOPS[shop] + '" title="' + SHOPS[shop] + '" style="position:absolute;top:12px;right:14px;height:20px;width:auto;opacity:.9;pointer-events:none" onerror="this.remove()">';
   }
 
   function priceCard(title, value, historical, currency, kind, shop) {
     const current = value == null ? 'Indisponível' : money(value, currency);
     const low = historical == null ? '—' : money(historical, currency);
-    return '<article class="game-price-card ' + kind + '">' +
+    return '<article class="game-price-card ' + kind + '"' + (shop ? ' style="position:relative"' : '') + '>' +
       '<span class="game-price-label">' + title + '</span>' + shopLogo(shop) +
       '<strong class="game-price-value">' + current + '</strong>' +
       '<span class="game-price-history">Menor preço histórico: ' + low + '</span></article>';
