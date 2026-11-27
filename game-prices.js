@@ -56,10 +56,11 @@
     catch { return (amount.toFixed(2) + ' ' + (currency || '')).trim(); }
   }
 
-  const SHOPS = { steam: 'Steam' };
+  const SHOPS = { steam: { name: 'Steam', file: 'steam.svg' }, nuuvem: { name: 'Nuuvem', file: 'nuuvem.png' } };
   function shopLogo(shop) {
     if (!Object.prototype.hasOwnProperty.call(SHOPS, shop)) return '';
-    return '<img class="game-price-shop" src="imagens/shops/' + shop + '.svg" alt="' + SHOPS[shop] + '" title="' + SHOPS[shop] + '" style="position:absolute;top:12px;right:14px;height:20px;width:auto;opacity:.9;pointer-events:none" onerror="this.remove()">';
+    const info = SHOPS[shop];
+    return '<img class="game-price-shop" src="imagens/shops/' + info.file + '" alt="' + info.name + '" title="' + info.name + '" style="position:absolute;top:12px;right:14px;height:20px;width:auto;opacity:.9;pointer-events:none" onerror="this.remove()">';
   }
 
   function priceCard(title, value, historical, currency, kind, shop) {

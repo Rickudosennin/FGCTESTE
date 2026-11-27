@@ -181,6 +181,7 @@
       "name": "Street Fighter 6",
       "slug": "sf6",
       "steamAppId": 1364780,
+      "nuuvemSlug": "street-fighter-6",
       "enabled": true
     },
     {

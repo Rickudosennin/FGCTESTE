@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchPrices } = require('./providers/ggdeals');
 const { fetchSteamPrices, detectRetailShop } = require('./providers/steam');
+const { fetchNuuvemPrices, detectNuuvemShop } = require('./providers/nuuvem');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'data', 'game-prices');
@@ -29,6 +30,12 @@ async function main() {
     const r = results[game.slug];
     if (r && r.status === 'ok' && r.prices) r.prices.shopRetail = detectRetailShop(r.prices.currentRetail, steamPrices[game.slug]);
   }
+  // Nuuvem: só tenta quando a Steam não bateu e o jogo tem nuuvemSlug no config.
+  try {
+    const needNuuvem = supported.filter(g => g.nuuvemSlug && results[g.slug]?.status === 'ok' && !results[g.slug].prices?.shopRetail);
+    const nuuvemPrices = await fetchNuuvemPrices(needNuuvem);
+    for (const game of needNuuvem) results[game.slug].prices.shopRetail = detectNuuvemShop(results[game.slug].prices.currentRetail, nuuvemPrices[game.slug]);
+  } catch (error) { console.log('Nuuvem ignorada: ' + error.message); }
 
   const index = {
     provider: 'ggdeals',
