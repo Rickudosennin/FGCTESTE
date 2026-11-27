@@ -568,6 +568,8 @@ function adicionarBotaoAssistir(t, card) {
         if (!links.length) return;
         const rot = { TWITCH: 'Twitch', YOUTUBE: 'YouTube' };
         const bc = card.querySelector('.bc-sub');
+        const ordem = { TWITCH: 0, YOUTUBE: 1 };
+        links.sort((a, b) => (ordem[a.src] ?? 9) - (ordem[b.src] ?? 9)); // ordem fixa: Twitch à esquerda, YouTube à direita
         const mostrar = links.slice(0, 2);
         mostrar.slice().reverse().forEach(l => {
             const txt = 'Assistir' + (rot[l.src] ? ' · ' + rot[l.src] : '');
