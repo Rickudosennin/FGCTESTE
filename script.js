@@ -556,8 +556,9 @@ function linkDaStream(st) {
         const h = YT_CANAIS[nome.toLowerCase().replace(/[^a-z0-9]/g, '')];
         if (h) return 'https://youtube.com/' + h;
         if (/^UC[\w-]{22}$/.test(nome)) return 'https://youtube.com/channel/' + nome + '/live';
-        if (/^[\w-]{11}$/.test(nome)) return 'https://youtube.com/watch?v=' + nome;
-        return 'https://youtube.com/results?search_query=' + encodeURIComponent(nome) + '&sp=EgIQAg%3D%3D';
+        // Start.gg guarda o nome do canal -> assume @nome (sem espaços/símbolos); YT_CANAIS corrige handles que diferem do nome
+        const h2 = nome.replace(/[^\p{L}\p{N}_.-]/gu, '');
+        return h2 ? 'https://youtube.com/@' + encodeURIComponent(h2) : '';
     }
     return '';
 }
