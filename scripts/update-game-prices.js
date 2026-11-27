@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { fetchPrices } = require('./providers/ggdeals');
+const { fetchSteamPrices, detectRetailShop } = require('./providers/steam');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'data', 'game-prices');
@@ -20,6 +21,15 @@ async function main() {
   }
 
   const results = await fetchPrices(supported, { region: CONFIG.region || 'br' });
+  // Identifica a loja do menor preço Retail (apenas Steam, por comparação de preço). Falha aqui nunca quebra a atualização.
+  let steamPrices = {};
+  try { steamPrices = await fetchSteamPrices(supported.filter(g => results[g.slug]?.status === 'ok'), { region: CONFIG.region || 'br' }); }
+  catch (error) { console.log('Steam ignorada: ' + error.message); }
+  for (const game of supported) {
+    const r = results[game.slug];
+    if (r && r.status === 'ok' && r.prices) r.prices.shopRetail = detectRetailShop(r.prices.currentRetail, steamPrices[game.slug]);
+  }
+
   const index = {
     provider: 'ggdeals',
     region: CONFIG.region || 'br',
