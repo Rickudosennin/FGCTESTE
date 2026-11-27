@@ -553,7 +553,7 @@ function linkDaStream(st) {
         if (nome.startsWith('@')) return 'https://youtube.com/' + nome;
         if (/^UC[\w-]{22}$/.test(nome)) return 'https://youtube.com/channel/' + nome + '/live';
         if (/^[\w-]{11}$/.test(nome)) return 'https://youtube.com/watch?v=' + nome;
-        return 'https://youtube.com/results?search_query=' + encodeURIComponent(nome) + '&sp=EgJAAQ%253D%253D';
+        return 'https://youtube.com/results?search_query=' + encodeURIComponent(nome) + '&sp=EgJAAQ%3D%3D';
     }
     return '';
 }
