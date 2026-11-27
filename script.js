@@ -543,6 +543,8 @@ function formatarDataGoogle(ts){return new Date(ts*1000).toISOString().replace(/
 function gerarLinkGoogleCalendar(t){const i=formatarDataGoogle(t.startAt),f=formatarDataGoogle(t.startAt+7200),d=encodeURIComponent(`Inscrição: https://start.gg${t.url}`);return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.name)}&dates=${i}/${f}&details=${d}`;}
 
 // Botão "Assistir": monta o link da stream a partir de streamName/streamSource (a API não devolve URL pronta). Injeção pós-render, não altera o card original.
+// Canais de YouTube conhecidos: o Start.gg só guarda o nome de exibição. Chave = nome minúsculo sem espaço/símbolo; valor = @handle. Adicione novos aqui.
+const YT_CANAIS = { 'wasfesports': '@wasfesports', 'wasf': '@wasfesports' };
 function linkDaStream(st) {
     const nome = String(st.streamName || '').trim();
     if (!nome) return '';
@@ -551,9 +553,11 @@ function linkDaStream(st) {
     if (src === 'TWITCH') return 'https://twitch.tv/' + encodeURIComponent(nome);
     if (src === 'YOUTUBE') {
         if (nome.startsWith('@')) return 'https://youtube.com/' + nome;
+        const h = YT_CANAIS[nome.toLowerCase().replace(/[^a-z0-9]/g, '')];
+        if (h) return 'https://youtube.com/' + h;
         if (/^UC[\w-]{22}$/.test(nome)) return 'https://youtube.com/channel/' + nome + '/live';
         if (/^[\w-]{11}$/.test(nome)) return 'https://youtube.com/watch?v=' + nome;
-        return 'https://youtube.com/results?search_query=' + encodeURIComponent(nome) + '&sp=EgJAAQ%3D%3D';
+        return 'https://youtube.com/results?search_query=' + encodeURIComponent(nome) + '&sp=EgIQAg%3D%3D';
     }
     return '';
 }
