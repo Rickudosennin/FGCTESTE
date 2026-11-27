@@ -542,6 +542,63 @@ function iniciarTimer(id, registrationClosesAt, checkInData, eventStartAt, event
 function formatarDataGoogle(ts){return new Date(ts*1000).toISOString().replace(/-|:|\.\d+/g,"");}
 function gerarLinkGoogleCalendar(t){const i=formatarDataGoogle(t.startAt),f=formatarDataGoogle(t.startAt+7200),d=encodeURIComponent(`Inscrição: https://start.gg${t.url}`);return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.name)}&dates=${i}/${f}&details=${d}`;}
 
+// Botão "Assistir": monta o link da stream a partir de streamName/streamSource (a API não devolve URL pronta). Injeção pós-render, não altera o card original.
+function linkDaStream(st) {
+    const nome = String(st.streamName || '').trim();
+    if (!nome) return '';
+    if (/^https?:\/\//i.test(nome)) return nome;
+    const src = String(st.streamSource || '').toUpperCase();
+    if (src === 'TWITCH') return 'https://twitch.tv/' + encodeURIComponent(nome);
+    if (src === 'YOUTUBE') {
+        if (nome.startsWith('@')) return 'https://youtube.com/' + nome;
+        if (/^UC[\w-]{22}$/.test(nome)) return 'https://youtube.com/channel/' + nome + '/live';
+        if (/^[\w-]{11}$/.test(nome)) return 'https://youtube.com/watch?v=' + nome;
+        return 'https://youtube.com/results?search_query=' + encodeURIComponent(nome) + '&sp=EgJAAQ%253D%253D';
+    }
+    return '';
+}
+function adicionarBotaoAssistir(t, card) {
+    try {
+        const links = (t.streams || []).map(st => ({ url: linkDaStream(st), src: String(st.streamSource || '').toUpperCase() })).filter(l => l.url);
+        if (!links.length) return;
+        const rot = { TWITCH: 'Twitch', YOUTUBE: 'YouTube' };
+        const bc = card.querySelector('.bc-sub');
+        links.slice(0, 2).forEach(l => {
+            const txt = 'Assistir' + (rot[l.src] ? ' · ' + rot[l.src] : '');
+            if (bc) {
+                bc.insertAdjacentHTML('afterbegin', `<a class="bc-btn" href="${l.url}" target="_blank" rel="noopener" onclick="event.stopPropagation();">${txt}</a>`);
+            } else {
+                const box = card.querySelector('.mt-4.space-y-2');
+                if (box) box.insertAdjacentHTML('afterbegin', `<a href="${l.url}" target="_blank" rel="noopener" class="block text-center btn-calendar text-slate-300 font-bold py-2 rounded-lg transition uppercase text-[10px] tracking-wider" onclick="event.stopPropagation();"><i class="fa-solid fa-tv mr-1"></i> ${txt}</a>`);
+            }
+        });
+    } catch (e) { /* botão é opcional */ }
+}
+
+// Fallback do badge de fase: stream queue do Start.gg só cobre Twitch; aqui busca set ACTIVE do evento (não altera o fluxo principal)
+async function buscarBadgeAoVivoFallback(t, card) {
+    try {
+        const evs = (t.events || []).filter(ev => ev.state === 'ACTIVE');
+        if (!evs.length) return;
+        const q = `query($id: ID!) { event(id: $id) { sets(page:1, perPage:1, filters:{state:[2]}) { nodes { state fullRoundText phaseGroup { phase { name } } } } } }`;
+        for (const ev of evs) {
+            const json = await callStartGG(q, { id: ev.id });
+            const set = json?.data?.event?.sets?.nodes?.[0];
+            if (!set || !set.fullRoundText) continue;
+            if (card.querySelector('.bracket-live-badge')) return;
+            const fase = set.phaseGroup?.phase?.name;
+            const html = `<div class="bracket-live-badge">🔴 ${fase ? fase + ' — ' : ''}${set.fullRoundText}</div>`;
+            let bc = card.querySelector('.bc-badges:not(.bc-stream-badges)');
+            if (bc) { bc.insertAdjacentHTML('afterbegin', html); return; }
+            const info = card.querySelector('.bc-info');
+            if (info) { info.insertAdjacentHTML('afterbegin', `<div class="bc-badges">${html}</div>`); return; }
+            const h3 = card.querySelector('h3');
+            if (h3 && h3.parentNode) h3.parentNode.insertAdjacentHTML('afterbegin', html);
+            return;
+        }
+    } catch (e) { /* silencioso: badge é opcional */ }
+}
+
 async function pesquisar() {
     const gameObj = games.find(g => g.value === document.getElementById("campo_jogo").value), typeVal = document.getElementById("campo_tipo").value, localVal = document.getElementById("campo_local").value;
     _tipoPesquisa = typeVal;
@@ -646,7 +703,11 @@ async function pesquisar() {
             if (t.streams && t.streams.length > 0) { const hasTwitch = t.streams.some(s => s.streamSource==='TWITCH'), hasYT = t.streams.some(s => s.streamSource==='YOUTUBE'); streamHTML = `<div style="position:absolute;bottom:8px;right:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);padding:3px 8px;border-radius:4px;border:1px solid ${isLiveNow?'#dc2626':'rgba(255,255,255,0.1)'}">${isLiveNow?'<span class="animate-pulse flex h-2 w-2 rounded-full bg-red-500 mr-1"></span><span class="text-[9px] font-black text-red-500 uppercase mr-2 tracking-tighter">LIVE</span>':'<span class="text-[9px] font-black text-white uppercase tracking-tighter">Stream:</span>'}${hasTwitch?'<i class="fa-brands fa-twitch text-[#a970ff] text-xs"></i>':''}${hasYT?'<i class="fa-brands fa-youtube text-[#ff0000] text-xs"></i>':''}</div>`; }
             
             let bracketBadgeHTML = '';
-            const firstSet = t.streamQueue?.[0]?.sets?.[0];
+            // Varre TODAS as filas/sets (mesma base do isLiveNow): prioriza set ACTIVE, depois CALLED
+            const _todosSets = (t.streamQueue || []).flatMap(q => q.sets || []);
+            const _isAtivo = s => s && (s.state === 'ACTIVE' || s.state === 2);
+            const _isCalled = s => s && (s.state === 'CALLED' || s.state === 6);
+            const firstSet = _todosSets.find(s => _isAtivo(s) && s.fullRoundText) || _todosSets.find(s => _isCalled(s) && s.fullRoundText) || t.streamQueue?.[0]?.sets?.[0];
             if (firstSet && firstSet.fullRoundText) {
                 const phaseName = firstSet.phaseGroup?.phase?.name || '';
                 const roundText = firstSet.fullRoundText;
@@ -690,7 +751,10 @@ async function pesquisar() {
                 card.style.animationDelay = `${Math.min(i * 0.05, 0.5)}s`;
             }
             container.appendChild(card);
+            adicionarBotaoAssistir(t, card);
             if (!usaLinhaBc) aplicarTiltCard(card);
+            // Fallback (YouTube/sem stream queue): sem badge da fila -> busca set ACTIVE direto no evento, em segundo plano
+            if (!bracketBadgeHTML) { buscarBadgeAoVivoFallback(t, card); }
             const checkInData = eventoAtual ? { checkInEnabled: eventoAtual.checkInEnabled, checkInDuration: eventoAtual.checkInDuration, checkInBuffer: eventoAtual.checkInBuffer } : null;
             const eventState = eventoAtual?.state || null;
             if (regCloseEfetivo || (checkInData && checkInData.checkInEnabled)) { iniciarTimer(timerId, regCloseEfetivo, checkInData, eventoAtual?.startAt || t.startAt, eventState); }
