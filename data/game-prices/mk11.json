@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/mortal-kombat11/",
   "prices": {
     "currentRetail": "9.77",
-    "currentKeyshops": "16.99",
+    "currentKeyshops": "15.67",
     "historicalRetail": "9.39",
-    "historicalKeyshops": "9.72"
+    "historicalKeyshops": "9.72",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

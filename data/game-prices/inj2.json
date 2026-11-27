@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/injustice-2/",
   "prices": {
     "currentRetail": "12.74",
-    "currentKeyshops": "13.49",
+    "currentKeyshops": "13.89",
     "historicalRetail": "10.91",
-    "historicalKeyshops": "9.42"
+    "historicalKeyshops": "9.42",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

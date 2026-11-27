@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/granblue-fantasy-versus-rising/",
   "prices": {
     "currentRetail": "70.54",
-    "currentKeyshops": "121.76",
+    "currentKeyshops": "133.21",
     "historicalRetail": "48.57",
-    "historicalKeyshops": "48.50"
+    "historicalKeyshops": "48.50",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

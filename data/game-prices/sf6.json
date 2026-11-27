@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/street-fighter-6/",
   "prices": {
     "currentRetail": "50.99",
-    "currentKeyshops": "58.69",
+    "currentKeyshops": "49.87",
     "historicalRetail": "50.99",
-    "historicalKeyshops": "45.77"
+    "historicalKeyshops": "45.77",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/mortal-kombat-2023/",
   "prices": {
     "currentRetail": "29.64",
-    "currentKeyshops": "36.59",
+    "currentKeyshops": "35.47",
     "historicalRetail": "23.00",
-    "historicalKeyshops": "33.90"
+    "historicalKeyshops": "33.90",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

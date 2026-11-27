@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/mortal-kombat-x/",
   "prices": {
     "currentRetail": "9.94",
-    "currentKeyshops": "13.09",
+    "currentKeyshops": "12.01",
     "historicalRetail": "7.49",
-    "historicalKeyshops": "7.94"
+    "historicalKeyshops": "7.94",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

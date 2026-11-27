@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/guilty-gear-strive/",
   "prices": {
     "currentRetail": "66.56",
-    "currentKeyshops": "77.84",
+    "currentKeyshops": "76.95",
     "historicalRetail": "65.24",
-    "historicalKeyshops": "49.91"
+    "historicalKeyshops": "49.91",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }

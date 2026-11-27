@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/blazblue-centralfiction/",
   "prices": {
     "currentRetail": "55.72",
-    "currentKeyshops": "14.78",
+    "currentKeyshops": "14.41",
     "historicalRetail": "8.86",
-    "historicalKeyshops": "8.39"
+    "historicalKeyshops": "8.39",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.761Z"
 }

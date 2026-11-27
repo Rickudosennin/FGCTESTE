@@ -11,9 +11,10 @@
   "sourceUrl": "https://gg.deals/game/fatal-fury-city-of-the-wolves/",
   "prices": {
     "currentRetail": "12.74",
-    "currentKeyshops": "15.27",
+    "currentKeyshops": "14.82",
     "historicalRetail": "8.49",
-    "historicalKeyshops": "14.21"
+    "historicalKeyshops": "14.21",
+    "shopRetail": null
   },
-  "updatedAt": "2026-11-26T21:26:43.474Z"
+  "updatedAt": "2026-11-27T02:06:00.762Z"
 }
