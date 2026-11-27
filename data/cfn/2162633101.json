@@ -1,34 +1,34 @@
 {
   "cfnId": "2162633101",
-  "updatedAt": "2026-11-26T20:03:43.752Z",
+  "updatedAt": "2026-11-27T18:39:47.309Z",
   "main": {
-    "id": 34,
-    "name": "Arjun",
-    "toolName": "arjun"
+    "id": 3,
+    "name": "Kimberly",
+    "toolName": "kimberly"
   },
   "league": {
-    "points": 57625,
+    "points": 178011,
     "rank": 36,
-    "masterRating": 1513,
-    "masterLeague": 36,
-    "masterRatingRanking": 162318
+    "masterRating": 1601,
+    "masterLeague": 40,
+    "masterRatingRanking": 67427
   },
-  "playTimeSeconds": 6026082,
+  "playTimeSeconds": 6043983,
   "playTimeByMode": [
     {
       "type": 2,
       "name": "Ranked Matches",
-      "seconds": 2733202
+      "seconds": 2735727
     },
     {
       "type": 8,
       "name": "Practice",
-      "seconds": 2043637
+      "seconds": 2054605
     },
     {
       "type": 4,
       "name": "Custom Room Matches",
-      "seconds": 672678
+      "seconds": 677086
     },
     {
       "type": 5,
@@ -63,21 +63,21 @@
   ],
   "season": {
     "id": 14,
-    "battles": 765,
-    "wins": 402
+    "battles": 811,
+    "wins": 426
   },
   "topCharacters": [
     {
       "id": 3,
       "name": "Kimberly",
-      "battles": 637,
-      "wins": 331
+      "battles": 675,
+      "wins": 354
     },
     {
       "id": 34,
       "name": "Arjun",
-      "battles": 56,
-      "wins": 36
+      "battles": 64,
+      "wins": 37
     },
     {
       "id": 32,

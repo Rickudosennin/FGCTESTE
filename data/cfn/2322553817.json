@@ -1,29 +1,29 @@
 {
   "cfnId": "2322553817",
-  "updatedAt": "2026-11-26T19:48:55.489Z",
+  "updatedAt": "2026-11-27T18:39:42.321Z",
   "main": {
     "id": 13,
     "name": "A.K.I.",
     "toolName": "aki"
   },
   "league": {
-    "points": 872816,
+    "points": 874156,
     "rank": 36,
-    "masterRating": 1773,
+    "masterRating": 1766,
     "masterLeague": 41,
-    "masterRatingRanking": 7997
+    "masterRatingRanking": 8734
   },
-  "playTimeSeconds": 10033636,
+  "playTimeSeconds": 10056825,
   "playTimeByMode": [
     {
       "type": 2,
       "name": "Ranked Matches",
-      "seconds": 7937903
+      "seconds": 7957828
     },
     {
       "type": 8,
       "name": "Practice",
-      "seconds": 1080339
+      "seconds": 1083603
     },
     {
       "type": 4,
@@ -68,15 +68,15 @@
   ],
   "season": {
     "id": 14,
-    "battles": 735,
-    "wins": 435
+    "battles": 847,
+    "wins": 497
   },
   "topCharacters": [
     {
       "id": 13,
       "name": "A.K.I.",
-      "battles": 735,
-      "wins": 435
+      "battles": 847,
+      "wins": 497
     }
   ]
 }
